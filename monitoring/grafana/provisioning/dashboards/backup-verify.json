@@ -1,0 +1,55 @@
+{
+  "dashboard": {
+    "title": "Backup Verification Status",
+    "panels": [
+      {
+        "title": "Latest Restore Time",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "backup_restore_duration_seconds"
+          }
+        ],
+        "thresholds": [
+          {
+            "color": "red",
+            "value": 1800
+          }
+        ]
+      },
+      {
+        "title": "GovJobs Row Count After Restore",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "backup_govjobs_count"
+          }
+        ]
+      },
+      {
+        "title": "PrivJobs Row Count After Restore", 
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "backup_privjobs_count"
+          }
+        ]
+      },
+      {
+        "title": "Schema Validation Status",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "up{job=\"backup-verify\"}"
+          }
+        ]
+      }
+    ],
+    "time": {
+      "from": "now-24h",
+      "to": "now"
+    },
+    "refresh": "5m"
+  },
+  "overwrite": true
+}

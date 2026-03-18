@@ -1,0 +1,69 @@
+name: RojgarSetu Production Deploy
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  K8S_NAMESPACE: rojgarsetu
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.21'
+
+      - name: Test Backend Go
+        run: cd backend_go && go mod tidy && go test ./... -v
+
+      - name: Test Crawler Go
+        run: cd crawler_go && go mod tidy && go test ./... -v
+
+      - name: Test API Gateway Node
+        run: cd api_gateway_node && npm ci && npm test
+
+      - name: Test Frontend
+        run: cd frontend && npm ci && npm run build && npm test
+
+      - name: Lint YAML K8s
+        run: yamllint deployment/k8s/*.yaml
+
+  deploy-k8s:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure K8s
+        uses: azure/k8s-set-context@v3
+        with:
+          method: kubeconfig
+          kubeconfig: ${{ secrets.KUBECONFIG }}
+
+      - name: Deploy to Kubernetes
+        run: |
+          kubectl apply -f deployment/k8s/ --namespace=${{ env.K8S_NAMESPACE }}
+          kubectl rollout status deployment/backend -n ${{ env.K8S_NAMESPACE }} --timeout=5m
+
+## REQUIRED GITHUB SECRETS:
+## 1. KUBECONFIG: Base64 encoded kubeconfig for prod cluster
+## 2. DB_PASSWORD: PostgreSQL root password
+## 3. POSTGRES_PASSWORD: App DB password
+## 4. JWT_SECRET: JWT signing secret (64 chars)
+## 5. S3_ACCESS_KEY: AWS IAM for backups
+## 6. S3_SECRET_KEY: AWS secret key
+## 7. YOUTUBE_API_KEY: YouTube Data API key
+## 8. GF_SECURITY_ADMIN_PASSWORD: Grafana admin pw
+
+## USAGE:
+## 1. Add secrets to GitHub repo Settings > Secrets
+## 2. Push to main triggers deploy
+## 3. Blue/Green via scripts/blue-green-deploy.ps1 locally

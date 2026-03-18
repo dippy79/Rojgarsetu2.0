@@ -1,0 +1,12 @@
+# github.com/rojgarsetu/backend/internal/services
+internal\services\user_service.go:22:62: undefined: db.RegisterRequest
+internal\services\user_service.go:112:14: s.db.UpdateUser undefined (type *db.PostgresDB has no field or method UpdateUser)
+internal\services\user_service.go:112:33: undefined: db.UpdateUserParams
+internal\services\user_service.go:122:14: s.db.VerifyUser undefined (type *db.PostgresDB has no field or method VerifyUser)
+internal\services\user_service.go:127:14: s.db.DeactivateUser undefined (type *db.PostgresDB has no field or method DeactivateUser)
+internal\services\user_service.go:170:83: undefined: db.UpdateCandidateRequest
+internal\services\user_service.go:244:79: undefined: db.UpdateCompanyRequest
+internal\services\user_service.go:299:85: undefined: db.CreateJobRequest
+internal\services\user_service.go:353:78: undefined: db.CreateJobRequest
+internal\services\user_service.go:426:97: undefined: db.ApplyJobRequest
+internal\services\user_service.go:127:14: too many errors

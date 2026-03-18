@@ -1,0 +1,51 @@
+{
+  "__inputs": [],
+  "dashboard": {
+    "id": null,
+    "title": "Requests - Rate, Latency, Errors",
+    "tags": ["rojgarsetu"],
+    "style": "dark",
+    "timezone": "browser",
+    "panels": [
+      {
+        "title": "Request Rate",
+        "type": "timeseries",
+        "targets": [
+          {
+            "expr": "rate(http_requests_total[5m])",
+            "legendFormat": "{{method}} {{endpoint}}"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0}
+      },
+      {
+        "title": "Request Latency",
+        "type": "timeseries",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m]))",
+            "legendFormat": "p95"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0}
+      },
+      {
+        "title": "Error Codes",
+        "type": "piechart",
+        "targets": [
+          {
+            "expr": "rate(http_requests_total{status=~\"5..\"}[5m])",
+            "legendFormat": "{{status}}"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8}
+      }
+    ],
+    "time": {"from": "now-6h", "to": "now"},
+    "timepicker": {},
+    "timezone": "",
+    "uid": "requests",
+    "version": 1
+  },
+  "overwrite": false
+}

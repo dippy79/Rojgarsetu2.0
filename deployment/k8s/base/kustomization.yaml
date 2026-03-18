@@ -1,0 +1,21 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- backend.yaml
+- crawler.yaml
+- postgres.yaml
+- redis.yaml
+- ingress.yaml
+- configmap-backend.yaml
+- hpa-backend.yaml
+- hpa-crawler.yaml
+- pdb-backend.yaml
+- pdb-crawler.yaml
+- vpa-crawler.yaml
+- frontend.yaml
+- auth-service.yaml
+- api-gateway.yaml
+- ai-engine.yaml
+- prometheus.yaml
+- grafana.yaml
+namespace: rojgarsetu

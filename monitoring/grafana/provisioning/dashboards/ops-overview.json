@@ -1,0 +1,26 @@
+{
+  "dashboard": {
+    "title": "Ops Overview",
+    "panels": [
+      {
+        "title": "Backup Status",
+        "type": "stat",
+        "targets": [{"expr": "up{job=\"pgbackrest\"}"}],
+        "thresholds": [{"color": "red", "value": 0}]
+      },
+      {
+        "title": "Data Freshness (hours)",
+        "type": "gauge",
+        "targets": [{"expr": "(time() - crawler_last_success_timestamp_seconds)/3600"}]
+      },
+      {
+        "title": "Resource Saturation",
+        "type": "graph",
+        "targets": [{"expr": "container_cpu_usage_seconds_total"}]
+      }
+    ],
+    "time": {"from": "now-6h", "to": "now"},
+    "refresh": "5m"
+  },
+  "overwrite": true
+}

@@ -1,0 +1,56 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+alerting:
+  alertmanagers: []
+
+rule_files:
+  - /etc/prometheus/rules.yml
+
+scrape_configs:
+  # Prometheus self-monitoring
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # API Gateway metrics
+  - job_name: 'api-gateway'
+    static_configs:
+      - targets: ['api-gateway:3000']
+    metrics_path: '/metrics'
+
+  # Auth Service metrics
+  - job_name: 'auth-service'
+    static_configs:
+      - targets: ['auth-service:8081']
+    metrics_path: '/actuator/prometheus'
+
+  # AI Engine metrics
+  - job_name: 'ai-engine'
+    static_configs:
+      - targets: ['ai-engine:8000']
+    metrics_path: '/metrics'
+
+  # Crawler Service metrics
+  - job_name: 'crawler'
+    static_configs:
+      - targets: ['crawler-service:8082']
+    metrics_path: '/metrics'
+
+  # Backend API metrics
+  - job_name: 'backend'
+    static_configs:
+      - targets: ['backend:8083']
+    metrics_path: '/metrics'
+
+  # Postgres Exporter
+  - job_name: 'postgres_exporter'
+    static_configs:
+      - targets: ['postgres_exporter:9187']
+
+  # Redis Exporter
+  - job_name: 'redis_exporter'
+    static_configs:
+      - targets: ['redis_exporter:9121']
+

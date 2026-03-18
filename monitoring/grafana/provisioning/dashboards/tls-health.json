@@ -1,0 +1,44 @@
+{
+  "__inputs": [],
+  "dashboard": {
+    "id": null,
+    "title": "TLS Handshake Success",
+    "tags": ["rojgarsetu"],
+    "style": "dark",
+    "timezone": "browser",
+    "panels": [
+      {
+        "title": "TLS Success Rate",
+        "type": "timeseries",
+        "targets": [
+          {
+            "expr": "rate(tls_connections_total[5m]) - rate(tls_handshake_failures[5m])",
+            "legendFormat": "Success"
+          },
+          {
+            "expr": "rate(tls_handshake_failures[5m])",
+            "legendFormat": "Failures"
+          }
+        ],
+        "gridPos": {"h": 9, "w": 12, "x": 0, "y": 0}
+      },
+      {
+        "title": "TLS Errors",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "increase(tls_handshake_failures[1h])",
+            "legendFormat": "Errors Last Hour"
+          }
+        ],
+        "gridPos": {"h": 9, "w": 12, "x": 12, "y": 0}
+      }
+    ],
+    "time": {"from": "now-6h", "to": "now"},
+    "timepicker": {},
+    "timezone": "",
+    "uid": "tls-health",
+    "version": 1
+  },
+  "overwrite": false
+}

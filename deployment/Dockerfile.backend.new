@@ -1,0 +1,32 @@
+FROM golang:1.23-alpine AS builder
+
+WORKDIR /app
+
+# Copy go modules first for caching
+COPY go.mod go.sum ./
+RUN go mod download
+
+# Copy entire source
+COPY . .
+
+# Install sqlc if yaml present (idempotent)
+RUN if [ -f sqlc.yaml ]; then go install github.com/sqlc-dev/sqlc/cmd/sqlc@latest && sqlc generate; else echo "No sqlc.yaml, skipping generation"; fi
+
+# Tidy and build strictly (no masking failures)
+RUN go mod tidy
+RUN go build -v -o /app/bin/backend ./cmd/server/main.go
+
+FROM alpine:latest
+
+RUN apk --no-cache add ca-certificates wget
+
+WORKDIR /app
+
+COPY --from=builder /app/bin/backend .
+
+EXPOSE 8083
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://localhost:8083/health || exit 1
+
+CMD ["./backend"]

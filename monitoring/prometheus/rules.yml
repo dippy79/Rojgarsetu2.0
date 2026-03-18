@@ -1,0 +1,83 @@
+groups:
+  - name: rojgarsetu.rules
+    rules:
+      # High error rate (>5% 5xx)
+      - alert: HighErrorRate
+        expr: rate(http_requests_total{status=~\"5..\"}[5m]) / rate(http_requests_total[5m]) > 0.05
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High error rate on {{ $labels.endpoint }}"
+          description: "{{ $labels.instance }} has error rate >5% for 5xx errors"
+
+      # DB connection refused (placeholder, use pg exporter later)
+      - alert: DBConnectionRefused
+        expr: pg_up == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "DB connection refused"
+
+      # Container restart loop
+      - alert: ContainerRestartLoop
+        expr: increase(container_start_time_seconds[10m]) > 2
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Container {{ $labels.container }} restarting too frequently"
+
+      # TLS handshake failures (if metric added)
+      - alert: TLSHandshakeFailures
+        expr: rate(tls_handshake_failures[5m]) > 0.1
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "TLS handshake failures detected"
+
+# Data Staleness Alerts
+      - alert: CrawlerStale
+        expr: time() - crawler_last_success_timestamp_seconds{source=~\"ncs|ssc|naukri\"} > 86400
+        for: 1h
+        labels:
+          severity: critical
+        annotations:
+          summary: "{{ $labels.source }} stale >24h"
+
+      - alert: JobCountDrop
+        expr: jobs_total < jobs_total offset 1d * 0.7
+        for: 1h
+        labels:
+          severity: warning
+        annotations:
+          summary: "Job count dropped >30%"
+
+# Crawler blocks
+- alert: CrawlerBlocksHigh
+        expr: rate(crawler_requests_blocked_total[5m]) > 10
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Crawler blocks >10/5m ({{ $labels.reason }})"
+          description: "@channel Critical: Crawler blocked. Check RUNBOOK_INCIDENT.md #3"
+
+      - alert: AdaptiveThrottleActive
+        expr: crawler_adaptive_throttle_active > 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Adaptive throttle active"
+          description: "@crawler-team Reduce rate limiters per domain. See logs for details"
+      - alert: ReplicationLagHigh
+        expr: pg_replication_lag_seconds{region=~".+"} > 30
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Replication lag >30s in {{ $labels.region }}"
+          description: "Lag on {{ $labels.instance }}"

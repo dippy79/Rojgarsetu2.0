@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+$patch: replace
+kind: Deployment
+metadata:
+  name: backend
+spec:
+  template:
+    spec:
+      containers:
+      - name: backend
+        env:
+        - name: CRAWLER_REGION
+          value: "us"
+        - name: DB_URL_LOCAL
+          valueFrom:
+            secretKeyRef:
+              name: rojgarsetu-secrets-us
+              key: ro_database_url
+---
+apiVersion: apps/v1
+$patch: replace
+kind: Deployment
+metadata:
+  name: crawler
+spec:
+  template:
+    spec:
+      containers:
+      - name: crawler
+        env:
+        - name: CRAWLER_REGION
+          value: "us"
+---
+apiVersion: networking.k8s.io/v1
+$patch: replace
+kind: Ingress
+metadata:
+  name: rojgarsetu-ingress
+spec:
+  rules:
+  - host: us.rojgarsetu.com
+  tls:
+  - hosts:
+    - us.rojgarsetu.com
+    secretName: us-rojgarsetu-tls

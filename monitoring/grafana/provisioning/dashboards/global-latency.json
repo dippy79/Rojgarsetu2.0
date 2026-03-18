@@ -1,0 +1,16 @@
+{
+  "title": "Global Latency Map",
+  "panels": [
+    {
+      "type": "worldmap",
+      "title": "Request Latency by Region",
+      "targets": [{
+        "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{region=~\"us|eu|apac\"}[5m]))",
+        "legendFormat": "{{region}}"
+      }],
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0}
+    }
+  ],
+  "time": {"from": "now-6h", "to": "now"},
+  "timezone": "browser"
+}

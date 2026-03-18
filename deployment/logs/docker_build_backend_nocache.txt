@@ -1,0 +1,170 @@
+#0 building with "desktop-linux" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile.backend
+#1 transferring dockerfile: 1.20kB done
+#1 DONE 0.1s
+
+#2 [internal] load metadata for docker.io/library/alpine:latest
+#2 ...
+
+#3 [internal] load metadata for docker.io/library/golang:1.24-alpine
+#3 DONE 0.6s
+
+#2 [internal] load metadata for docker.io/library/alpine:latest
+#2 DONE 0.6s
+
+#4 [internal] load .dockerignore
+#4 transferring context: 916B 0.1s
+#4 transferring context: 920B 0.1s done
+#4 DONE 0.2s
+
+#5 [internal] load build context
+#5 DONE 0.0s
+
+#6 [builder  1/12] FROM docker.io/library/golang:1.24-alpine@sha256:8bee1901f1e530bfb4a7850aa7a479d17ae3a18beb6e09064ed54cfd245b7191
+#6 resolve docker.io/library/golang:1.24-alpine@sha256:8bee1901f1e530bfb4a7850aa7a479d17ae3a18beb6e09064ed54cfd245b7191 0.1s done
+#6 DONE 0.2s
+
+#7 [builder  2/12] WORKDIR /app
+#7 CACHED
+
+#8 [stage-1 1/4] FROM docker.io/library/alpine:latest@sha256:25109184c71bdad752c8312a8623239686a9a2071e8825f20acb8f2198c3f659
+#8 resolve docker.io/library/alpine:latest@sha256:25109184c71bdad752c8312a8623239686a9a2071e8825f20acb8f2198c3f659 0.1s done
+#8 CACHED
+
+#5 [internal] load build context
+#5 transferring context: 116.50kB 0.3s done
+#5 DONE 0.4s
+
+#9 [builder  3/12] RUN apk add --no-cache git ca-certificates build-base
+#9 2.632 ( 1/33) Installing libgcc (15.2.0-r2)
+#9 2.651 ( 2/33) Installing jansson (2.14.1-r0)
+#9 2.664 ( 3/33) Installing libstdc++ (15.2.0-r2)
+#9 2.844 ( 4/33) Installing zstd-libs (1.5.7-r2)
+#9 3.132 ( 5/33) Installing binutils (2.45.1-r0)
+#9 ...
+
+#10 [stage-1 2/4] RUN apk add --no-cache ca-certificates
+#10 2.859 (1/1) Installing ca-certificates (20251003-r0)
+#10 3.188 Executing busybox-1.37.0-r30.trigger
+#10 3.205 Executing ca-certificates-20251003-r0.trigger
+#10 3.389 OK: 8473 KiB in 17 packages
+#10 DONE 4.0s
+
+#9 [builder  3/12] RUN apk add --no-cache git ca-certificates build-base
+#9 3.988 ( 6/33) Installing libmagic (5.46-r2)
+#9 4.055 ( 7/33) Installing file (5.46-r2)
+#9 4.066 ( 8/33) Installing libgomp (15.2.0-r2)
+#9 4.088 ( 9/33) Installing libatomic (15.2.0-r2)
+#9 4.096 (10/33) Installing gmp (6.3.0-r4)
+#9 4.118 (11/33) Installing isl26 (0.26-r1)
+#9 4.183 (12/33) Installing mpfr4 (4.2.2-r0)
+#9 4.306 (13/33) Installing mpc1 (1.3.1-r1)
+#9 4.318 (14/33) Installing gcc (15.2.0-r2)
+#9 ...
+
+#11 [stage-1 3/4] WORKDIR /app
+#11 DONE 0.6s
+
+#9 [builder  3/12] RUN apk add --no-cache git ca-certificates build-base
+#9 15.47 (15/33) Installing libstdc++-dev (15.2.0-r2)
+#9 16.41 (16/33) Installing musl-dev (1.2.5-r21)
+#9 17.13 (17/33) Installing g++ (15.2.0-r2)
+#9 21.09 (18/33) Installing make (4.4.1-r3)
+#9 21.13 (19/33) Installing fortify-headers (1.1-r5)
+#9 21.14 (20/33) Installing patch (2.8-r0)
+#9 21.16 (21/33) Installing build-base (0.5-r3)
+#9 21.16 (22/33) Installing brotli-libs (1.2.0-r0)
+#9 21.29 (23/33) Installing c-ares (1.34.6-r0)
+#9 21.32 (24/33) Installing libunistring (1.4.1-r0)
+#9 21.51 (25/33) Installing libidn2 (2.3.8-r0)
+#9 21.55 (26/33) Installing nghttp2-libs (1.68.0-r0)
+#9 21.58 (27/33) Installing nghttp3 (1.13.1-r0)
+#9 21.60 (28/33) Installing libpsl (0.21.5-r3)
+#9 21.62 (29/33) Installing libcurl (8.17.0-r1)
+#9 21.92 (30/33) Installing libexpat (2.7.4-r0)
+#9 21.94 (31/33) Installing pcre2 (10.47-r0)
+#9 22.02 (32/33) Installing git (2.52.0-r0)
+#9 22.49 (33/33) Installing git-init-template (2.52.0-r0)
+#9 22.50 Executing busybox-1.37.0-r30.trigger
+#9 22.51 OK: 287.1 MiB in 50 packages
+#9 DONE 27.1s
+
+#12 [builder  4/12] COPY backend_go/go.mod backend_go/go.sum ./
+#12 DONE 0.5s
+
+#13 [builder  5/12] RUN go mod download
+#13 DONE 14.1s
+
+#14 [builder  6/12] COPY backend_go/go.mod backend_go/go.sum ./
+#14 DONE 1.8s
+
+#15 [builder  7/12] RUN go mod download
+#15 DONE 2.5s
+
+#16 [builder  8/12] COPY backend_go/ ./
+#16 DONE 1.4s
+
+#17 [builder  9/12] RUN export GOBIN=/go/bin &&     if ! command -v sqlc >/dev/null 2>&1; then       go install github.com/sqlc-dev/sqlc/cmd/sqlc@latest;     fi
+#17 13.20 go: downloading github.com/sqlc-dev/sqlc v1.30.0
+#17 13.64 go: downloading github.com/cubicdaiya/gonp v1.0.4
+#17 13.64 go: downloading github.com/go-sql-driver/mysql v1.9.3
+#17 13.64 go: downloading github.com/google/cel-go v0.26.1
+#17 13.65 go: downloading github.com/jackc/pgx/v5 v5.7.5
+#17 13.66 go: downloading github.com/spf13/cobra v1.9.1
+#17 13.73 go: downloading github.com/spf13/pflag v1.0.7
+#17 13.92 go: downloading golang.org/x/sync v0.16.0
+#17 14.00 go: downloading google.golang.org/grpc v1.75.0
+#17 14.32 go: downloading google.golang.org/protobuf v1.36.8
+#17 15.05 go: downloading modernc.org/sqlite v1.38.2
+#17 15.85 go: downloading filippo.io/edwards25519 v1.1.0
+#17 16.23 go: downloading github.com/davecgh/go-spew v1.1.1
+#17 16.60 go: downloading github.com/tetratelabs/wazero v1.9.0
+#17 16.61 go: downloading github.com/riza-io/grpc-go v0.2.0
+#17 16.69 go: downloading cel.dev/expr v0.24.0
+#17 16.83 go: downloading google.golang.org/genproto/googleapis/api v0.0.0-20250707201910-8d1bb00bc6a7
+#17 17.47 go: downloading github.com/fatih/structtag v1.2.0
+#17 19.26 go: downloading github.com/jinzhu/inflection v1.0.0
+#17 19.39 go: downloading github.com/pingcap/tidb/pkg/parser v0.0.0-20250324122243-d51e00e5bbf0
+#17 19.98 go: downloading github.com/pganalyze/pg_query_go/v6 v6.1.0
+#17 19.98 go: downloading github.com/antlr4-go/antlr/v4 v4.13.1
+#17 20.00 go: downloading google.golang.org/genproto/googleapis/rpc v0.0.0-20250707201910-8d1bb00bc6a7
+#17 20.15 go: downloading github.com/jackc/pgpassfile v1.0.0
+#17 20.16 go: downloading github.com/jackc/pgservicefile v0.0.0-20240606120523-5a60cdf6a761
+#17 20.26 go: downloading github.com/jackc/puddle/v2 v2.2.2
+#17 20.30 go: downloading github.com/stoewer/go-strcase v1.2.0
+#17 20.57 go: downloading github.com/pingcap/errors v0.11.5-0.20240311024730-e056997136bb
+#17 20.86 go: downloading github.com/pingcap/failpoint v0.0.0-20240528011301-b51a646c7c86
+#17 20.90 go: downloading golang.org/x/sys v0.34.0
+#17 22.23 go: downloading golang.org/x/exp v0.0.0-20250620022241-b7579e27df2b
+#17 23.76 go: downloading github.com/pingcap/log v1.1.0
+#17 24.73 go: downloading go.uber.org/zap v1.27.0
+#17 24.82 go: downloading go.uber.org/atomic v1.11.0
+#17 25.48 go: downloading go.uber.org/multierr v1.11.0
+#17 25.48 go: downloading gopkg.in/natefinch/lumberjack.v2 v2.2.1
+#17 29.15 go: downloading modernc.org/libc v1.66.3
+#17 38.78 go: downloading modernc.org/mathutil v1.7.1
+#17 38.78 go: downloading github.com/dustin/go-humanize v1.0.1
+#17 38.78 go: downloading github.com/google/uuid v1.6.0
+#17 38.78 go: downloading modernc.org/memory v1.11.0
+#17 38.92 go: downloading github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec
+#17 DONE 202.1s
+
+#18 [builder 10/12] RUN if [ -f sqlc.yaml ]; then sqlc generate; else echo "sqlc.yaml not found, skipping generation"; fi
+#18 0.592 error parsing sqlc.yaml: yaml: line 17: did not find expected alphabetic or numeric character
+#18 ERROR: process "/bin/sh -c if [ -f sqlc.yaml ]; then sqlc generate; else echo \"sqlc.yaml not found, skipping generation\"; fi" did not complete successfully: exit code: 1
+------
+ > [builder 10/12] RUN if [ -f sqlc.yaml ]; then sqlc generate; else echo "sqlc.yaml not found, skipping generation"; fi:
+0.592 error parsing sqlc.yaml: yaml: line 17: did not find expected alphabetic or numeric character
+------
+Dockerfile.backend:26
+--------------------
+  24 |     
+  25 |     # If sqlc.yaml exists, run sqlc generate (idempotent)
+  26 | >>> RUN if [ -f sqlc.yaml ]; then sqlc generate; else echo "sqlc.yaml not found, skipping generation"; fi
+  27 |     
+  28 |     # Tidy and build strictly
+--------------------
+ERROR: failed to build: failed to solve: process "/bin/sh -c if [ -f sqlc.yaml ]; then sqlc generate; else echo \"sqlc.yaml not found, skipping generation\"; fi" did not complete successfully: exit code: 1
+
+View build details: docker-desktop://dashboard/build/desktop-linux/desktop-linux/x20dta2urfy54vhga34ookdyn

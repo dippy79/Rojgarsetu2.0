@@ -1,0 +1,51 @@
+{
+  "__inputs": [],
+  "dashboard": {
+    "id": null,
+    "title": "Container Health Status",
+    "tags": ["rojgarsetu"],
+    "style": "dark",
+    "timezone": "browser",
+    "panels": [
+      {
+        "title": "Container CPU Usage",
+        "type": "timeseries",
+        "targets": [
+          {
+            "expr": "rate(container_cpu_usage_seconds_total[5m])",
+            "legendFormat": "{{container}}"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0}
+      },
+      {
+        "title": "Memory Usage",
+        "type": "timeseries",
+        "targets": [
+          {
+            "expr": "container_memory_usage_bytes",
+            "legendFormat": "{{container}}"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0}
+      },
+      {
+        "title": "Restarts",
+        "type": "timeseries",
+        "targets": [
+          {
+            "expr": "increase(container_start_time_seconds[1h])",
+            "legendFormat": "{{container}}"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8}
+      }
+    ],
+    "time": {"from": "now-6h", "to": "now"},
+    "timepicker": {},
+    "timezone": "",
+    "uid": "containers",
+    "version": 1
+  },
+  "overwrite": false
+}

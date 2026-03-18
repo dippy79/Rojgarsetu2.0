@@ -1,0 +1,49 @@
+{
+  "dashboard": {
+    "title": "Incident Response Timeline",
+    "panels": [
+      {
+        "title": "Active Alerts (Last 24h)",
+        "type": "table",
+        "targets": [
+          {
+            "expr": "ALERTS{alertstate=\"firing\"}"
+          }
+        ]
+      },
+      {
+        "title": "Alert History (7d)",
+        "type": "logs",
+        "targets": [
+          {
+            "expr": "changes(ALERTS{alertstate=\"firing\"}[7d])"
+          }
+        ]
+      },
+      {
+        "title": "Incident Duration by Severity",
+        "type": "barchart",
+        "targets": [
+          {
+            "expr": "sum_over_time(ALERTS{severity=\"critical\"}[24h])"
+          }
+        ]
+      },
+      {
+        "title": "Crawler Blocks Timeline",
+        "type": "time series",
+        "targets": [
+          {
+            "expr": "rate(crawler_requests_blocked_total[1h])"
+          }
+        ]
+      }
+    ],
+    "time": {
+      "from": "now-7d",
+      "to": "now"
+    },
+    "refresh": "1m"
+  },
+  "overwrite": true
+}

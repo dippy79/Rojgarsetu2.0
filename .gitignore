@@ -1,0 +1,41 @@
+# Environment
+.env
+.env.*
+*.pem
+*.key
+*.crt
+*.p12
+*.jks
+*.keystore
+
+# Secrets
+**/secrets/
+**/secret.yaml
+**/credentials.json
+**/values.yaml
+
+# Terraform
+*.tfstate
+*.tfvars
+
+# Node
+node_modules/
+
+# Python
+__pycache__/
+
+# Go
+bin/
+dist/
+
+# Logs
+*.log
+
+# K8s
+kubeconfig
+deployment/k8s/secrets/
+
+# OS
+.DS_Store
+Thumbs.db
+

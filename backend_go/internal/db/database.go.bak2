@@ -1,0 +1,336 @@
+﻿package db
+
+import (
+	"context"
+	"database/sql"
+	"fmt"
+	"time"
+	// for pgtype
+)
+
+type PostgresDB struct {
+	db *sql.DB
+}
+
+func NewPostgresDB(connStr string) (*PostgresDB, error) {
+	db, err := sql.Open("postgres", connStr)
+	if err != nil {
+		return nil, fmt.Errorf("failed to open database (check DATABASE_URL env): %w", err)
+	}
+	if err != nil {
+		return nil, fmt.Errorf("failed to open database: %w", err)
+	}
+
+	db.SetMaxOpenConns(25)
+	db.SetMaxIdleConns(5)
+	db.SetConnMaxLifetime(5 * time.Minute)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	if err := db.PingContext(ctx); err != nil {
+		return nil, fmt.Errorf("failed to ping database: %w", err)
+	}
+
+	return &PostgresDB{db: db}, nil
+}
+
+func (d *PostgresDB) Close() error {
+	return d.db.Close()
+}
+
+func (d *PostgresDB) GetDB() *sql.DB {
+	return d.db
+}
+
+// GovJob queries
+// TODO: Replace with sqlc-generated querier method
+// GetGovJobs(ctx context.Context, GetGovJobsParams) ([]GovJob, error)
+func (d *PostgresDB) GetGovJobs(filter GovJobFilter, page, limit int) ([]GovJob, int, error) {
+	return nil, 0, fmt.Errorf("sqlc not implemented yet")
+}
+
+func (d *PostgresDB) GetGovJobByID(id string) (*GovJob, error) {
+	var job GovJob
+	err := d.db.QueryRow(`
+		SELECT id, title, department, location, apply_url, last_date, 
+		       source, eligibility, vacancy_count, salary, exam_date, created_at
+		FROM jobs_government 
+		WHERE id = $1 AND is_active = true
+	`, id).Scan(
+		&job.ID, &job.Title, &job.Department, &job.Location, &job.ApplyURL,
+		&job.LastDate, &job.Source, &job.Eligibility, &job.VacancyCount,
+		&job.Salary, &job.ExamDate, &job.CreatedAt,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &job, nil
+}
+
+// PrivJob queries
+func (d *PostgresDB) GetPrivJobs(filter PrivJobFilter, page, limit int) ([]PrivJob, int, error) {
+	offset := (page - 1) * limit
+
+	whereClause := "WHERE is_active = true"
+	params := []interface{}{}
+	paramIndex := 1
+
+	if filter.Company != "" {
+		whereClause += fmt.Sprintf(" AND company ILIKE $%d", paramIndex)
+		params = append(params, "%"+filter.Company+"%")
+		paramIndex++
+	}
+
+	if filter.Location != "" {
+		whereClause += fmt.Sprintf(" AND location ILIKE $%d", paramIndex)
+		params = append(params, "%"+filter.Location+"%")
+		paramIndex++
+	}
+
+	if filter.Source != "" {
+		whereClause += fmt.Sprintf(" AND source = $%d", paramIndex)
+		params = append(params, filter.Source)
+		paramIndex++
+	}
+
+	if filter.JobType != "" {
+		whereClause += fmt.Sprintf(" AND job_type = $%d", paramIndex)
+		params = append(params, filter.JobType)
+		paramIndex++
+	}
+
+	// Count total
+	var total int
+	countQuery := fmt.Sprintf("SELECT COUNT(*) FROM jobs_private %s", whereClause)
+	err := d.db.QueryRow(countQuery, params...).Scan(&total)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	// Get jobs
+	query := fmt.Sprintf(`
+		SELECT id, company, title, location, url, salary, experience, 
+		       job_type, skills, description, source, posted_at, created_at
+		FROM jobs_private 
+		%s 
+		ORDER BY created_at DESC 
+		LIMIT $%d OFFSET $%d
+	`, whereClause, paramIndex, paramIndex+1)
+
+	params = append(params, limit, offset)
+
+	rows, err := d.db.Query(query, params...)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer rows.Close()
+
+	var jobs []PrivJob
+	for rows.Next() {
+		var job PrivJob
+		err := rows.Scan(
+			&job.ID, &job.Company, &job.Title, &job.Location, &job.URL,
+			&job.Salary, &job.Experience, &job.JobType, &job.Skills,
+			&job.Description, &job.Source, &job.PostedAt, &job.CreatedAt,
+		)
+		if err != nil {
+			return nil, 0, err
+		}
+		jobs = append(jobs, job)
+	}
+
+	return jobs, total, nil
+}
+
+func (d *PostgresDB) GetPrivJobByID(id string) (*PrivJob, error) {
+	var job PrivJob
+	err := d.db.QueryRow(`
+		SELECT id, company, title, location, url, salary, experience, 
+		       job_type, skills, description, source, posted_at, created_at
+		FROM jobs_private 
+		WHERE id = $1 AND is_active = true
+	`, id).Scan(
+		&job.ID, &job.Company, &job.Title, &job.Location, &job.URL,
+		&job.Salary, &job.Experience, &job.JobType, &job.Skills,
+		&job.Description, &job.Source, &job.PostedAt, &job.CreatedAt,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &job, nil
+}
+
+// Course queries
+func (d *PostgresDB) GetCourses(filter CourseFilter, page, limit int) ([]Course, int, error) {
+	offset := (page - 1) * limit
+
+	whereClause := "WHERE is_active = true"
+	params := []interface{}{}
+	paramIndex := 1
+
+	if filter.Provider != "" {
+		whereClause += fmt.Sprintf(" AND provider ILIKE $%d", paramIndex)
+		params = append(params, "%"+filter.Provider+"%")
+		paramIndex++
+	}
+
+	if filter.Mode != "" {
+		whereClause += fmt.Sprintf(" AND mode = $%d", paramIndex)
+		params = append(params, filter.Mode)
+		paramIndex++
+	}
+
+	if filter.Level != "" {
+		whereClause += fmt.Sprintf(" AND level = $%d", paramIndex)
+		params = append(params, filter.Level)
+		paramIndex++
+	}
+
+	// Count total
+	var total int
+	countQuery := fmt.Sprintf("SELECT COUNT(*) FROM courses %s", whereClause)
+	err := d.db.QueryRow(countQuery, params...).Scan(&total)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	// Get courses
+	query := fmt.Sprintf(`
+		SELECT id, provider, title, url, duration, mode, level, skills,
+		       description, thumbnail_url, price, is_free, source, created_at
+		FROM courses 
+		%s 
+		ORDER BY created_at DESC 
+		LIMIT $%d OFFSET $%d
+	`, whereClause, paramIndex, paramIndex+1)
+
+	params = append(params, limit, offset)
+
+	rows, err := d.db.Query(query, params...)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer rows.Close()
+
+	var courses []Course
+	for rows.Next() {
+		var course Course
+		err := rows.Scan(
+			&course.ID, &course.Provider, &course.Title, &course.URL,
+			&course.Duration, &course.Mode, &course.Level, &course.Skills,
+			&course.Description, &course.ThumbnailURL, &course.Price,
+			&course.IsFree, &course.Source, &course.CreatedAt,
+		)
+		if err != nil {
+			return nil, 0, err
+		}
+		courses = append(courses, course)
+	}
+
+	return courses, total, nil
+}
+
+func (d *PostgresDB) GetCourseByID(id string) (*Course, error) {
+	var course Course
+	err := d.db.QueryRow(`
+		SELECT id, provider, title, url, duration, mode, level, skills,
+		       description, thumbnail_url, price, is_free, source, created_at
+		FROM courses 
+		WHERE id = $1 AND is_active = true
+	`, id).Scan(
+		&course.ID, &course.Provider, &course.Title, &course.URL,
+		&course.Duration, &course.Mode, &course.Level, &course.Skills,
+		&course.Description, &course.ThumbnailURL, &course.Price,
+		&course.IsFree, &course.Source, &course.CreatedAt,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &course, nil
+}
+
+// Video queries
+func (d *PostgresDB) GetVideos(filter VideoFilter, page, limit int) ([]Video, int, error) {
+	offset := (page - 1) * limit
+
+	whereClause := "WHERE is_active = true"
+	params := []interface{}{}
+	paramIndex := 1
+
+	if filter.Channel != "" {
+		whereClause += fmt.Sprintf(" AND channel ILIKE $%d", paramIndex)
+		params = append(params, "%"+filter.Channel+"%")
+		paramIndex++
+	}
+
+	if filter.Category != "" {
+		whereClause += fmt.Sprintf(" AND category = $%d", paramIndex)
+		params = append(params, filter.Category)
+		paramIndex++
+	}
+
+	// Count total
+	var total int
+	countQuery := fmt.Sprintf("SELECT COUNT(*) FROM youtube_videos %s", whereClause)
+	err := d.db.QueryRow(countQuery, params...).Scan(&total)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	// Get videos
+	query := fmt.Sprintf(`
+		SELECT id, channel, channel_id, title, url, thumbnail, 
+		       description, video_id, published_at, duration, 
+		       view_count, like_count, category, created_at
+		FROM youtube_videos 
+		%s 
+		ORDER BY published_at DESC 
+		LIMIT $%d OFFSET $%d
+	`, whereClause, paramIndex, paramIndex+1)
+
+	params = append(params, limit, offset)
+
+	rows, err := d.db.Query(query, params...)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer rows.Close()
+
+	var videos []Video
+	for rows.Next() {
+		var video Video
+		err := rows.Scan(
+			&video.ID, &video.Channel, &video.ChannelID, &video.Title,
+			&video.URL, &video.Thumbnail, &video.Description, &video.VideoID,
+			&video.PublishedAt, &video.Duration, &video.ViewCount,
+			&video.LikeCount, &video.Category, &video.CreatedAt,
+		)
+		if err != nil {
+			return nil, 0, err
+		}
+		videos = append(videos, video)
+	}
+
+	return videos, total, nil
+}
+
+func (d *PostgresDB) GetVideoByID(id string) (*Video, error) {
+	var video Video
+	err := d.db.QueryRow(`
+		SELECT id, channel, channel_id, title, url, thumbnail, 
+		       description, video_id, published_at, duration, 
+		       view_count, like_count, category, created_at
+		FROM youtube_videos 
+		WHERE id = $1 AND is_active = true
+	`, id).Scan(
+		&video.ID, &video.Channel, &video.ChannelID, &video.Title,
+		&video.URL, &video.Thumbnail, &video.Description, &video.VideoID,
+		&video.PublishedAt, &video.Duration, &video.ViewCount,
+		&video.LikeCount, &video.Category, &video.CreatedAt,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &video, nil
+}

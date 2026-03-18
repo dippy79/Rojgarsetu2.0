@@ -1,0 +1,12 @@
+# github.com/rojgarsetu/backend/internal/services
+internal\services\user_service.go:140:14: s.db.ListUsers undefined (type *db.PostgresDB has no field or method ListUsers)
+internal\services\user_service.go:140:32: undefined: db.ListUsersParams
+internal\services\user_service.go:161:14: s.db.GetCandidateByUserID undefined (type *db.PostgresDB has no field or method GetCandidateByUserID)
+internal\services\user_service.go:166:14: s.db.GetCandidateByID undefined (type *db.PostgresDB has no field or method GetCandidateByID)
+internal\services\user_service.go:193:14: s.db.GetCandidateProfile undefined (type *db.PostgresDB has no field or method GetCandidateProfile)
+internal\services\user_service.go:198:14: s.db.UpdateCandidateProfile undefined (type *db.PostgresDB has no field or method UpdateCandidateProfile)
+internal\services\user_service.go:211:14: s.db.SearchCandidates undefined (type *db.PostgresDB has no field or method SearchCandidates)
+internal\services\user_service.go:211:39: undefined: db.SearchCandidatesParams
+internal\services\user_service.go:235:14: s.db.GetCompanyByUserID undefined (type *db.PostgresDB has no field or method GetCompanyByUserID)
+internal\services\user_service.go:240:14: s.db.GetCompanyByID undefined (type *db.PostgresDB has no field or method GetCompanyByID)
+internal\services\user_service.go:240:14: too many errors

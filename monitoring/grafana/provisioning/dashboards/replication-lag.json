@@ -1,0 +1,23 @@
+{
+  "title": "Replication Lag",
+  "panels": [
+    {
+      "type": "stat",
+      "title": "Max Replication Lag by Region",
+      "targets": [{
+        "expr": "max(pg_replication_lag_seconds{region=~\"us|eu|apac\"}) by (region)",
+        "legendFormat": "{{region}}"
+      }],
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0}
+    },
+    {
+      "type": "timeseries",
+      "title": "Lag Over Time",
+      "targets": [{
+        "expr": "pg_replication_lag_seconds{region=~\"us|eu|apac\"}"
+      }],
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0}
+    }
+  ],
+  "time": {"from": "now-6h", "to": "now"}
+}

@@ -1,0 +1,40 @@
+FROM golang:1.24-alpine3.20 AS builder
+
+WORKDIR /app
+
+# Install build dependencies
+RUN apk add --no-cache git ca-certificates tzdata goose
+
+# Copy go mod files
+COPY go.mod go.sum ./
+
+RUN go mod download
+
+# Copy source code
+COPY . .
+COPY certs/ ./certs/
+COPY migrations/ ./migrations/
+
+# Build the binary
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-s -w -X main.version=2.0.1" -o ./backend_server ./cmd/server/main.go
+
+# Final minimal runtime image - distroless static
+FROM gcr.io/distroless/static-debian12:nonroot
+
+# Switch to non-root user
+USER 1000:1000
+
+WORKDIR /app
+
+# Copy only necessary files from builder
+COPY --from=builder /app/backend_server .
+COPY --from=builder /app/certs ./certs/
+COPY --from=builder /app/migrations ./migrations/
+
+# Health check on HTTPS health endpoint
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://localhost:8083/health || exit 1
+
+EXPOSE 8083 8443
+
+ENTRYPOINT ["./backend_server"]

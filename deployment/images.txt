@@ -1,0 +1,6 @@
+WARNING: This output is designed for human readability. For machine-readable output, please use --format.
+IMAGE                               ID             DISK USAGE   CONTENT SIZE   EXTRA
+crawler-service:latest              b782826b2d59       44.6MB         14.3MB        
+deployment-api-gateway:latest       a4ab7f96038e        260MB         57.9MB        
+deployment-auth-service:latest      879ed9c96122        454MB          161MB        
+deployment-crawler-service:latest   9858c638c7c5       44.6MB         14.3MB        

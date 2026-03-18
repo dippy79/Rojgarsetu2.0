@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  loki:
+    image: grafana/loki:3.1.1
+    ports:
+      - "3100:3100"
+    volumes:
+      - loki_data:/loki
+    command: -config.file=/etc/loki/local-config.yaml
+    networks:
+      - rojgar-network
+
+  promtail:
+    image: grafana/promtail:3.1.1
+    volumes:
+      - /var/log:/var/log
+      - ./monitoring/promtail-config.yml:/etc/promtail/config.yml
+    command: -config.file=/etc/promtail/config.yml
+    depends_on:
+      - loki
+    networks:
+      - rojgar-network
+
+volumes:
+  loki_data:
+
+networks:
+  rojgar-network:
+    external: true
+

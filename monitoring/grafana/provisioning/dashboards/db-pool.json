@@ -1,0 +1,51 @@
+{
+  "__inputs": [],
+  "dashboard": {
+    "id": null,
+    "title": "DB Connection Pool Usage",
+    "tags": ["rojgarsetu"],
+    "style": "dark",
+    "timezone": "browser",
+    "panels": [
+      {
+        "title": "Active Connections",
+        "type": "timeseries",
+        "targets": [
+          {
+            "expr": "pg_stat_activity_count",
+            "legendFormat": "Active DB Conns"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0}
+      },
+      {
+        "title": "Pool Usage %",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "pg_stat_database_connections / 100",
+            "legendFormat": "Usage %"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0}
+      },
+      {
+        "title": "Max Connections",
+        "type": "gauge",
+        "targets": [
+          {
+            "expr": "pg_settings_max_connections",
+            "legendFormat": "Max Conns"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8}
+      }
+    ],
+    "time": {"from": "now-6h", "to": "now"},
+    "timepicker": {},
+    "timezone": "",
+    "uid": "db-pool",
+    "version": 1
+  },
+  "overwrite": false
+}

@@ -1,0 +1,27 @@
+FROM golang:1.24-alpine AS builder
+WORKDIR /app
+
+RUN apk add --no-cache git ca-certificates build-base
+
+# Copy go modules first for caching - already present, ensuring order
+COPY crawler_go/go.mod crawler_go/go.sum ./
+RUN go mod download
+
+# Copy full source
+COPY crawler_go/ ./
+
+# Tidy
+RUN go mod tidy
+
+# Build strictly
+RUN export GOBIN=/go/bin && \
+    CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o /app/bin/crawler ./cmd/main.go
+
+FROM alpine:latest
+RUN apk add --no-cache ca-certificates tzdata
+WORKDIR /root/
+COPY --from=builder /app/bin/crawler .
+EXPOSE 8082
+HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://localhost:8082/health || exit 1
+CMD ["./crawler"]

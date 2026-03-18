@@ -1,0 +1,12 @@
+-- +goose Up
+-- Phase 19: Schema v4 placeholder migration
+-- Future changes: Add users, candidates, companies, applications tables
+-- Add indexes, partitions for jobs/courses
+-- Add audit logs
+
+-- Example future change:
+-- CREATE TABLE users (
+--     id UUID PRIMARY KEY,
+--     email VARCHAR UNIQUE NOT NULL,
+--     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+-- );

@@ -1,0 +1,24 @@
+{
+  "title": "Crawler Health by Region",
+  "panels": [
+    {
+      "type": "stat",
+      "title": "Crawler Requests {region}",
+      "targets": [{
+        "expr": "rate(crawler_requests_total{region=~\"us|eu|apac\"}[5m])",
+        "legendFormat": "{{region}}"
+      }],
+      "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0}
+    },
+    {
+      "type": "gauge",
+      "title": "Crawler Success Rate",
+      "targets": [{
+        "expr": "rate(crawler_requests_success_total{region=~\"us|eu|apac\"}[5m]) / rate(crawler_requests_total{region=~\"us|eu|apac\"}[5m])",
+        "legendFormat": "{{region}}"
+      }],
+      "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0}
+    }
+  ],
+  "time": {"from": "now-6h", "to": "now"}
+}
