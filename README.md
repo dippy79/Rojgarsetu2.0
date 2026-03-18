@@ -35,7 +35,7 @@ RojgarSetu 2.0 is a production-ready job portal platform for government and priv
 ### 🛠 Local Setup
 1. Clone repo:
    ```
-   git clone https://github.com/yourorg/rojgarsetu2.git
+   git clone https://github.com/dippy79/rojgarsetu2.git
    cd rojgarsetu2
    ```
 
