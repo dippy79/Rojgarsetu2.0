@@ -1,220 +1,193 @@
-﻿package db
+﻿// Code generated manually. DO NOT EDIT SQLC FILES.
+package db
 
 import (
 	"context"
 	"database/sql"
 	"fmt"
-	"time"
+
+	"github.com/google/uuid"
 )
 
+// PostgresDB wraps *Queries and adds helper methods with filters + pagination.
 type PostgresDB struct {
-	*Queries
-	DB *sql.DB
+	Queries *Queries
 }
 
-func NewPostgresDB(connStr string) (*PostgresDB, error) {
-	dbConn, err := sql.Open("postgres", connStr)
+// NewPostgresDB creates a PostgresDB from a *sql.DB connection.
+func NewPostgresDB(db *sql.DB) *PostgresDB {
+	return &PostgresDB{Queries: New(db)}
+}
+
+// ── pagination helper ────────────────────────────────────────────────────────
+
+func clampPagination(page, limit int) (int, int, int) {
+	if page < 1 {
+		page = 1
+	}
+	if limit < 1 || limit > 100 {
+		limit = 20
+	}
+	offset := (page - 1) * limit
+	return page, limit, offset
+}
+
+// ── Government Jobs ──────────────────────────────────────────────────────────
+
+func (p *PostgresDB) GetGovJobs(f GovJobFilter, page, limit int) ([]GetGovJobsRow, int, error) {
+	_, limit, offset := clampPagination(page, limit)
+
+	total, err := p.Queries.GetGovJobsCount(context.Background(), GetGovJobsCountParams{
+		Column1: f.Department,
+		Column2: f.Location,
+		Column3: f.Source,
+	})
 	if err != nil {
-		return nil, fmt.Errorf("failed to open database (check DATABASE_URL env): %w", err)
+		return nil, 0, err
 	}
 
-	dbConn.SetMaxOpenConns(25)
-	dbConn.SetMaxIdleConns(5)
-	dbConn.SetConnMaxLifetime(5 * time.Minute)
-
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	if err := dbConn.PingContext(ctx); err != nil {
-		return nil, fmt.Errorf("failed to ping database: %w", err)
+	rows, err := p.Queries.GetGovJobs(context.Background(), GetGovJobsParams{
+		Column1: f.Department,
+		Column2: f.Location,
+		Column3: f.Source,
+		Limit:   int32(limit),
+		Offset:  int32(offset),
+	})
+	if err != nil {
+		return nil, 0, err
 	}
 
-	q := New(dbConn)
-
-	return &PostgresDB{
-		Queries: q,
-		DB:      dbConn,
-	}, nil
+	return rows, int(total), nil
 }
 
-func (p *PostgresDB) Close() error {
-	return p.DB.Close()
-}
-
-func (p *PostgresDB) GetDB() *sql.DB {
-	return p.DB
-}
-
-func (p *PostgresDB) WithTx(tx *sql.Tx) *PostgresDB {
-	return &PostgresDB{
-		Queries: p.Queries.WithTx(tx),
-		DB:      p.DB,
+func (p *PostgresDB) GetGovJobByID(id string) (*GetGovJobByIDRow, error) {
+	uid, err := uuid.Parse(id)
+	if err != nil {
+		return nil, fmt.Errorf("invalid id: %w", err)
 	}
-}
-
-// ExecWithRetry executes query with deadlock retry
-func (p *PostgresDB) ExecWithRetry(ctx context.Context, query string, args ...interface{}) (sql.Result, error) {
-	var result sql.Result
-	var err error
-	for attempt := 0; attempt < 3; attempt++ {
-		result, err = p.DB.ExecContext(ctx, query, args...)
-		if err == nil {
-			return result, nil
-		}
-		if pgErr, ok := err.(interface{ Code() string }); ok && pgErr.Code() == "40P01" { // deadlock
-			time.Sleep(time.Duration(attempt+1) * 100 * time.Millisecond)
-			continue
-		}
+	row, err := p.Queries.GetGovJobByID(context.Background(), uid)
+	if err != nil {
 		return nil, err
 	}
-	return nil, err
+	return &row, nil
 }
 
-// QueryWithRetry for select queries with deadlock retry
-func (p *PostgresDB) QueryWithRetry(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error) {
-	var rows *sql.Rows
-	var err error
-	for attempt := 0; attempt < 3; attempt++ {
-		rows, err = p.DB.QueryContext(ctx, query, args...)
-		if err == nil {
-			return rows, nil
-		}
-		if pgErr, ok := err.(interface{ Code() string }); ok && pgErr.Code() == "40P01" {
-			if rows != nil {
-				rows.Close()
-			}
-			time.Sleep(time.Duration(attempt+1) * 100 * time.Millisecond)
-			continue
-		}
+// ── Private Jobs ─────────────────────────────────────────────────────────────
+
+func (p *PostgresDB) GetPrivJobs(f PrivJobFilter, page, limit int) ([]GetPrivJobsRow, int, error) {
+	_, limit, offset := clampPagination(page, limit)
+
+	total, err := p.Queries.GetPrivJobsCount(context.Background(), GetPrivJobsCountParams{
+		Column1: f.Company,
+		Column2: f.Location,
+		Column3: f.Source,
+		Column4: f.JobType,
+	})
+	if err != nil {
+		return nil, 0, err
+	}
+
+	rows, err := p.Queries.GetPrivJobs(context.Background(), GetPrivJobsParams{
+		Column1: f.Company,
+		Column2: f.Location,
+		Column3: f.Source,
+		Column4: f.JobType,
+		Limit:   int32(limit),
+		Offset:  int32(offset),
+	})
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return rows, int(total), nil
+}
+
+func (p *PostgresDB) GetPrivJobByID(id string) (*GetPrivJobByIDRow, error) {
+	uid, err := uuid.Parse(id)
+	if err != nil {
+		return nil, fmt.Errorf("invalid id: %w", err)
+	}
+	row, err := p.Queries.GetPrivJobByID(context.Background(), uid)
+	if err != nil {
 		return nil, err
 	}
-	return nil, err
+	return &row, nil
 }
 
-// GovJob methods using sqlc
-func (p *PostgresDB) GetGovJobs(filter GovJobFilter, page, limit int) ([]GovJob, int, error) {
-	ctx := context.Background()
-	offset := (page - 1) * limit
-	listParams := GetGovJobsParams{
-		Department: filter.Department,
-		Location:   filter.Location,
-		Source:     filter.Source,
-		Limit:      int32(limit),
-		Offset:     int32(offset),
-	}
-	jobs, err := p.Queries.GetGovJobs(ctx, listParams)
+// ── Courses ──────────────────────────────────────────────────────────────────
+
+func (p *PostgresDB) GetCourses(f CourseFilter, page, limit int) ([]GetCoursesRow, int, error) {
+	_, limit, offset := clampPagination(page, limit)
+
+	total, err := p.Queries.GetCoursesCount(context.Background(), GetCoursesCountParams{
+		Column1: f.Provider,
+		Column2: f.Mode,
+		Column3: f.Level,
+	})
 	if err != nil {
 		return nil, 0, err
 	}
-	countParams := GetGovJobsCountParams{
-		Department: filter.Department,
-		Location:   filter.Location,
-		Source:     filter.Source,
-	}
-	count, err := p.Queries.GetGovJobsCount(ctx, countParams)
-	if err != nil {
-		return jobs, 0, err
-	}
-	return jobs, int(count), nil
-}
 
-func (p *PostgresDB) GetGovJobByID(id string) (*GovJob, error) {
-	ctx := context.Background()
-	return p.Queries.GetGovJobByID(ctx, id)
-}
-
-// PrivJob methods using sqlc
-func (p *PostgresDB) GetPrivJobs(filter PrivJobFilter, page, limit int) ([]PrivJob, int, error) {
-	ctx := context.Background()
-	offset := (page - 1) * limit
-	listParams := GetPrivJobsParams{
-		Company:  filter.Company,
-		Location: filter.Location,
-		Source:   filter.Source,
-		JobType:  filter.JobType,
-		Limit:    int32(limit),
-		Offset:   int32(offset),
-	}
-	jobs, err := p.Queries.GetPrivJobs(ctx, listParams)
+	rows, err := p.Queries.GetCourses(context.Background(), GetCoursesParams{
+		Column1: f.Provider,
+		Column2: f.Mode,
+		Column3: f.Level,
+		Limit:   int32(limit),
+		Offset:  int32(offset),
+	})
 	if err != nil {
 		return nil, 0, err
 	}
-	countParams := GetPrivJobsCountParams{
-		Company:  filter.Company,
-		Location: filter.Location,
-		Source:   filter.Source,
-		JobType:  filter.JobType,
-	}
-	count, err := p.Queries.GetPrivJobsCount(ctx, countParams)
+
+	return rows, int(total), nil
+}
+
+func (p *PostgresDB) GetCourseByID(id string) (*GetCourseByIDRow, error) {
+	uid, err := uuid.Parse(id)
 	if err != nil {
-		return jobs, 0, err
+		return nil, fmt.Errorf("invalid id: %w", err)
 	}
-	return jobs, int(count), nil
+	row, err := p.Queries.GetCourseByID(context.Background(), uid)
+	if err != nil {
+		return nil, err
+	}
+	return &row, nil
 }
 
-func (p *PostgresDB) GetPrivJobByID(id string) (*PrivJob, error) {
-	ctx := context.Background()
-	return p.Queries.GetPrivJobByID(ctx, id)
-}
+// ── Videos ───────────────────────────────────────────────────────────────────
 
-// Course methods using sqlc
-func (p *PostgresDB) GetCourses(filter CourseFilter, page, limit int) ([]Course, int, error) {
-	ctx := context.Background()
-	offset := (page - 1) * limit
-	listParams := GetCoursesParams{
-		Provider: filter.Provider,
-		Mode:     filter.Mode,
-		Level:    filter.Level,
-		Limit:    int32(limit),
-		Offset:   int32(offset),
-	}
-	courses, err := p.Queries.GetCourses(ctx, listParams)
+func (p *PostgresDB) GetVideos(f VideoFilter, page, limit int) ([]GetVideosRow, int, error) {
+	_, limit, offset := clampPagination(page, limit)
+
+	total, err := p.Queries.GetVideosCount(context.Background(), GetVideosCountParams{
+		Column1: f.Channel,
+		Column2: f.Category,
+	})
 	if err != nil {
 		return nil, 0, err
 	}
-	countParams := GetCoursesCountParams{
-		Provider: filter.Provider,
-		Mode:     filter.Mode,
-		Level:    filter.Level,
-	}
-	count, err := p.Queries.GetCoursesCount(ctx, countParams)
-	if err != nil {
-		return courses, 0, err
-	}
-	return courses, int(count), nil
-}
 
-func (p *PostgresDB) GetCourseByID(id string) (*Course, error) {
-	ctx := context.Background()
-	return p.Queries.GetCourseByID(ctx, id)
-}
-
-// Video methods using sqlc
-func (p *PostgresDB) GetVideos(filter VideoFilter, page, limit int) ([]Video, int, error) {
-	ctx := context.Background()
-	offset := (page - 1) * limit
-	listParams := GetVideosParams{
-		Channel:  filter.Channel,
-		Category: filter.Category,
-		Limit:    int32(limit),
-		Offset:   int32(offset),
-	}
-	videos, err := p.Queries.GetVideos(ctx, listParams)
+	rows, err := p.Queries.GetVideos(context.Background(), GetVideosParams{
+		Column1: f.Channel,
+		Column2: f.Category,
+		Limit:   int32(limit),
+		Offset:  int32(offset),
+	})
 	if err != nil {
 		return nil, 0, err
 	}
-	countParams := GetVideosCountParams{
-		Channel:  filter.Channel,
-		Category: filter.Category,
-	}
-	count, err := p.Queries.GetVideosCount(ctx, countParams)
-	if err != nil {
-		return videos, 0, err
-	}
-	return videos, int(count), nil
+
+	return rows, int(total), nil
 }
 
-func (p *PostgresDB) GetVideoByID(id string) (*Video, error) {
-	ctx := context.Background()
-	return p.Queries.GetVideoByID(ctx, id)
+func (p *PostgresDB) GetVideoByID(id string) (*GetVideoByIDRow, error) {
+	uid, err := uuid.Parse(id)
+	if err != nil {
+		return nil, fmt.Errorf("invalid id: %w", err)
+	}
+	row, err := p.Queries.GetVideoByID(context.Background(), uid)
+	if err != nil {
+		return nil, err
+	}
+	return &row, nil
 }

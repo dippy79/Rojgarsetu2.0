@@ -16,4 +16,4 @@ func NewLogger(traceID string) zerolog.Logger {
 		Level(zerolog.InfoLevel)
 }
 
-var Logger = NewLogger()
+var Logger = NewLogger("")

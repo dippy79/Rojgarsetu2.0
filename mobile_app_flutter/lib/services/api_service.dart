@@ -1,184 +1,80 @@
-import 'dart:convert';
 import 'package:dio/dio.dart';
-import '../models/job.dart';
-import '../models/course.dart';
-import '../models/user.dart';
+import '../core/constants/api_constants.dart';
+import '../core/storage/token_storage.dart';
 
 class ApiService {
-  static const String baseUrl = 'http://localhost:3000/api';
   late final Dio _dio;
-  String? _accessToken;
+  final TokenStorage _storage;
 
-  ApiService() {
+  ApiService(this._storage) {
     _dio = Dio(BaseOptions(
-      baseUrl: baseUrl,
-      connectTimeout: const Duration(seconds: 30),
-      receiveTimeout: const Duration(seconds: 30),
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      baseUrl:        ApiConstants.baseUrl,
+      connectTimeout: const Duration(seconds: 10),
+      receiveTimeout: const Duration(seconds: 10),
+      headers: {'Content-Type': 'application/json'},
     ));
 
     _dio.interceptors.add(InterceptorsWrapper(
-      onRequest: (options, handler) {
-        if (_accessToken != null) {
-          options.headers['Authorization'] = 'Bearer $_accessToken';
+      onRequest: (options, handler) async {
+        final token = await _storage.getAccessToken();
+        if (token != null && token.isNotEmpty) {
+          options.headers['Authorization'] = 'Bearer $token';
         }
-        return handler.next(options);
+        handler.next(options);
       },
-      onError: (error, handler) {
-        return handler.next(error);
+      onError: (error, handler) async {
+        if (error.response?.statusCode == 401) {
+          final refreshed = await _tryRefresh();
+          if (refreshed) {
+            final token = await _storage.getAccessToken();
+            error.requestOptions.headers['Authorization'] =
+                'Bearer $token';
+            final retry = await _dio.fetch(error.requestOptions);
+            return handler.resolve(retry);
+          }
+        }
+        handler.next(error);
       },
     ));
   }
 
-  void setToken(String? token) {
-    _accessToken = token;
-  }
-
-  // Auth
-  Future<Map<String, dynamic>> register({
-    required String name,
-    required String email,
-    required String password,
-  }) async {
-    final response = await _dio.post('/auth/register', data: {
-      'name': name,
-      'email': email,
-      'password': password,
-    });
-    return response.data;
-  }
-
-  Future<Map<String, dynamic>> login({
-    required String email,
-    required String password,
-  }) async {
-    final response = await _dio.post('/auth/login', data: {
-      'email': email,
-      'password': password,
-    });
-    if (response.data['status'] == 'success') {
-      _accessToken = response.data['data']['accessToken'];
-    }
-    return response.data;
-  }
-
-  Future<void> logout() async {
-    _accessToken = null;
-  }
-
-  // Jobs
-  Future<List<Job>> getJobs({
-    int page = 1,
-    int limit = 20,
-    String? location,
-    String? source,
-    String? jobType,
-    String? search,
-  }) async {
-    final response = await _dio.get('/jobs', queryParameters: {
-      'page': page,
-      'limit': limit,
-      if (location != null) 'location': location,
-      if (source != null) 'source': source,
-      if (jobType != null) 'jobType': jobType,
-      if (search != null) 'search': search,
-    });
-
-    if (response.data['status'] == 'success') {
-      final jobs = (response.data['data']['jobs'] as List)
-          .map((json) => Job.fromJson(json))
-          .toList();
-      return jobs;
-    }
-    return [];
-  }
-
-  Future<Job?> getJobDetails(String jobId) async {
+  Future<bool> _tryRefresh() async {
     try {
-      final response = await _dio.get('/jobs/$jobId');
-      if (response.data['status'] == 'success') {
-        return Job.fromJson(response.data['data']);
-      }
-    } catch (e) {
-      return null;
+      final rt = await _storage.getRefreshToken();
+      if (rt == null || rt.isEmpty) return false;
+      final resp = await _dio.post(
+          ApiConstants.refresh, data: {'token': rt});
+      final newToken = resp.data['token'] as String?;
+      if (newToken == null) return false;
+      await _storage.saveTokens(
+        accessToken:  newToken,
+        refreshToken: rt,
+        userID:       await _storage.getUserID() ?? '',
+        role:         await _storage.getRole()   ?? '',
+      );
+      return true;
+    } catch (_) {
+      await _storage.clearAll();
+      return false;
     }
-    return null;
   }
 
-  Future<List<Job>> getRecommendedJobs() async {
-    final response = await _dio.get('/recommendations/jobs');
-    if (response.data['status'] == 'success') {
-      final jobs = (response.data['data']['jobs'] as List)
-          .map((json) => Job.fromJson(json))
-          .toList();
-      return jobs;
-    }
-    return [];
-  }
+  Future<Response> get(String path,
+      {Map<String, dynamic>? params}) =>
+      _dio.get(path, queryParameters: params);
 
-  // Courses
-  Future<List<Course>> getCourses({
-    int page = 1,
-    int limit = 20,
-    String? provider,
-    String? level,
-    bool? free,
-  }) async {
-    final response = await _dio.get('/courses', queryParameters: {
-      'page': page,
-      'limit': limit,
-      if (provider != null) 'provider': provider,
-      if (level != null) 'level': level,
-      if (free != null) 'free': free.toString(),
-    });
+  Future<Response> post(String path, {dynamic data}) =>
+      _dio.post(path, data: data);
 
-    if (response.data['status'] == 'success') {
-      final courses = (response.data['data']['courses'] as List)
-          .map((json) => Course.fromJson(json))
-          .toList();
-      return courses;
-    }
-    return [];
-  }
+  Future<Response> put(String path, {dynamic data}) =>
+      _dio.put(path, data: data);
 
-  Future<List<Course>> getRecommendedCourses() async {
-    final response = await _dio.get('/recommendations/courses');
-    if (response.data['status'] == 'success') {
-      final courses = (response.data['data']['courses'] as List)
-          .map((json) => Course.fromJson(json))
-          .toList();
-      return courses;
-    }
-    return [];
-  }
+  Future<Response> patch(String path, {dynamic data}) =>
+      _dio.patch(path, data: data);
 
-  // User Profile
-  Future<User?> getProfile() async {
-    try {
-      final response = await _dio.get('/users/profile');
-      if (response.data['status'] == 'success') {
-        return User.fromJson(response.data['data']);
-      }
-    } catch (e) {
-      return null;
-    }
-    return null;
-  }
-
-  Future<bool> updateProfile({
-    String? name,
-    String? phone,
-    List<String>? skills,
-    String? resumeUrl,
-  }) async {
-    try {
-      final response = await _dio.put('/users/profile', data: {
-        if (name != null) 'name': name,
-        if (phone != null) 'phone': phone,
-        if (skills != null) 'skills': skills,
-        if (resumeUrl != null) 'resumeUrl': resumeUrl,
+  Future<Response> delete(String path) =>
+      _dio.delete(path);
+}
       });
       return response.data['status'] == 'success';
     } catch (e) {

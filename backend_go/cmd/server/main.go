@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"crypto/tls"
+	"database/sql"
 	"fmt"
 	"net"
 	"net/http"
@@ -24,7 +25,6 @@ import (
 var (
 	version    = "2.0.0"
 	logger     zerolog.Logger
-	dbURL      string
 	serverPort int
 	redisURL   string
 )
@@ -33,8 +33,18 @@ func main() {
 	// Initialize logger
 	logger = zerolog.New(os.Stderr).Output(zerolog.ConsoleWriter{Out: os.Stderr, TimeFormat: time.RFC3339}).With().Timestamp().Caller().Logger()
 
-	// Root command
-	dbURL = os.Getenv("DATABASE_URL")
+	// Load config early
+	cfg := config.Load()
+	if cfg.JWT.Secret == "" {
+		logger.Fatal().Msg("JWT_SECRET required")
+		return
+	}
+	if len(cfg.JWT.Secret) < 32 {
+		logger.Fatal().Msg("JWT_SECRET must be at least 32 characters")
+		return
+	}
+
+	dbURL := os.Getenv("DATABASE_URL")
 	if dbURL == "" {
 		logger.Fatal().Msg("DATABASE_URL environment variable required")
 		return
@@ -51,12 +61,12 @@ func main() {
 	}
 
 	// Start server
-	if err := run(); err != nil {
+	if err := run(cfg, dbURL); err != nil {
 		logger.Fatal().Err(err).Msg("Server failed")
 	}
 }
 
-func run() error {
+func run(cfg *config.Config, dbURL string) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -69,25 +79,26 @@ func run() error {
 		cancel()
 	}()
 
-	// Initialize database
-	database, err := db.NewPostgresDB(dbURL)
+	// Initialize database - FIXED
+	sqlDB, err := sql.Open("postgres", dbURL)
 	if err != nil {
-		return fmt.Errorf("failed to connect to database: %w", err)
+		return fmt.Errorf("sql open: %w", err)
 	}
-	defer database.Close()
+	defer sqlDB.Close()
+	if err = sqlDB.Ping(); err != nil {
+		return fmt.Errorf("db ping: %w", err)
+	}
+	database := db.NewPostgresDB(sqlDB)
 	logger.Info().Msg("Database connected")
 
-	// Initialize services
-	govJobService := services.NewGovJobService(database)
-	privJobService := services.NewPrivJobService(database)
-	courseService := services.NewCourseService(database)
-	videoService := services.NewVideoService(database)
+	// Initialize services - FIXED to ContentService
+	contentSvc := services.NewContentService(database)
 
-	// Initialize handlers
-	govJobHandler := handlers.NewGovJobHandler(govJobService)
-	privJobHandler := handlers.NewPrivJobHandler(privJobService)
-	courseHandler := handlers.NewCourseHandler(courseService)
-	videoHandler := handlers.NewVideoHandler(videoService)
+	// Initialize handlers - FIXED to use ContentService
+	govJobHandler := handlers.NewGovJobHandler(contentSvc)
+	privJobHandler := handlers.NewPrivJobHandler(contentSvc)
+	courseHandler := handlers.NewCourseHandler(contentSvc)
+	videoHandler := handlers.NewVideoHandler(contentSvc)
 
 	middleware.RegisterBuildInfo()
 
@@ -98,7 +109,7 @@ func run() error {
 	router.Use(middleware.LoggingMiddleware())
 	router.Use(gin.Logger())
 
-	// Explicit CORS - allows React localhost:3000, all methods, common headers
+	// CORS
 	corsMiddleware := cors.New(cors.Config{
 		AllowOrigins:     []string{"http://localhost:3000", "http://127.0.0.1:3000"},
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
@@ -113,13 +124,13 @@ func run() error {
 	// Metrics endpoint
 	router.GET("/metrics", middleware.MetricsHandler())
 
-	// Health checks
+	// Health checks - FIXED DB access via sqlDB (keep alive)
 	router.GET("/health", func(c *gin.Context) {
 		requestID, _ := c.Get("requestID")
 		status := "healthy"
 		dbStatus := "ok"
 
-		if err := database.DB.PingContext(c.Request.Context()); err != nil {
+		if err := sqlDB.PingContext(c.Request.Context()); err != nil {
 			dbStatus = "error: " + err.Error()
 			status = "degraded"
 		}
@@ -150,12 +161,12 @@ func run() error {
 		msg := []string{}
 
 		ctx := c.Request.Context()
-		if err := database.DB.PingContext(ctx); err != nil {
+		if err := sqlDB.PingContext(ctx); err != nil {
 			status = "not_ready"
 			msg = append(msg, "db: "+err.Error())
 		}
 
-		// Redis ping via TCP (no client dep)
+		// Redis ping via TCP
 		if redisConn, err := net.DialTimeout("tcp", "redis:6379", 2*time.Second); err != nil {
 			status = "not_ready"
 			msg = append(msg, "redis: "+err.Error())
@@ -163,7 +174,7 @@ func run() error {
 			redisConn.Close()
 		}
 
-		// Goose status mock (check migration dir exists)
+		// Migrations dir check
 		if _, err := os.Stat("migrations"); os.IsNotExist(err) {
 			msg = append(msg, "migrations: missing")
 		}
@@ -177,29 +188,23 @@ func run() error {
 		})
 	})
 
-	// API routes
+	// API routes - FIXED to gin.HandlerFunc wrapper
 	api := router.Group("/api/v1")
 	{
-		// Government Jobs
-		api.GET("/gov-jobs", govJobHandler.GetGovJobs)
-		api.GET("/gov-jobs/:id", govJobHandler.GetGovJobByID)
+		api.GET("/gov-jobs", gin.WrapF(govJobHandler.List))
+		api.GET("/gov-jobs/:id", gin.WrapF(govJobHandler.GetByID))
 
-		// Private Jobs
-		api.GET("/private-jobs", privJobHandler.GetPrivJobs)
-		api.GET("/private-jobs/:id", privJobHandler.GetPrivJobByID)
+		api.GET("/private-jobs", gin.WrapF(privJobHandler.List))
+		api.GET("/private-jobs/:id", gin.WrapF(privJobHandler.GetByID))
 
-		// Courses
-		api.GET("/courses", courseHandler.GetCourses)
-		api.GET("/courses/:id", courseHandler.GetCourseByID)
+		api.GET("/courses", gin.WrapF(courseHandler.List))
+		api.GET("/courses/:id", gin.WrapF(courseHandler.GetByID))
 
-		// Videos
-		api.GET("/videos", videoHandler.GetVideos)
-		api.GET("/videos/:id", videoHandler.GetVideoByID)
+		api.GET("/videos", gin.WrapF(videoHandler.List))
+		api.GET("/videos/:id", gin.WrapF(videoHandler.GetByID))
 	}
 
-	cfg := config.Load()
-
-	// HTTP Server (:8083 for metrics/internal)
+	// HTTP Server
 	httpSrv := &http.Server{
 		Addr:    fmt.Sprintf(":%d", serverPort),
 		Handler: router,
@@ -214,7 +219,7 @@ func run() error {
 
 	var httpsSrv *http.Server
 
-	// HTTPS Server (:8443) if enabled
+	// HTTPS if enabled
 	if cfg.TLS.Enabled {
 		httpsSrv = &http.Server{
 			Addr:      ":8443",
@@ -243,7 +248,7 @@ func run() error {
 		logger.Error().Err(err).Msg("HTTP server shutdown failed")
 	}
 
-	if cfg.TLS.Enabled {
+	if cfg.TLS.Enabled && httpsSrv != nil {
 		if err := httpsSrv.Shutdown(shutdownCtx); err != nil {
 			logger.Error().Err(err).Msg("HTTPS server shutdown failed")
 		}

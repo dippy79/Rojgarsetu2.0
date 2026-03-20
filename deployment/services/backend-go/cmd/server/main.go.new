@@ -1,0 +1,201 @@
+package main
+
+import (
+	"context"
+	"crypto/tls"
+	"fmt"
+	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
+
+	"github.com/gin-contrib/cors"
+	"github.com/gin-gonic/gin"
+	"github.com/rojgarsetu/backend/config"
+	"github.com/rojgarsetu/backend/internal/db"
+	"github.com/rojgarsetu/backend/internal/handlers"
+	"github.com/rojgarsetu/backend/internal/middleware"
+	"github.com/rojgarsetu/backend/internal/services"
+	"github.com/rs/zerolog"
+)
+
+var (
+	version    = "2.0.0"
+	logger     zerolog.Logger
+	dbURL      string
+	serverPort int
+	redisURL   string
+)
+
+func main() {
+	// Initialize logger
+	logger = zerolog.New(os.Stderr).Output(zerolog.ConsoleWriter{Out: os.Stderr, TimeFormat: time.RFC3339}).With().Timestamp().Caller().Logger()
+
+	// Load config
+	cfg := config.Load()
+
+	// Root command
+	dbURL = os.Getenv("DATABASE_URL")
+	if dbURL == "" {
+		logger.Fatal().Msg("DATABASE_URL environment variable required")
+		return
+	}
+
+	redisURL = os.Getenv("REDIS_URL")
+	if redisURL == "" {
+		redisURL = "redis://localhost:6379"
+	}
+
+	serverPort = 8083
+	if port := os.Getenv("PORT"); port != "" {
+		fmt.Sscanf(port, "%d", &serverPort)
+	}
+
+	// Start server
+	if err := run(cfg); err != nil {
+		logger.Fatal().Err(err).Msg("Server failed")
+	}
+}
+
+func run(cfg *config.Config) error {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	// Setup signal handling
+	sigCh := make(chan os.Signal, 1)
+	signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
+	go func() {
+		<-sigCh
+		logger.Info().Msg("Received shutdown signal")
+		cancel()
+	}()
+
+	// Initialize database
+	database, err := db.NewPostgresDB(dbURL)
+	if err != nil {
+		return fmt.Errorf("failed to connect to database: %w", err)
+	}
+	defer database.Close()
+	logger.Info().Msg("Database connected")
+
+	// Initialize services
+	govJobService := services.NewGovJobService(database)
+	privJobService := services.NewPrivJobService(database)
+	courseService := services.NewCourseService(database)
+	videoService := services.NewVideoService(database)
+
+	// Initialize handlers
+	govJobHandler := handlers.NewGovJobHandler(govJobService)
+	privJobHandler := handlers.NewPrivJobHandler(privJobService)
+	courseHandler := handlers.NewCourseHandler(courseService)
+	videoHandler := handlers.NewVideoHandler(videoService)
+
+	middleware.RegisterBuildInfo()
+
+	// Setup Gin router
+	gin.SetMode(gin.ReleaseMode)
+	router := gin.New()
+	router.Use(gin.Recovery())
+	router.Use(gin.Logger())
+
+	// Security middleware first
+	router.Use(middleware.SecurityHeaders())
+
+	// Rate limiting
+	router.Use(middleware.RateLimitMiddleware(cfg.RateLimit))
+
+	// CORS
+	corsMiddleware := cors.New(cors.Config{
+		AllowOrigins:     []string{"http://localhost:3000", "http://127.0.0.1:3000"},
+		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization"},
+		ExposeHeaders:    []string{"Content-Length"},
+		AllowCredentials: true,
+		MaxAge:           12 * time.Hour,
+	})
+	router.Use(corsMiddleware)
+	router.Use(middleware.PrometheusMiddleware())
+
+	// Metrics endpoint
+	router.GET("/metrics", middleware.MetricsHandler())
+
+	// Health check
+	router.GET("/health", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{
+			"status":    "healthy",
+			"service":   "backend-api",
+			"version":   version,
+			"timestamp": time.Now().Format(time.RFC3339),
+		})
+	})
+
+	// API routes
+	api := router.Group("/api/v1")
+	{
+		// Government Jobs
+		api.GET("/gov-jobs", govJobHandler.GetGovJobs)
+		api.GET("/gov-jobs/:id", govJobHandler.GetGovJobByID)
+
+		// Private Jobs
+		api.GET("/private-jobs", privJobHandler.GetPrivJobs)
+		api.GET("/private-jobs/:id", privJobHandler.GetPrivJobByID)
+
+		// Courses
+		api.GET("/courses", courseHandler.GetCourses)
+		api.GET("/courses/:id", courseHandler.GetCourseByID)
+
+		// Videos
+		api.GET("/videos", videoHandler.GetVideos)
+		api.GET("/videos/:id", videoHandler.GetVideoByID)
+	}
+
+	// Start HTTP server
+	srv := &http.Server{
+		Addr:      fmt.Sprintf(":%d", serverPort),
+		Handler:   router,
+		ReadTimeout:  15 * time.Second,
+		WriteTimeout: 30 * time.Second,
+		IdleTimeout:  60 * time.Second,
+	}
+
+	if cfg.TLS.Enabled {
+		cert, err := tls.LoadX509KeyPair(cfg.TLS.Cert, cfg.TLS.Key)
+		if err != nil {
+			return fmt.Errorf("failed to load TLS cert: %w", err)
+		}
+		srv.TLSConfig = &tls.Config{
+			Certificates: []tls.Certificate{cert},
+		}
+		logger.Info().Msgf("Starting HTTPS server on :8443 with TLS cert %s", cfg.TLS.Cert)
+		go func() {
+			if err := srv.ListenAndServeTLS("", ""); err != nil && err != http.ErrServerClosed {
+				logger.Error().Err(err).Msg("HTTPS server error")
+			}
+		}()
+	} else {
+		logger.Info().Int("port", serverPort).Msg("Starting HTTP server")
+		go func() {
+			if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+				logger.Error().Err(err).Msg("HTTP server error")
+			}
+		}()
+	}
+
+	logger.Info().Msg("Backend API service ready")
+
+	// Wait for shutdown
+	<-ctx.Done()
+	logger.Info().Msg("Shutting down server...")
+
+	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer shutdownCancel()
+
+	if err := srv.Shutdown(shutdownCtx); err != nil {
+		return fmt.Errorf("server shutdown failed: %w", err)
+	}
+
+	logger.Info().Msg("Server shutdown complete")
+	return nil
+}
+

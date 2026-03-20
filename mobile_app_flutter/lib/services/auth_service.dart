@@ -1,45 +1,59 @@
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:dio/dio.dart';
+import 'api_service.dart';
+import '../core/constants/api_constants.dart';
+import '../core/storage/token_storage.dart';
 
 class AuthService {
-  final FlutterSecureStorage _storage = const FlutterSecureStorage();
-  
-  static const String _accessTokenKey = 'access_token';
-  static const String _refreshTokenKey = 'refresh_token';
-  static const String _userIdKey = 'user_id';
+  final ApiService   _api;
+  final TokenStorage _storage;
 
-  Future<void> saveTokens({
-    required String accessToken,
-    required String refreshToken,
+  AuthService(this._api, this._storage);
+
+  Future<Map<String, dynamic>> register({
+    required String name,
+    required String email,
+    required String password,
+    required String role,
+    String? phone,
   }) async {
-    await _storage.write(key: _accessTokenKey, value: accessToken);
-    await _storage.write(key: _refreshTokenKey, value: refreshToken);
+    final resp = await _api.post(ApiConstants.register, data: {
+      'name':     name,
+      'email':    email,
+      'password': password,
+      'role':     role,
+      if (phone != null) 'phone': phone,
+    });
+    return resp.data as Map<String, dynamic>;
   }
 
-  Future<String?> getAccessToken() async {
-    return await _storage.read(key: _accessTokenKey);
+  Future<void> login({
+    required String email,
+    required String password,
+  }) async {
+    final resp = await _api.post(ApiConstants.login, data: {
+      'email':    email,
+      'password': password,
+    });
+    final data = resp.data as Map<String, dynamic>;
+    await _storage.saveTokens(
+      accessToken:  data['token']         as String? ?? '',
+      refreshToken: data['refresh_token'] as String? ?? '',
+      userID:       data['id']            as String? ?? '',
+      role:         data['role']          as String? ?? '',
+    );
   }
 
-  Future<String?> getRefreshToken() async {
-    return await _storage.read(key: _refreshTokenKey);
-  }
-
-  Future<void> saveUserId(String userId) async {
-    await _storage.write(key: _userIdKey, value: userId);
-  }
-
-  Future<String?> getUserId() async {
-    return await _storage.read(key: _userIdKey);
+  Future<void> logout() async {
+    try { await _api.post(ApiConstants.logout); } catch (_) {}
+    await _storage.clearAll();
   }
 
   Future<bool> isLoggedIn() async {
-    final token = await getAccessToken();
+    final token = await _storage.getAccessToken();
     return token != null && token.isNotEmpty;
   }
 
-  Future<void> clearTokens() async {
-    await _storage.delete(key: _accessTokenKey);
-    await _storage.delete(key: _refreshTokenKey);
-    await _storage.delete(key: _userIdKey);
-  }
+  Future<String?> getCurrentUserID() => _storage.getUserID();
+  Future<String?> getCurrentRole()   => _storage.getRole();
 }
 

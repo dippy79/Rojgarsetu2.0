@@ -1,0 +1,411 @@
+package db
+
+import (
+	"encoding/json"
+	"time"
+)
+
+// ============================================
+// USER & AUTH MODELS
+// ============================================
+
+type User struct {
+	ID           string     `json:"id"`
+	Name         string     `json:"name"`
+	Email        string     `json:"email"`
+	PasswordHash string     `json:"-"`
+	Role         string     `json:"role"` // candidate, company, admin, superadmin
+	Phone        string     `json:"phone"`
+	AvatarURL    string     `json:"avatar_url"`
+	IsActive     bool       `json:"is_active"`
+	IsVerified   bool       `json:"is_verified"`
+	LastLogin    *time.Time `json:"last_login,omitempty"`
+	CreatedAt    time.Time  `json:"created_at"`
+	UpdatedAt    time.Time  `json:"updated_at"`
+}
+
+type Candidate struct {
+	ID                string          `json:"id"`
+	UserID            string          `json:"user_id"`
+	Phone             string          `json:"phone"`
+	ResumeURL         string          `json:"resume_url"`
+	ResumeParsed      json.RawMessage `json:"resume_parsed,omitempty"`
+	Skills            []string        `json:"skills"`
+	ExperienceYears   int             `json:"experience_years"`
+	CurrentCompany    string          `json:"current_company"`
+	CurrentPosition   string          `json:"current_position"`
+	Location          string          `json:"location"`
+	LinkedinURL       string          `json:"linkedin_url"`
+	GitHubURL         string          `json:"github_url"`
+	PortfolioURL      string          `json:"portfolio_url"`
+	Bio               string          `json:"bio"`
+	IsOpenToWork      bool            `json:"is_open_to_work"`
+	ExpectedSalary    string          `json:"expected_salary"`
+	PreferredJobType  []string        `json:"preferred_job_type"`
+	PreferredLocation []string        `json:"preferred_location"`
+	CreatedAt         time.Time       `json:"created_at"`
+	UpdatedAt         time.Time       `json:"updated_at"`
+}
+
+type CandidateProfile struct {
+	ID              string          `json:"id"`
+	CandidateID     string          `json:"candidate_id"`
+	Education       json.RawMessage `json:"education"`       // [{institution, degree, field, start_year, end_year, percentage}]
+	Skills          json.RawMessage `json:"skills"`          // [{skill_name, proficiency, years_experience}]
+	Projects        json.RawMessage `json:"projects"`        // [{name, description, url, technologies, start_date, end_date}]
+	Certifications  json.RawMessage `json:"certifications"`  // [{name, provider, date, url, expiry_date}]
+	WorkExperience  json.RawMessage `json:"work_experience"` // [{company, position, location, start_date, end_date, description}]
+	Languages       json.RawMessage `json:"languages"`       // [{language, proficiency}]
+	PortfolioURL    string          `json:"portfolio_url"`
+	GitHubURL       string          `json:"github_url"`
+	LinkedinURL     string          `json:"linkedin_url"`
+	PersonalWebsite string          `json:"personal_website"`
+	CreatedAt       time.Time       `json:"created_at"`
+	UpdatedAt       time.Time       `json:"updated_at"`
+}
+
+type Company struct {
+	ID           string     `json:"id"`
+	UserID       string     `json:"user_id"`
+	Name         string     `json:"name"`
+	Industry     string     `json:"industry"`
+	CompanySize  string     `json:"company_size"`
+	Website      string     `json:"website"`
+	LogoURL      string     `json:"logo_url"`
+	Description  string     `json:"description"`
+	Headquarters string     `json:"headquarters"`
+	FoundedYear  int        `json:"founded_year"`
+	IsVerified   bool       `json:"is_verified"`
+	IsActive     bool       `json:"is_active"`
+	ApprovedBy   *string    `json:"approved_by,omitempty"`
+	ApprovedAt   *time.Time `json:"approved_at,omitempty"`
+	CreatedAt    time.Time  `json:"created_at"`
+	UpdatedAt    time.Time  `json:"updated_at"`
+}
+
+type CompanyJob struct {
+	ID                string     `json:"id"`
+	CompanyID         string     `json:"company_id"`
+	Title             string     `json:"title"`
+	Description       string     `json:"description"`
+	Requirements      string     `json:"requirements"`
+	Responsibilities  string     `json:"responsibilities"`
+	Location          string     `json:"location"`
+	JobType           string     `json:"job_type"` // full-time, part-time, contract, internship
+	ExperienceMin     int        `json:"experience_min"`
+	ExperienceMax     int        `json:"experience_max"`
+	SalaryMin         int        `json:"salary_min"`
+	SalaryMax         int        `json:"salary_max"`
+	SalaryCurrency    string     `json:"salary_currency"`
+	Skills            []string   `json:"skills"`
+	Benefits          []string   `json:"benefits"`
+	ApplicationURL    string     `json:"application_url"`
+	ApplicationEmail  string     `json:"application_email"`
+	IsRemote          bool       `json:"is_remote"`
+	IsActive          bool       `json:"is_active"`
+	ViewsCount        int        `json:"views_count"`
+	ApplicationsCount int        `json:"applications_count"`
+	PostedAt          time.Time  `json:"posted_at"`
+	ExpiresAt         *time.Time `json:"expires_at,omitempty"`
+	CreatedAt         time.Time  `json:"created_at"`
+	UpdatedAt         time.Time  `json:"updated_at"`
+}
+
+// Extended Company Job with Company Info
+type CompanyJobWithCompany struct {
+	CompanyJob
+	CompanyName     string `json:"company_name"`
+	CompanyLogo     string `json:"company_logo"`
+	CompanyVerified bool   `json:"company_verified"`
+}
+
+type JobApplication struct {
+	ID          string    `json:"id"`
+	JobID       string    `json:"job_id"`
+	CandidateID string    `json:"candidate_id"`
+	Status      string    `json:"status"` // pending, reviewing, shortlisted, rejected, hired
+	CoverLetter string    `json:"cover_letter"`
+	ResumeURL   string    `json:"resume_url"`
+	MatchScore  float64   `json:"match_score"`
+	Notes       string    `json:"notes"`
+	AppliedAt   time.Time `json:"applied_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
+}
+
+type SavedJob struct {
+	ID          string    `json:"id"`
+	CandidateID string    `json:"candidate_id"`
+	JobID       string    `json:"job_id"`
+	SavedAt     time.Time `json:"saved_at"`
+}
+
+// ============================================
+// AI SERVICES MODELS
+// ============================================
+
+type ResumeAIFeedback struct {
+	ID               string          `json:"id"`
+	CandidateID      string          `json:"candidate_id"`
+	ResumeURL        string          `json:"resume_url"`
+	FeedbackText     string          `json:"feedback_text"`
+	OverallScore     float64         `json:"overall_score"`
+	ATSScore         float64         `json:"ats_score"`
+	ReadabilityScore float64         `json:"readability_score"`
+	ImpactScore      float64         `json:"impact_score"`
+	Suggestions      json.RawMessage `json:"suggestions"`
+	Strengths        json.RawMessage `json:"strengths"`
+	Weaknesses       json.RawMessage `json:"weaknesses"`
+	KeywordsFound    []string        `json:"keywords_found"`
+	KeywordsMissing  []string        `json:"keywords_missing"`
+	CreatedAt        time.Time       `json:"created_at"`
+}
+
+type AICareerPath struct {
+	ID              string          `json:"id"`
+	CandidateID     string          `json:"candidate_id"`
+	CurrentRole     string          `json:"current_role"`
+	TargetRole      string          `json:"target_role"`
+	RoadmapJSON     json.RawMessage `json:"roadmap_json"`
+	ConfidenceScore float64         `json:"confidence_score"`
+	MarketDemand    string          `json:"market_demand"`
+	SalaryRange     string          `json:"salary_range"`
+	CreatedAt       time.Time       `json:"created_at"`
+	UpdatedAt       time.Time       `json:"updated_at"`
+}
+
+type AISkillGap struct {
+	ID                 string          `json:"id"`
+	CandidateID        string          `json:"candidate_id"`
+	TargetRole         string          `json:"target_role"`
+	CurrentSkills      []string        `json:"current_skills"`
+	MissingSkills      []string        `json:"missing_skills"`
+	RecommendedSkills  json.RawMessage `json:"recommended_skills"`
+	RecommendedCourses json.RawMessage `json:"recommended_courses"`
+	GapPercentage      float64         `json:"gap_percentage"`
+	CreatedAt          time.Time       `json:"created_at"`
+}
+
+type AIMockInterview struct {
+	ID              string          `json:"id"`
+	CandidateID     string          `json:"candidate_id"`
+	JobRole         string          `json:"job_role"`
+	InterviewType   string          `json:"interview_type"` // hr, technical, behavioral
+	TranscriptJSON  json.RawMessage `json:"transcript_json"`
+	Score           float64         `json:"score"`
+	Strengths       json.RawMessage `json:"strengths"`
+	Improvements    json.RawMessage `json:"improvements"`
+	Recommendations string          `json:"recommendations"`
+	DurationMinutes int             `json:"duration_minutes"`
+	CompletedAt     *time.Time      `json:"completed_at,omitempty"`
+	CreatedAt       time.Time       `json:"created_at"`
+}
+
+type AIJobMatchScore struct {
+	ID                   string          `json:"id"`
+	CandidateID          string          `json:"candidate_id"`
+	JobID                string          `json:"job_id"`
+	MatchScore           float64         `json:"match_score"`
+	SkillMatchScore      float64         `json:"skill_match_score"`
+	ExperienceMatchScore float64         `json:"experience_match_score"`
+	CultureMatchScore    float64         `json:"culture_match_score"`
+	MatchedSkills        []string        `json:"matched_skills"`
+	MissingSkills        []string        `json:"missing_skills"`
+	AnalysisJSON         json.RawMessage `json:"analysis_json"`
+	CreatedAt            time.Time       `json:"created_at"`
+}
+
+// ============================================
+// GAMIFICATION MODELS
+// ============================================
+
+type Gamification struct {
+	ID                  string          `json:"id"`
+	CandidateID         string          `json:"candidate_id"`
+	XPPoints            int             `json:"xp_points"`
+	Level               int             `json:"level"`
+	BadgesJSON          json.RawMessage `json:"badges_json"` // [{id, name, description, icon, earned_at}]
+	StreakDays          int             `json:"streak_days"`
+	LongestStreak       int             `json:"longest_streak"`
+	JobsApplied         int             `json:"jobs_applied"`
+	InterviewsCompleted int             `json:"interviews_completed"`
+	CoursesCompleted    int             `json:"courses_completed"`
+	ProfileCompleteness int             `json:"profile_completeness"`
+	LastActivity        *time.Time      `json:"last_activity,omitempty"`
+	CreatedAt           time.Time       `json:"created_at"`
+	UpdatedAt           time.Time       `json:"updated_at"`
+}
+
+// Badge structure
+type Badge struct {
+	ID          string    `json:"id"`
+	Name        string    `json:"name"`
+	Description string    `json:"description"`
+	Icon        string    `json:"icon"`
+	EarnedAt    time.Time `json:"earned_at"`
+}
+
+// ============================================
+// ADMIN MODELS
+// ============================================
+
+type AdminLog struct {
+	ID         string          `json:"id"`
+	AdminID    *string         `json:"admin_id,omitempty"`
+	Action     string          `json:"action"`
+	TargetType string          `json:"target_type"`
+	TargetID   *string         `json:"target_id,omitempty"`
+	Details    json.RawMessage `json:"details"`
+	IPAddress  string          `json:"ip_address"`
+	UserAgent  string          `json:"user_agent"`
+	CreatedAt  time.Time       `json:"created_at"`
+}
+
+type SystemSetting struct {
+	ID          string    `json:"id"`
+	Key         string    `json:"key"`
+	Value       string    `json:"value"`
+	Description string    `json:"description"`
+	IsPublic    bool      `json:"is_public"`
+	UpdatedBy   *string   `json:"updated_by,omitempty"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
+}
+
+// ============================================
+// NOTIFICATION MODELS
+// ============================================
+
+type CandidateNotification struct {
+	ID          string          `json:"id"`
+	CandidateID string          `json:"candidate_id"`
+	Title       string          `json:"title"`
+	Message     string          `json:"message"`
+	Type        string          `json:"type"` // job_alert, application_update, interview, achievement, system
+	Data        json.RawMessage `json:"data"`
+	IsRead      bool            `json:"is_read"`
+	CreatedAt   time.Time       `json:"created_at"`
+}
+
+type CompanyNotification struct {
+	ID        string          `json:"id"`
+	CompanyID string          `json:"company_id"`
+	Title     string          `json:"title"`
+	Message   string          `json:"message"`
+	Type      string          `json:"type"`
+	Data      json.RawMessage `json:"data"`
+	IsRead    bool            `json:"is_read"`
+	CreatedAt time.Time       `json:"created_at"`
+}
+
+// ============================================
+// AI UPDATER MODELS
+// ============================================
+
+type AIUpdaterLog struct {
+	ID              string          `json:"id"`
+	UpdaterVersion  string          `json:"updater_version"`
+	TargetService   string          `json:"target_service"`
+	Status          string          `json:"status"` // running, completed, failed
+	ChangesApplied  json.RawMessage `json:"changes_applied"`
+	Errors          []string        `json:"errors"`
+	StartedAt       time.Time       `json:"started_at"`
+	CompletedAt     *time.Time      `json:"completed_at,omitempty"`
+	DurationSeconds int             `json:"duration_seconds"`
+}
+
+// ============================================
+type GovJob struct {
+	ID           string    `json:"id"`
+	Title        string    `json:"title"`
+	Department   string    `json:"department"`
+	Location     string    `json:"location"`
+	ApplyURL     string    `json:"apply_url"`
+	LastDate     time.Time `json:"last_date"`
+	Source       string    `json:"source"`
+	Eligibility  string    `json:"eligibility"`
+	VacancyCount *int32    `json:"vacancy_count"`
+
+	Salary   string     `json:"salary"`
+	ExamDate *time.Time `json:"exam_date"`
+
+	CreatedAt time.Time `json:"created_at"`
+}
+
+type PrivJob struct {
+	ID          string    `json:"id"`
+	Company     string    `json:"company"`
+	Title       string    `json:"title"`
+	Location    string    `json:"location"`
+	URL         string    `json:"url"`
+	Salary      string    `json:"salary"`
+	Experience  string    `json:"experience"`
+	JobType     string    `json:"job_type"`
+	Skills      []string  `json:"skills"`
+	Description string    `json:"description"`
+	Source      string    `json:"source"`
+	PostedAt    time.Time `json:"posted_at"`
+	CreatedAt   time.Time `json:"created_at"`
+}
+
+type Course struct {
+	ID           string    `json:"id"`
+	Provider     string    `json:"provider"`
+	Title        string    `json:"title"`
+	URL          string    `json:"url"`
+	Duration     string    `json:"duration"`
+	Mode         string    `json:"mode"`
+	Level        string    `json:"level"`
+	Skills       []string  `json:"skills"`
+	Description  string    `json:"description"`
+	ThumbnailURL string    `json:"thumbnail_url"`
+	Price        string    `json:"price"`
+	IsFree       bool      `json:"is_free"`
+	Source       string    `json:"source"`
+	CreatedAt    time.Time `json:"created_at"`
+}
+
+type Video struct {
+	ID          string    `json:"id"`
+	Channel     string    `json:"channel"`
+	ChannelID   string    `json:"channel_id"`
+	Title       string    `json:"title"`
+	URL         string    `json:"url"`
+	Thumbnail   string    `json:"thumbnail"`
+	Description string    `json:"description"`
+	VideoID     string    `json:"video_id"`
+	PublishedAt time.Time `json:"published_at"`
+	Duration    string    `json:"duration"`
+	ViewCount   *int64    `json:"view_count"`
+
+	LikeCount *int64 `json:"like_count"`
+
+	Category  string    `json:"category"`
+	CreatedAt time.Time `json:"created_at"`
+}
+
+type GovJobFilter struct {
+	Department string `json:"department"`
+	Location   string `json:"location"`
+	Source     string `json:"source"`
+}
+
+type PrivJobFilter struct {
+	Company  string `json:"company"`
+	Location string `json:"location"`
+	Source   string `json:"source"`
+	JobType  string `json:"job_type"`
+}
+
+type CourseFilter struct {
+	Provider string `json:"provider"`
+	Mode     string `json:"mode"`
+	Level    string `json:"level"`
+}
+
+type VideoFilter struct {
+	Channel  string `json:"channel"`
+	Category string `json:"category"`
+}
+
+// PAGINATION
+// ============================================

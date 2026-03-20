@@ -1,40 +1,36 @@
-class Course {
+import 'package:equatable/equatable.dart';
+
+class Course extends Equatable {
   final String id;
   final String title;
-  final String provider;
-  final String? url;
-  final List<String>? skills;
-  final String? duration;
+  final String? provider;
+  final String? mode;
   final String? level;
-  final String? thumbnailUrl;
-  final bool isFree;
-  final double? price;
+  final String? description;
+  final String? url;
+  final DateTime createdAt;
 
-  Course({
+  const Course({
     required this.id,
     required this.title,
-    required this.provider,
-    this.url,
-    this.skills,
-    this.duration,
+    this.provider,
+    this.mode,
     this.level,
-    this.thumbnailUrl,
-    this.isFree = true,
-    this.price,
+    this.description,
+    this.url,
+    required this.createdAt,
   });
 
   factory Course.fromJson(Map<String, dynamic> json) {
     return Course(
       id: json['id'] ?? '',
       title: json['title'] ?? '',
-      provider: json['provider'] ?? '',
-      url: json['url'],
-      skills: json['skills'] != null ? List<String>.from(json['skills']) : null,
-      duration: json['duration'],
+      provider: json['provider'],
+      mode: json['mode'],
       level: json['level'],
-      thumbnailUrl: json['thumbnailUrl'],
-      isFree: json['isFree'] ?? true,
-      price: json['price']?.toDouble(),
+      description: json['description'],
+      url: json['url'],
+      createdAt: json['created_at'] != null ? DateTime.parse(json['created_at']) : DateTime.now(),
     );
   }
 
@@ -43,14 +39,15 @@ class Course {
       'id': id,
       'title': title,
       'provider': provider,
-      'url': url,
-      'skills': skills,
-      'duration': duration,
+      'mode': mode,
       'level': level,
-      'thumbnailUrl': thumbnailUrl,
-      'isFree': isFree,
-      'price': price,
+      'description': description,
+      'url': url,
+      'created_at': createdAt.toIso8601String(),
     };
   }
+
+  @override
+  List<Object?> get props => [id, title, createdAt];
 }
 

@@ -1,46 +1,45 @@
-class Job {
+import 'package:equatable/equatable.dart';
+
+class Job extends Equatable {
   final String id;
   final String title;
+  final String description;
   final String? location;
   final String? jobType;
   final int? salaryMin;
   final int? salaryMax;
-  final String? eligibility;
-  final String? description;
-  final String? applicationUrl;
-  final DateTime? postedAt;
-  final String? source;
-  final Company? company;
+  final List<String> skills;
+  final bool isActive;
+  final int views;
+  final DateTime createdAt;
 
-  Job({
+  const Job({
     required this.id,
     required this.title,
+    required this.description,
     this.location,
     this.jobType,
     this.salaryMin,
     this.salaryMax,
-    this.eligibility,
-    this.description,
-    this.applicationUrl,
-    this.postedAt,
-    this.source,
-    this.company,
+    required this.skills,
+    required this.isActive,
+    required this.views,
+    required this.createdAt,
   });
 
   factory Job.fromJson(Map<String, dynamic> json) {
     return Job(
       id: json['id'] ?? '',
       title: json['title'] ?? '',
+      description: json['description'] ?? '',
       location: json['location'],
-      jobType: json['jobType'],
-      salaryMin: json['salaryMin'],
-      salaryMax: json['salaryMax'],
-      eligibility: json['eligibility'],
-      description: json['description'],
-      applicationUrl: json['applicationUrl'],
-      postedAt: json['postedAt'] != null ? DateTime.parse(json['postedAt']) : null,
-      source: json['source'],
-      company: json['company'] != null ? Company.fromJson(json['company']) : null,
+      jobType: json['job_type'],
+      salaryMin: json['salary_min'],
+      salaryMax: json['salary_max'],
+      skills: List<String>.from(json['skills'] ?? []),
+      isActive: json['is_active'] ?? false,
+      views: json['views'] ?? 0,
+      createdAt: json['created_at'] != null ? DateTime.parse(json['created_at']) : DateTime.now(),
     );
   }
 
@@ -48,58 +47,19 @@ class Job {
     return {
       'id': id,
       'title': title,
-      'location': location,
-      'jobType': jobType,
-      'salaryMin': salaryMin,
-      'salaryMax': salaryMax,
-      'eligibility': eligibility,
       'description': description,
-      'applicationUrl': applicationUrl,
-      'postedAt': postedAt?.toIso8601String(),
-      'source': source,
-      'company': company?.toJson(),
+      'location': location,
+      'job_type': jobType,
+      'salary_min': salaryMin,
+      'salary_max': salaryMax,
+      'skills': skills,
+      'is_active': isActive,
+      'views': views,
+      'created_at': createdAt.toIso8601String(),
     };
   }
 
-  String get salaryRange {
-    if (salaryMin == null && salaryMax == null) return 'Not disclosed';
-    if (salaryMin != null && salaryMax != null) {
-      return '₹${(salaryMin! / 100000).toStringAsFixed(1)}L - ₹${(salaryMax! / 100000).toStringAsFixed(1)}L';
-    }
-    if (salaryMin != null) return '₹${(salaryMin! / 100000).toStringAsFixed(1)}L+';
-    return 'Up to ₹${(salaryMax! / 100000).toStringAsFixed(1)}L';
-  }
-}
-
-class Company {
-  final String? id;
-  final String? name;
-  final String? logo;
-  final String? website;
-
-  Company({
-    this.id,
-    this.name,
-    this.logo,
-    this.website,
-  });
-
-  factory Company.fromJson(Map<String, dynamic> json) {
-    return Company(
-      id: json['id'],
-      name: json['name'],
-      logo: json['logo'],
-      website: json['website'],
-    );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'name': name,
-      'logo': logo,
-      'website': website,
-    };
-  }
+  @override
+  List<Object?> get props => [id, title, createdAt];
 }
 

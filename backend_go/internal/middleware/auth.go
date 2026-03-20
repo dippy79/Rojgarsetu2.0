@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
@@ -107,18 +106,8 @@ func AuthMiddleware(cfg *config.Config) gin.HandlerFunc {
 			return
 		}
 
-		// Validate expiry (jwt library handles Valid)
-		if claims.ExpiresAt != nil && time.Now().After(claims.ExpiresAt.Time) {
-			c.JSON(http.StatusUnauthorized, gin.H{
-				"status": "error",
-				"error": gin.H{
-					"code":    401,
-					"message": "Token expired",
-				},
-			})
-			c.Abort()
-			return
-		}
+		// Validate exp claim explicitly - redundant since token.Valid already checks
+		// claims.Valid() handled by jwt library in token.Valid
 
 		// Set user info in context
 		c.Set("user_id", claims.UserID)

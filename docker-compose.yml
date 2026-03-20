@@ -1,0 +1,68 @@
+version: '3.9'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB:       rojgarsetu
+      POSTGRES_USER:     rojgarsetu
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U rojgarsetu"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  migrate:
+    image: migrate/migrate
+    restart: on-failure
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./backend_go/migrations:/migrations
+    environment:
+      DATABASE_URL: postgres://rojgarsetu:${POSTGRES_PASSWORD}@postgres:5432/rojgarsetu?sslmode=disable
+    command: >
+      -path=/migrations
+      -database $${DATABASE_URL}
+      up
+    healthcheck:
+      test: ["CMD", "migrate", "-path=/migrations", "-database", "$${DATABASE_URL}", "version"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  backend:
+    build:
+      context: ./backend_go
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      DATABASE_URL:   postgres://rojgarsetu:${POSTGRES_PASSWORD}@postgres:5432/rojgarsetu?sslmode=disable
+      JWT_SECRET:     ${JWT_SECRET}
+      PORT:           8080
+      APP_ENV:        production
+      ALLOWED_ORIGIN: ${ALLOWED_ORIGIN:-http://localhost:3000}
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/robots.txt || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  pgdata:
+
+# change to sslmode=require for production

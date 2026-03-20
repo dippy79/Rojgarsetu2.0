@@ -1,7 +1,0 @@
-com\rojgarsetu\auth\AuthServiceApplication.class
-com\rojgarsetu\auth\HealthController.class
-com\rojgarsetu\auth\AuthController$RegisterRequest.class
-com\rojgarsetu\auth\AuthController$LoginRequest.class
-com\rojgarsetu\auth\AuthServiceApplication$1.class
-com\rojgarsetu\auth\AuthController$User.class
-com\rojgarsetu\auth\AuthController.class
