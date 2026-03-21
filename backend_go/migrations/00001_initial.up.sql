@@ -1,6 +1,6 @@
 -- migrations/00001_initial.up.sql
 -- From schema_v2.sql (abridged)
-CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 CREATE TABLE jobs_government (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),

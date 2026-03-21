@@ -18,7 +18,8 @@ CREATE INDEX IF NOT EXISTS idx_job_applications_candidate_id ON job_applications
 CREATE INDEX IF NOT EXISTS idx_job_applications_status ON job_applications(status);
 CREATE INDEX IF NOT EXISTS idx_job_applications_created_at ON job_applications(created_at DESC);
 
-CREATE TRIGGER IF NOT EXISTS update_job_applications_updated_at
+DROP TRIGGER IF EXISTS update_job_applications_updated_at ON job_applications;
+CREATE TRIGGER update_job_applications_updated_at
     BEFORE UPDATE ON job_applications
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 

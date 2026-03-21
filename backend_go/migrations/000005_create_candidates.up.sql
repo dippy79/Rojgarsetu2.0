@@ -21,7 +21,8 @@ CREATE INDEX IF NOT EXISTS idx_candidates_user_id ON candidates(user_id);
 CREATE INDEX IF NOT EXISTS idx_candidates_location ON candidates(location);
 CREATE INDEX IF NOT EXISTS idx_candidates_skills ON candidates USING GIN(skills);
 
-CREATE TRIGGER IF NOT EXISTS update_candidates_updated_at
+DROP TRIGGER IF EXISTS update_candidates_updated_at ON candidates;
+CREATE TRIGGER update_candidates_updated_at
     BEFORE UPDATE ON candidates
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 

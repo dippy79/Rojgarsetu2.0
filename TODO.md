@@ -1,18 +1,24 @@
-# Migrate Container Fix - COMPLETED ✅
+# Migration Trigger Fix TODO
 
-## Plan Steps:
-- [x] Step 1: Create TODO.md ✅
-- [x] Step 2: Edit docker-compose.yml - remove env_file from migrate service ✅
-- [x] Step 3: Edit docker-compose.yml - hardcoded DSN in migrate command ✅
-- [x] Step 4: Update TODO.md with completion status ✅
-- [ ] Step 5: Run docker compose down -v & up -d
-- [ ] Step 6: Verify docker compose ps (migrate exited 0)
-- [ ] Step 7: Test http://localhost:8080/health
+## Plan Steps
+- [x] Edit backend_go/migrations/00003_refresh_tokens.up.sql (1 trigger)
 
-## Changes Made:
-docker-compose.yml migrate service:
-- Removed `env_file: - .env.production`
-- Hardcoded DSN: `postgres://amitsharma:Asha12%40Ashok24@postgres:5432/rojgarsetu2?sslmode=disable`
+- [x] Edit backend_go/migrations/000004_create_users.up.sql (2 triggers)
 
-Ready for testing.
+- [x] Edit backend_go/migrations/000005_create_candidates.up.sql (1 trigger)
+- [x] Edit backend_go/migrations/000006_create_companies.up.sql (1 trigger)
+
+- [x] Edit backend_go/migrations/000007_create_company_jobs.up.sql (1 trigger)
+
+- [x] Edit backend_go/migrations/000008_create_job_applications.up.sql (1 trigger)
+
+- [x] Verify: search_files "CREATE TRIGGER IF NOT EXISTS" → 0 results
+
+- [x] Test: docker compose down -v && docker compose up -d && docker compose logs migrate (all pass ✅)
+
+
+## Rules
+- Exact string replace only
+- No column changes
+- No docker-compose changes
 

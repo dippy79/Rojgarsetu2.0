@@ -18,7 +18,8 @@ CREATE INDEX IF NOT EXISTS idx_companies_user_id ON companies(user_id);
 CREATE INDEX IF NOT EXISTS idx_companies_industry ON companies(industry);
 CREATE INDEX IF NOT EXISTS idx_companies_location ON companies(location);
 
-CREATE TRIGGER IF NOT EXISTS update_companies_updated_at
+DROP TRIGGER IF EXISTS update_companies_updated_at ON companies;
+CREATE TRIGGER update_companies_updated_at
     BEFORE UPDATE ON companies
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 

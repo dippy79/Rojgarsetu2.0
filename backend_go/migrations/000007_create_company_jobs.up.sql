@@ -24,7 +24,8 @@ CREATE INDEX IF NOT EXISTS idx_company_jobs_skills ON company_jobs USING GIN(ski
 CREATE INDEX IF NOT EXISTS idx_company_jobs_is_active ON company_jobs(is_active);
 CREATE INDEX IF NOT EXISTS idx_company_jobs_created_at ON company_jobs(created_at DESC);
 
-CREATE TRIGGER IF NOT EXISTS update_company_jobs_updated_at
+DROP TRIGGER IF EXISTS update_company_jobs_updated_at ON company_jobs;
+CREATE TRIGGER update_company_jobs_updated_at
     BEFORE UPDATE ON company_jobs
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
