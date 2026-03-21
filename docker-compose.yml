@@ -3,20 +3,24 @@ version: '3.9'
 services:
   postgres:
     image: postgres:16-alpine
-    restart: unless-stopped
+    restart: always
     environment:
-      POSTGRES_DB:       rojgarsetu
-      POSTGRES_USER:     rojgarsetu
+      POSTGRES_DB:       rojgardb
+      POSTGRES_USER:     rojgar
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - pgdata:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
+    # ports removed for production - internal only
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U rojgarsetu"]
+      test: ["CMD-SHELL", "pg_isready -U rojgar"]
       interval: 10s
       timeout: 5s
       retries: 5
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   migrate:
     image: migrate/migrate
@@ -27,7 +31,7 @@ services:
     volumes:
       - ./backend_go/migrations:/migrations
     environment:
-      DATABASE_URL: postgres://rojgarsetu:${POSTGRES_PASSWORD}@postgres:5432/rojgarsetu?sslmode=disable
+      DATABASE_URL: postgres://rojgar:${POSTGRES_PASSWORD}@postgres:5432/rojgardb?sslmode=require
     command: >
       -path=/migrations
       -database $${DATABASE_URL}
@@ -37,32 +41,49 @@ services:
       interval: 10s
       timeout: 5s
       retries: 3
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   backend:
     build:
       context: ./backend_go
       dockerfile: Dockerfile
-    restart: unless-stopped
+    restart: always
     depends_on:
       postgres:
         condition: service_healthy
       migrate:
         condition: service_completed_successfully
     environment:
-      DATABASE_URL:   postgres://rojgarsetu:${POSTGRES_PASSWORD}@postgres:5432/rojgarsetu?sslmode=disable
+      DATABASE_URL:   postgres://rojgar:${POSTGRES_PASSWORD}@postgres:5432/rojgardb?sslmode=require
       JWT_SECRET:     ${JWT_SECRET}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_USER: rojgar
+      POSTGRES_DB: rojgardb
       PORT:           8080
-      APP_ENV:        production
-      ALLOWED_ORIGIN: ${ALLOWED_ORIGIN:-http://localhost:3000}
-    ports:
-      - "8080:8080"
+      ALLOWED_ORIGIN: ${ALLOWED_ORIGIN}
+      ENV: production
+    # ports removed for production - Nginx reverse proxy only
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/robots.txt || exit 1"]
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
 volumes:
   pgdata:
 
-# change to sslmode=require for production
+# Production notes:
+# - DATABASE_URL uses sslmode=require
+# - No ports exposed (Nginx only)
+# - restart: always, logging limits
+# - Healthcheck uses /health endpoint
+

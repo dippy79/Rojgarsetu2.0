@@ -25,6 +25,19 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 	h.authSvc.Logout(c)
 }
 
-func (h *AuthHandler) LogoutAll(c *gin.Context) {
-	h.authSvc.LogoutAll(c)
+func (h *AuthHandler) Register(c *gin.Context) {
+	h.authSvc.Register(c)
 }
+
+func (h *AuthHandler) Login(c *gin.Context) {
+	h.authSvc.Login(c)
+}
+
+func (h *AuthHandler) Refresh(c *gin.Context) {
+	h.authSvc.Refresh(c)
+}
+
+func (h *AuthHandler) Logout(c *gin.Context) {
+	h.authSvc.Logout(c)
+}
+

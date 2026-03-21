@@ -20,6 +20,7 @@ import (
 	"github.com/rojgarsetu/backend/internal/middleware"
 	"github.com/rojgarsetu/backend/internal/services"
 	"github.com/rs/zerolog"
+	"strings"
 )
 
 var (
@@ -55,7 +56,7 @@ func main() {
 		redisURL = "redis://localhost:6379"
 	}
 
-	serverPort = 8083
+serverPort = 8080
 	if port := os.Getenv("PORT"); port != "" {
 		fmt.Sscanf(port, "%d", &serverPort)
 	}
@@ -91,10 +92,23 @@ func run(cfg *config.Config, dbURL string) error {
 	database := db.NewPostgresDB(sqlDB)
 	logger.Info().Msg("Database connected")
 
-	// Initialize services - FIXED to ContentService
+	// Initialize ALL services
+	userSvc := services.NewUserService(database)
+	tokenSvc := services.NewTokenService(database)
+	candidateSvc := services.NewCandidateService(database)
+	companySvc := services.NewCompanyService(database)
+	jobSvc := services.NewJobService(database)
 	contentSvc := services.NewContentService(database)
+	applicationSvc := services.NewApplicationService(database)
 
-	// Initialize handlers - FIXED to use ContentService
+	// Initialize handlers
+	authSvc := services.NewAuthService(userSvc, tokenSvc, cfg)
+	authHandler := handlers.NewAuthHandler(authSvc)
+	userHandler := handlers.NewUserHandler(userSvc)
+	candidateHandler := handlers.NewCandidateHandler(candidateSvc)
+	companyHandler := handlers.NewCompanyHandler(companySvc)
+	jobHandler := handlers.NewJobHandler(jobSvc)
+	applicationHandler := handlers.NewApplicationHandler(applicationSvc)
 	govJobHandler := handlers.NewGovJobHandler(contentSvc)
 	privJobHandler := handlers.NewPrivJobHandler(contentSvc)
 	courseHandler := handlers.NewCourseHandler(contentSvc)
@@ -111,7 +125,17 @@ func run(cfg *config.Config, dbURL string) error {
 
 	// CORS
 	corsMiddleware := cors.New(cors.Config{
-		AllowOrigins:     []string{"http://localhost:3000", "http://127.0.0.1:3000"},
+	AllowOrigins:     func() []string {
+		allowed := os.Getenv("ALLOWED_ORIGIN")
+		if allowed == "" {
+			allowed = "http://localhost:3000,http://127.0.0.1:3000"
+		}
+		origins := strings.Split(allowed, ",")
+		for i := range origins {
+			origins[i] = strings.TrimSpace(origins[i])
+		}
+		return origins
+	}(),
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization"},
 		ExposeHeaders:    []string{"Content-Length"},
@@ -120,6 +144,9 @@ func run(cfg *config.Config, dbURL string) error {
 	})
 	router.Use(corsMiddleware)
 	router.Use(middleware.PrometheusMiddleware())
+	router.Use(middleware.BodyLimit())
+	router.Use(middleware.SecurityHeaders())
+	router.Use(middleware.RateLimitMiddleware(1)) // 60/min global
 
 	// Metrics endpoint
 	router.GET("/metrics", middleware.MetricsHandler())
@@ -188,20 +215,79 @@ func run(cfg *config.Config, dbURL string) error {
 		})
 	})
 
-	// API routes - FIXED to gin.HandlerFunc wrapper
+	// API routes
 	api := router.Group("/api/v1")
 	{
+		// Public routes
+		auth := api.Group("/auth")
+		{
+			auth.POST("/register", authHandler.Register)
+			login := auth.Group("")
+			login.Use(middleware.RateLimitMiddleware(5/60)) // 5/min
+			login.POST("/login", authHandler.Login)
+			auth.POST("/refresh", authHandler.Refresh)
+		}
+
+		api.GET("/jobs", jobHandler.ListActiveJobs)
+		api.GET("/jobs/:id", jobHandler.GetJob)
 		api.GET("/gov-jobs", gin.WrapF(govJobHandler.List))
 		api.GET("/gov-jobs/:id", gin.WrapF(govJobHandler.GetByID))
-
-		api.GET("/private-jobs", gin.WrapF(privJobHandler.List))
-		api.GET("/private-jobs/:id", gin.WrapF(privJobHandler.GetByID))
-
+		api.GET("/priv-jobs", gin.WrapF(privJobHandler.List))
+		api.GET("/priv-jobs/:id", gin.WrapF(privJobHandler.GetByID))
 		api.GET("/courses", gin.WrapF(courseHandler.List))
 		api.GET("/courses/:id", gin.WrapF(courseHandler.GetByID))
-
 		api.GET("/videos", gin.WrapF(videoHandler.List))
 		api.GET("/videos/:id", gin.WrapF(videoHandler.GetByID))
+		api.GET("/companies", companyHandler.ListCompanies)
+		api.GET("/companies/:id", companyHandler.GetCompany)
+		api.GET("/candidates", candidateHandler.ListCandidates)
+		api.GET("/candidates/:id", candidateHandler.GetCandidate)
+
+		api.GET("/robots.txt", func(c *gin.Context) {
+			c.String(http.StatusOK, "User-agent: *\nDisallow: /admin/\nSitemap: https://rojgarsetu.com/sitemap.xml")
+		})
+
+		// Protected routes
+		protected := api.Group("")
+		protected.Use(middleware.AuthMiddleware(cfg))
+		{
+			protected.POST("/auth/logout", authHandler.Logout)
+
+			users := protected.Group("/users")
+			{
+				users.GET("", userHandler.ListUsers)
+				users.GET("/:id", userHandler.GetUser)
+			}
+
+			candidates := protected.Group("/candidates")
+			{
+				candidates.GET("/me", candidateHandler.GetMyProfile)
+				candidates.PUT("/me", candidateHandler.UpdateMyProfile)
+				candidates.GET("/me/applications", candidateHandler.GetMyApplications)
+			}
+
+			companies := protected.Group("/companies")
+			{
+				companies.GET("/me", companyHandler.GetMyCompany)
+				companies.PUT("/me", companyHandler.UpdateMyCompany)
+				companies.GET("/me/jobs", jobHandler.GetMyJobs)
+			}
+
+			jobs := protected.Group("/jobs")
+			{
+				jobs.POST("", jobHandler.CreateJob)
+				jobs.PUT("/:id", jobHandler.UpdateJob)
+				jobs.DELETE("/:id", jobHandler.DeleteJob)
+			}
+
+			applications := protected.Group("/applications")
+			{
+				applications.GET("/:id", applicationHandler.GetApplication)
+				jobs.POST("/:id/apply", applicationHandler.Apply)
+				jobs.GET("/:id/applications", applicationHandler.GetJobApplications)
+				applications.PATCH("/:id/status", applicationHandler.UpdateStatus)
+			}
+		}
 	}
 
 	// HTTP Server

@@ -126,3 +126,22 @@ func (s *UserService) ListUsers(ctx context.Context, page, limit int, role strin
 	}
 	return rows, len(rows), nil
 }
+
+func (s *UserService) EmailExists(ctx context.Context, email string) (bool, error) {
+	_, err := s.db.Queries.GetUserByEmail(ctx, email)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return false, nil
+		}
+		return false, err
+	}
+	return true, nil
+}
+
+func (s *UserService) UpdateLastLogin(ctx context.Context, id uuid.UUID) (*db.User, error) {
+	result, err := s.db.Queries.UpdateLastLogin(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	return &result, nil
+}
