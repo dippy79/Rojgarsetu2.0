@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../blocs/jobs/jobs_bloc.dart';
 import '../../models/job.dart';
 import '../../components/status_badge.dart';
 import '../../services/api_service.dart';

@@ -39,3 +39,5 @@ deployment/k8s/secrets/
 .DS_Store
 Thumbs.db
 
+
+.fake

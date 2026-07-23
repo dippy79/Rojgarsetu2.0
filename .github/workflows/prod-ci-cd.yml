@@ -20,19 +20,19 @@ jobs:
       - name: Go lint
         uses: golangci/golangci-lint-action@v6
         with:
-          working-directory: backend_go
+          working-directory: services/backend-go
 
       - name: Go lint crawler
         uses: golangci/golangci-lint-action@v6
         with:
-          working-directory: crawler_go
+          working-directory: services/crawler-go
 
       - name: ESLint Node
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
-        working-directory: api_gateway_node
+        working-directory: services/api-gateway-node
         run: npm ci && npm run lint
 
   test:
@@ -44,28 +44,28 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: ${{ env.GO_VERSION }}
-        working-directory: backend_go
+        working-directory: services/backend-go
         run: go test ./... 
 
       - name: Go test backend
         uses: actions/setup-go@v5
         with:
           go-version: ${{ env.GO_VERSION }}
-        working-directory: backend_go
+        working-directory: services/backend-go
         run: go test ./... 
 
       - name: Go test crawler
         uses: actions/setup-go@v5
         with:
           go-version: ${{ env.GO_VERSION }}
-        working-directory: crawler_go
+        working-directory: services/crawler-go
         run: go test ./... 
 
       - name: Test Node gateway
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-        working-directory: api_gateway_node
+        working-directory: services/api-gateway-node
         run: npm ci && npm test
 
   security_scan:
@@ -83,13 +83,13 @@ jobs:
       - name: GoSec Backend
         uses: securego/gosec-action@v1
         with:
-          directory: backend_go/
+          directory: services/backend-go/
           args: '-confidence high -severity high -out gosec-backend.sarif -fmt sarif'
 
       - name: GoSec Crawler
         uses: securego/gosec-action@v1
         with:
-          directory: crawler_go/
+          directory: services/crawler-go/
           args: '-confidence high -severity high -out gosec-crawler.sarif -fmt sarif'
 
       - name: Trivy filesystem scan
@@ -103,7 +103,7 @@ jobs:
       - name: Build backend for image scan
         uses: docker/build-push-action@v6
         with:
-          context: backend_go
+          context: services/backend-go
           file: deployment/Dockerfile.backend
           load: true
           tags: backend_scan:temp
@@ -118,7 +118,7 @@ jobs:
       - name: Build crawler for image scan
         uses: docker/build-push-action@v6
         with:
-          context: crawler_go
+          context: services/crawler-go
           file: deployment/Dockerfile.crawler
           load: true
           tags: crawler_scan:temp
@@ -170,7 +170,7 @@ jobs:
       - name: Build & push backend
         uses: docker/build-push-action@v6
         with:
-          context: backend_go
+          context: services/backend-go
           file: deployment/Dockerfile.backend
           push: true
           tags: ghcr.io/${{ github.repository }}/backend:latest
@@ -180,7 +180,7 @@ jobs:
       - name: Build & push crawler
         uses: docker/build-push-action@v6
         with:
-          context: crawler_go
+          context: services/crawler-go
           file: deployment/Dockerfile.crawler
           push: true
           tags: ghcr.io/${{ github.repository }}/crawler:latest
@@ -190,7 +190,7 @@ jobs:
       - name: Build & push api-gateway
         uses: docker/build-push-action@v6
         with:
-          context: api_gateway_node
+          context: services/api-gateway-node
           file: deployment/Dockerfile.api-gateway
           push: true
           tags: ghcr.io/${{ github.repository }}/api-gateway:latest
@@ -198,7 +198,7 @@ jobs:
       - name: Build & push auth-service
         uses: docker/build-push-action@v6
         with:
-          context: auth_service_java
+          context: services/auth-java
           file: deployment/Dockerfile.auth-service
           push: true
           tags: ghcr.io/${{ github.repository }}/auth-service:latest
@@ -206,7 +206,7 @@ jobs:
       - name: Build & push ai-engine
         uses: docker/build-push-action@v6
         with:
-          context: ai_engine_python
+          context: services/ai-engine-python
           file: deployment/Dockerfile.ai-engine
           push: true
           tags: ghcr.io/${{ github.repository }}/ai-engine:latest

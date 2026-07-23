@@ -4,7 +4,6 @@ import '../../core/di/service_locator.dart';
 import '../../services/api_service.dart';
 import '../../core/constants/api_constants.dart';
 import '../../components/status_badge.dart';
-import 'package:go_router/go_router.dart';
 
 class JobApplicationsScreen extends StatefulWidget {
   final String jobId;

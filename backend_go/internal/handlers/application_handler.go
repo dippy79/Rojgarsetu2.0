@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"database/sql"
 	"net/http"
 	"strconv"
 
@@ -90,7 +91,6 @@ func (h *ApplicationHandler) UpdateStatus(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	import "database/sql"
 	status := sql.NullString{String: req.Status, Valid: true}
 	notes := sql.NullString{String: req.Notes, Valid: req.Notes != ""}
 	application, err := h.svc.UpdateApplicationStatus(c, id, status, notes)

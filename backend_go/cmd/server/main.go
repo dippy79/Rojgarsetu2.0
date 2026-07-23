@@ -5,7 +5,6 @@ import (
 	"crypto/tls"
 	"database/sql"
 	"fmt"
-	"net"
 	"net/http"
 	"os"
 	"os/signal"
@@ -14,18 +13,19 @@ import (
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	_ "github.com/lib/pq"
 	"github.com/rojgarsetu/backend/config"
 	"github.com/rojgarsetu/backend/internal/db"
 	"github.com/rojgarsetu/backend/internal/handlers"
 	"github.com/rojgarsetu/backend/internal/middleware"
 	"github.com/rojgarsetu/backend/internal/services"
 	"github.com/rs/zerolog"
-	"strings"
 )
 
 var (
 	version    = "2.0.0"
 	logger     zerolog.Logger
+	dbURL      string
 	serverPort int
 	redisURL   string
 )
@@ -34,18 +34,11 @@ func main() {
 	// Initialize logger
 	logger = zerolog.New(os.Stderr).Output(zerolog.ConsoleWriter{Out: os.Stderr, TimeFormat: time.RFC3339}).With().Timestamp().Caller().Logger()
 
-	// Load config early
+	// Load config
 	cfg := config.Load()
-	if cfg.JWT.Secret == "" {
-		logger.Fatal().Msg("JWT_SECRET required")
-		return
-	}
-	if len(cfg.JWT.Secret) < 32 {
-		logger.Fatal().Msg("JWT_SECRET must be at least 32 characters")
-		return
-	}
 
-	dbURL := os.Getenv("DATABASE_URL")
+	// Root command
+	dbURL = os.Getenv("DATABASE_URL")
 	if dbURL == "" {
 		logger.Fatal().Msg("DATABASE_URL environment variable required")
 		return
@@ -56,18 +49,18 @@ func main() {
 		redisURL = "redis://localhost:6379"
 	}
 
-serverPort = 8080
+	serverPort = 8083
 	if port := os.Getenv("PORT"); port != "" {
 		fmt.Sscanf(port, "%d", &serverPort)
 	}
 
 	// Start server
-	if err := run(cfg, dbURL); err != nil {
+	if err := run(cfg); err != nil {
 		logger.Fatal().Err(err).Msg("Server failed")
 	}
 }
 
-func run(cfg *config.Config, dbURL string) error {
+func run(cfg *config.Config) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -80,39 +73,31 @@ func run(cfg *config.Config, dbURL string) error {
 		cancel()
 	}()
 
-	// Initialize database - FIXED
+	// Initialize database connection and SQLC wrapper
 	sqlDB, err := sql.Open("postgres", dbURL)
 	if err != nil {
-		return fmt.Errorf("sql open: %w", err)
+		return fmt.Errorf("failed to open database: %w", err)
 	}
-	defer sqlDB.Close()
-	if err = sqlDB.Ping(); err != nil {
-		return fmt.Errorf("db ping: %w", err)
+	ctxPing, pingCancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer pingCancel()
+	if err := sqlDB.PingContext(ctxPing); err != nil {
+		return fmt.Errorf("failed to ping database: %w", err)
 	}
 	database := db.NewPostgresDB(sqlDB)
+	defer sqlDB.Close()
 	logger.Info().Msg("Database connected")
 
-	// Initialize ALL services
-	userSvc := services.NewUserService(database)
-	tokenSvc := services.NewTokenService(database)
-	candidateSvc := services.NewCandidateService(database)
-	companySvc := services.NewCompanyService(database)
-	jobSvc := services.NewJobService(database)
-	contentSvc := services.NewContentService(database)
-	applicationSvc := services.NewApplicationService(database)
+	// Initialize services
+	govJobService := services.NewGovJobService(database)
+	privJobService := services.NewPrivJobService(database)
+	courseService := services.NewCourseService(database)
+	videoService := services.NewVideoService(database)
 
 	// Initialize handlers
-	authSvc := services.NewAuthService(userSvc, tokenSvc, cfg)
-	authHandler := handlers.NewAuthHandler(authSvc)
-	userHandler := handlers.NewUserHandler(userSvc)
-	candidateHandler := handlers.NewCandidateHandler(candidateSvc)
-	companyHandler := handlers.NewCompanyHandler(companySvc)
-	jobHandler := handlers.NewJobHandler(jobSvc)
-	applicationHandler := handlers.NewApplicationHandler(applicationSvc)
-	govJobHandler := handlers.NewGovJobHandler(contentSvc)
-	privJobHandler := handlers.NewPrivJobHandler(contentSvc)
-	courseHandler := handlers.NewCourseHandler(contentSvc)
-	videoHandler := handlers.NewVideoHandler(contentSvc)
+	govJobHandler := handlers.NewGovJobHandler(govJobService)
+	privJobHandler := handlers.NewPrivJobHandler(privJobService)
+	courseHandler := handlers.NewCourseHandler(courseService)
+	videoHandler := handlers.NewVideoHandler(videoService)
 
 	middleware.RegisterBuildInfo()
 
@@ -120,22 +105,17 @@ func run(cfg *config.Config, dbURL string) error {
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.New()
 	router.Use(gin.Recovery())
-	router.Use(middleware.LoggingMiddleware())
 	router.Use(gin.Logger())
+
+	// Security middleware first
+	router.Use(middleware.SecurityHeaders())
+
+	// Rate limiting
+	router.Use(middleware.RateLimitMiddleware(cfg.RateLimit))
 
 	// CORS
 	corsMiddleware := cors.New(cors.Config{
-	AllowOrigins:     func() []string {
-		allowed := os.Getenv("ALLOWED_ORIGIN")
-		if allowed == "" {
-			allowed = "http://localhost:3000,http://127.0.0.1:3000"
-		}
-		origins := strings.Split(allowed, ",")
-		for i := range origins {
-			origins[i] = strings.TrimSpace(origins[i])
-		}
-		return origins
-	}(),
+		AllowOrigins:     []string{"http://localhost:3000", "http://127.0.0.1:3000"},
 		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization"},
 		ExposeHeaders:    []string{"Content-Length"},
@@ -144,200 +124,83 @@ func run(cfg *config.Config, dbURL string) error {
 	})
 	router.Use(corsMiddleware)
 	router.Use(middleware.PrometheusMiddleware())
-	router.Use(middleware.BodyLimit())
-	router.Use(middleware.SecurityHeaders())
-	router.Use(middleware.RateLimitMiddleware(1)) // 60/min global
 
 	// Metrics endpoint
 	router.GET("/metrics", middleware.MetricsHandler())
 
-	// Health checks - FIXED DB access via sqlDB (keep alive)
+	// Health check
 	router.GET("/health", func(c *gin.Context) {
-		requestID, _ := c.Get("requestID")
-		status := "healthy"
-		dbStatus := "ok"
-
-		if err := sqlDB.PingContext(c.Request.Context()); err != nil {
-			dbStatus = "error: " + err.Error()
-			status = "degraded"
-		}
-
 		c.JSON(http.StatusOK, gin.H{
-			"status":     status,
-			"service":    "backend-api",
-			"version":    version,
-			"db_status":  dbStatus,
-			"timestamp":  time.Now().Format(time.RFC3339),
-			"request_id": requestID,
-		})
-	})
-
-	router.GET("/live", func(c *gin.Context) {
-		requestID, _ := c.Get("requestID")
-		c.JSON(http.StatusOK, gin.H{
-			"status":     "live",
-			"service":    "backend-api",
-			"timestamp":  time.Now().Format(time.RFC3339),
-			"request_id": requestID,
-		})
-	})
-
-	router.GET("/ready", func(c *gin.Context) {
-		requestID, _ := c.Get("requestID")
-		status := "ready"
-		msg := []string{}
-
-		ctx := c.Request.Context()
-		if err := sqlDB.PingContext(ctx); err != nil {
-			status = "not_ready"
-			msg = append(msg, "db: "+err.Error())
-		}
-
-		// Redis ping via TCP
-		if redisConn, err := net.DialTimeout("tcp", "redis:6379", 2*time.Second); err != nil {
-			status = "not_ready"
-			msg = append(msg, "redis: "+err.Error())
-		} else {
-			redisConn.Close()
-		}
-
-		// Migrations dir check
-		if _, err := os.Stat("migrations"); os.IsNotExist(err) {
-			msg = append(msg, "migrations: missing")
-		}
-
-		c.JSON(http.StatusOK, gin.H{
-			"status":     status,
-			"service":    "backend-api",
-			"checks":     msg,
-			"timestamp":  time.Now().Format(time.RFC3339),
-			"request_id": requestID,
+			"status":    "healthy",
+			"service":   "backend-api",
+			"version":   version,
+			"timestamp": time.Now().Format(time.RFC3339),
 		})
 	})
 
 	// API routes
 	api := router.Group("/api/v1")
 	{
-		// Public routes
-		auth := api.Group("/auth")
-		{
-			auth.POST("/register", authHandler.Register)
-			login := auth.Group("")
-			login.Use(middleware.RateLimitMiddleware(5/60)) // 5/min
-			login.POST("/login", authHandler.Login)
-			auth.POST("/refresh", authHandler.Refresh)
-		}
+		// Government Jobs
+		api.GET("/gov-jobs", govJobHandler.GetGovJobs)
+		api.GET("/gov-jobs/:id", govJobHandler.GetGovJobByID)
 
-		api.GET("/jobs", jobHandler.ListActiveJobs)
-		api.GET("/jobs/:id", jobHandler.GetJob)
-		api.GET("/gov-jobs", gin.WrapF(govJobHandler.List))
-		api.GET("/gov-jobs/:id", gin.WrapF(govJobHandler.GetByID))
-		api.GET("/priv-jobs", gin.WrapF(privJobHandler.List))
-		api.GET("/priv-jobs/:id", gin.WrapF(privJobHandler.GetByID))
-		api.GET("/courses", gin.WrapF(courseHandler.List))
-		api.GET("/courses/:id", gin.WrapF(courseHandler.GetByID))
-		api.GET("/videos", gin.WrapF(videoHandler.List))
-		api.GET("/videos/:id", gin.WrapF(videoHandler.GetByID))
-		api.GET("/companies", companyHandler.ListCompanies)
-		api.GET("/companies/:id", companyHandler.GetCompany)
-		api.GET("/candidates", candidateHandler.ListCandidates)
-		api.GET("/candidates/:id", candidateHandler.GetCandidate)
+		// Private Jobs
+		api.GET("/private-jobs", privJobHandler.GetPrivJobs)
+		api.GET("/private-jobs/:id", privJobHandler.GetPrivJobByID)
 
-		api.GET("/robots.txt", func(c *gin.Context) {
-			c.String(http.StatusOK, "User-agent: *\nDisallow: /admin/\nSitemap: https://rojgarsetu.com/sitemap.xml")
-		})
+		// Courses
+		api.GET("/courses", courseHandler.GetCourses)
+		api.GET("/courses/:id", courseHandler.GetCourseByID)
 
-		// Protected routes
-		protected := api.Group("")
-		protected.Use(middleware.AuthMiddleware(cfg))
-		{
-			protected.POST("/auth/logout", authHandler.Logout)
-
-			users := protected.Group("/users")
-			{
-				users.GET("", userHandler.ListUsers)
-				users.GET("/:id", userHandler.GetUser)
-			}
-
-			candidates := protected.Group("/candidates")
-			{
-				candidates.GET("/me", candidateHandler.GetMyProfile)
-				candidates.PUT("/me", candidateHandler.UpdateMyProfile)
-				candidates.GET("/me/applications", candidateHandler.GetMyApplications)
-			}
-
-			companies := protected.Group("/companies")
-			{
-				companies.GET("/me", companyHandler.GetMyCompany)
-				companies.PUT("/me", companyHandler.UpdateMyCompany)
-				companies.GET("/me/jobs", jobHandler.GetMyJobs)
-			}
-
-			jobs := protected.Group("/jobs")
-			{
-				jobs.POST("", jobHandler.CreateJob)
-				jobs.PUT("/:id", jobHandler.UpdateJob)
-				jobs.DELETE("/:id", jobHandler.DeleteJob)
-			}
-
-			applications := protected.Group("/applications")
-			{
-				applications.GET("/:id", applicationHandler.GetApplication)
-				jobs.POST("/:id/apply", applicationHandler.Apply)
-				jobs.GET("/:id/applications", applicationHandler.GetJobApplications)
-				applications.PATCH("/:id/status", applicationHandler.UpdateStatus)
-			}
-		}
+		// Videos
+		api.GET("/videos", videoHandler.GetVideos)
+		api.GET("/videos/:id", videoHandler.GetVideoByID)
 	}
 
-	// HTTP Server
-	httpSrv := &http.Server{
-		Addr:    fmt.Sprintf(":%d", serverPort),
-		Handler: router,
+	// Start HTTP server
+	srv := &http.Server{
+		Addr:         fmt.Sprintf(":%d", serverPort),
+		Handler:      router,
+		ReadTimeout:  15 * time.Second,
+		WriteTimeout: 30 * time.Second,
+		IdleTimeout:  60 * time.Second,
 	}
 
-	go func() {
-		logger.Info().Int("port", serverPort).Msg("Starting HTTP server")
-		if err := httpSrv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			logger.Error().Err(err).Msg("HTTP server error")
-		}
-	}()
-
-	var httpsSrv *http.Server
-
-	// HTTPS if enabled
 	if cfg.TLS.Enabled {
-		httpsSrv = &http.Server{
-			Addr:      ":8443",
-			Handler:   router,
-			TLSConfig: &tls.Config{Certificates: []tls.Certificate{cfg.LoadTLSCert()}},
+		cert, err := tls.LoadX509KeyPair(cfg.TLS.Cert, cfg.TLS.Key)
+		if err != nil {
+			return fmt.Errorf("failed to load TLS cert: %w", err)
 		}
+		srv.TLSConfig = &tls.Config{
+			Certificates: []tls.Certificate{cert},
+		}
+		logger.Info().Msgf("Starting HTTPS server on :8443 with TLS cert %s", cfg.TLS.Cert)
 		go func() {
-			logger.Info().Msg("Starting HTTPS server on :8443")
-			if err := httpsSrv.ListenAndServeTLS("", ""); err != nil && err != http.ErrServerClosed {
+			if err := srv.ListenAndServeTLS("", ""); err != nil && err != http.ErrServerClosed {
 				logger.Error().Err(err).Msg("HTTPS server error")
 			}
 		}()
-		logger.Info().Msg("TLS enabled, certs loaded from " + cfg.TLS.Cert)
+	} else {
+		logger.Info().Int("port", serverPort).Msg("Starting HTTP server")
+		go func() {
+			if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+				logger.Error().Err(err).Msg("HTTP server error")
+			}
+		}()
 	}
 
 	logger.Info().Msg("Backend API service ready")
 
 	// Wait for shutdown
 	<-ctx.Done()
-	logger.Info().Msg("Shutting down servers...")
+	logger.Info().Msg("Shutting down server...")
 
-	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 15*time.Second)
+	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer shutdownCancel()
 
-	if err := httpSrv.Shutdown(shutdownCtx); err != nil {
-		logger.Error().Err(err).Msg("HTTP server shutdown failed")
-	}
-
-	if cfg.TLS.Enabled && httpsSrv != nil {
-		if err := httpsSrv.Shutdown(shutdownCtx); err != nil {
-			logger.Error().Err(err).Msg("HTTPS server shutdown failed")
-		}
+	if err := srv.Shutdown(shutdownCtx); err != nil {
+		return fmt.Errorf("server shutdown failed: %w", err)
 	}
 
 	logger.Info().Msg("Server shutdown complete")

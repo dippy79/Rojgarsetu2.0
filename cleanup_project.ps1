@@ -111,20 +111,18 @@ $serviceRenames = @{
     'auth_service_java' = 'services/auth-java'
     'ai_engine_python' = 'services/ai-engine-python'
 }
+
+# Non-destructive mode: do NOT rename folders automatically.
+# Instead, ensure `services/` exists and print suggested mappings for manual review.
+$servicesDir = Join-Path $root 'services'
+if (!(Test-Path $servicesDir)) { New-Item -Path $servicesDir -ItemType Directory -Force | Out-Null }
 foreach ($old in $serviceRenames.Keys) {
     $oldPath = Join-Path $root $old
     $newPath = Join-Path $root $serviceRenames[$old]
     if (Test-Path $oldPath -PathType Container) {
-        Write-Host "Rename: $old -> $($serviceRenames[$old])" -ForegroundColor Green
-        if ($Preview) {
-            Rename-Item -Path $oldPath -NewName $newPath -WhatIf
-        } else {
-            # Backup if not preview
-            $backup = "$oldPath.bak"
-            if (Test-Path $backup) { Remove-Item $backup -Recurse -Force }
-            Rename-Item -Path $oldPath -NewName $backup
-            Rename-Item -Path $backup -NewName $newPath
-        }
+        Write-Host "Found: $oldPath -> Suggested location: $newPath (NO ACTION taken)" -ForegroundColor Yellow
+    } else {
+        Write-Host "Not found: $oldPath (skipping)" -ForegroundColor DarkGray
     }
 }
 

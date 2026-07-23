@@ -89,7 +89,7 @@ services:
       DB_PASSWORD: postgres
       JWT_SECRET: ${JWT_SECRET}
     ports:
-      - "3000:3000"
+      - "8080:8080"
     volumes:
       - ./.env:/app/.env:ro
     depends_on:
@@ -101,7 +101,7 @@ services:
       - rojgar-network
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:8080/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -196,12 +196,13 @@ services:
   ai-engine:
     env_file: .env
     build:
-      context: ./services/ai-engine-python
-      dockerfile: ../../Dockerfile.ai-engine
+      context: ../ai_engine_python
+      dockerfile: ../deployment/Dockerfile.ai-engine
     container_name: rojgar-ai-engine
     environment:
       DATABASE_URL: ${DATABASE_URL}
       REDIS_URL: ${REDIS_URL}
+      PYTHONPATH: /app
     ports:
       - "8000:8000"
     depends_on:
@@ -214,6 +215,12 @@ services:
     networks:
       - rojgar-network
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
 
   frontend:
     env_file: .env

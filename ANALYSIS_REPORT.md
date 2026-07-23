@@ -161,17 +161,17 @@
 1. **Auth Service Data Loss**
    - **Issue**: In-memory HashMap `users` in AuthController.java
    - **Impact**: All registered users disappear on service restart
-   - **Location**: `auth_service_java/.../AuthController.java` line ~30
+   - **Location**: `services/auth-java/.../AuthController.java` line ~30
 
 2. **Fake AI Recommendations**
    - **Issue**: `np.random.uniform(0.5, 1.0)` in service.py
    - **Impact**: Recommendations are completely random, not personalized
-   - **Location**: `ai_engine_python/recommender/service.py` lines ~85, ~130
+   - **Location**: `services/ai-engine-python/recommender/service.py` lines ~85, ~130
 
 3. **Chrome Binary Path**
    - **Issue**: Hardcoded `/usr/bin/chromium-browser`
    - **Impact**: Browser automation fails on Windows/local development
-   - **Location**: `crawler_go/internal/browser/browser.go` line ~25
+   - **Location**: `services/crawler-go/internal/browser/browser.go` line ~25
 
 ### 🟠 HIGH PRIORITY ISSUES
 
@@ -183,12 +183,12 @@
 5. **Empty Search Implementation**
    - **Issue**: POST `/search` returns empty results
    - **Impact**: Advanced search functionality doesn't work
-   - **Location**: `api_gateway_node/src/routes/jobs.js` line ~115
+   - **Location**: `services/api-gateway-node/src/routes/jobs.js` line ~115
 
 6. **Recommendations Not Connected**
    - **Issue**: `/recommendations/me` doesn't call AI engine
    - **Impact**: User recommendations always empty
-   - **Location**: `api_gateway_node/src/routes/jobs.js` line ~145
+   - **Location**: `services/api-gateway-node/src/routes/jobs.js` line ~145
 
 7. **Missing Spring Actuator**
    - **Issue**: Health check expects `/actuator/health`

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../../core/di/service_locator.dart';
 import '../../services/api_service.dart';
 import '../../core/constants/api_constants.dart';
-import '../../components/status_badge.dart'; // for reuse if needed
+// for reuse if needed
 
 class CandidateProfileScreen extends StatefulWidget {
   const CandidateProfileScreen({super.key});
@@ -187,7 +187,7 @@ class _CandidateProfileScreenState extends State<CandidateProfileScreen> {
                     ),
                     const SizedBox(height: 16),
                     DropdownButtonFormField<int>(
-                      value: _experience,
+                      initialValue: _experience,
                       decoration: const InputDecoration(
                         labelText: 'Experience (years)',
                         border: OutlineInputBorder(),

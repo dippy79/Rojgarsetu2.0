@@ -83,4 +83,7 @@ auth_service_java/.mvn/
 
 # Go
 crawler_go/vendor/
+services/auth-java/target/
+services/auth-java/.mvn/
+services/crawler-go/vendor/
 

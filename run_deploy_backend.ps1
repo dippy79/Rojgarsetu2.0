@@ -2,7 +2,7 @@
 # Run from repo root: powershell -ExecutionPolicy Bypass -File run_deploy_backend.ps1
 # Or paste directly into PowerShell
 
-$root='F:\Rojgarsetu2.0\rojgarsetu2\backend_go'
+$root='F:\Rojgarsetu2.0\rojgarsetu2\services\backend-go'
 Set-Location $root
 $ts=Get-Date -Format 'yyyyMMdd_HHmmss'
 $backup=Join-Path $root "deployment\backup_temp_stubs_$ts"
@@ -35,7 +35,7 @@ if ($LASTEXITCODE -ne 0) {
 # Docker build
 Write-Output "Building Docker image..."
 Set-Location (Split-Path $root -Parent)
-docker build --progress=plain -f .\deployment\Dockerfile.backend -t backend-test ..\backend_go > .\deployment\logs\docker_build_plain.txt 2>&1
+docker build --progress=plain -f .\deployment\Dockerfile.backend -t backend-test ..\services\backend-go > .\deployment\logs\docker_build_plain.txt 2>&1
 if ($LASTEXITCODE -ne 0) { 
   Write-Output 'docker build failed; see deployment\logs\docker_build_plain.txt'; 
   exit 2 

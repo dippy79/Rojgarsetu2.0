@@ -1,63 +1,51 @@
 package handlers
 
 import (
-	"encoding/json"
 	"net/http"
 	"strconv"
 
+	"github.com/gin-gonic/gin"
 	"github.com/rojgarsetu/backend/internal/db"
 	"github.com/rojgarsetu/backend/internal/services"
 )
 
 type PrivJobHandler struct {
-	svc *services.ContentService
+	service *services.PrivJobService
 }
 
-func NewPrivJobHandler(svc *services.ContentService) *PrivJobHandler {
-	return &PrivJobHandler{svc: svc}
+func NewPrivJobHandler(service *services.PrivJobService) *PrivJobHandler {
+	return &PrivJobHandler{service: service}
 }
 
-func (h *PrivJobHandler) writeJSON(w http.ResponseWriter, status int, v any) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(status)
-	json.NewEncoder(w).Encode(v)
-}
-
-func (h *PrivJobHandler) writeError(w http.ResponseWriter, status int, msg string) {
-	h.writeJSON(w, status, map[string]string{"error": msg})
-}
-
-func (h *PrivJobHandler) List(w http.ResponseWriter, r *http.Request) {
-	page, _ := strconv.Atoi(r.URL.Query().Get("page"))
-	limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
-	if page < 1 {
-		page = 1
-	}
-	if limit < 1 || limit > 100 {
-		limit = 20
-	}
+func (h *PrivJobHandler) GetPrivJobs(c *gin.Context) {
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
 
 	filter := db.PrivJobFilter{
-		Company:  r.URL.Query().Get("company"),
-		Location: r.URL.Query().Get("location"),
-		Source:   r.URL.Query().Get("source"),
-		JobType:  r.URL.Query().Get("jobType"),
+		Company:  c.Query("company"),
+		Location: c.Query("location"),
+		Source:   c.Query("source"),
+		JobType:  c.Query("job_type"),
 	}
 
-	rows, count, err := h.svc.GetPrivJobs(r.Context(), filter, page, limit)
+	jobs, total, err := h.service.GetPrivJobs(filter, page, limit)
 	if err != nil {
-		h.writeError(w, http.StatusInternalServerError, err.Error())
+		c.JSON(http.StatusInternalServerError, db.ErrorResponse(500, "Failed to fetch jobs"))
 		return
 	}
-	h.writeJSON(w, http.StatusOK, map[string]any{"data": rows, "count": count})
+
+	pagination := db.NewPagination(page, limit, total)
+	c.JSON(http.StatusOK, db.SuccessResponse(jobs, &pagination))
 }
 
-func (h *PrivJobHandler) GetByID(w http.ResponseWriter, r *http.Request) {
-	id := r.PathValue("id")
-	row, err := h.svc.GetPrivJobByID(r.Context(), id)
+func (h *PrivJobHandler) GetPrivJobByID(c *gin.Context) {
+	id := c.Param("id")
+
+	job, err := h.service.GetPrivJobByID(id)
 	if err != nil {
-		h.writeError(w, http.StatusNotFound, err.Error())
+		c.JSON(http.StatusNotFound, db.ErrorResponse(404, "Job not found"))
 		return
 	}
-	h.writeJSON(w, http.StatusOK, row)
+
+	c.JSON(http.StatusOK, db.SuccessResponse(job, nil))
 }

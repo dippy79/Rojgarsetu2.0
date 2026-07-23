@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"github.com/rojgarsetu/backend/internal/db"
 	"github.com/rojgarsetu/backend/internal/middleware"
 	"github.com/rojgarsetu/backend/internal/services"
 )
@@ -97,4 +98,3 @@ func (h *JobHandler) GetMyJobs(c *gin.Context) {
 	// Placeholder - implement full
 	c.JSON(http.StatusOK, gin.H{"data": []any{}, "count": 0})
 }
-

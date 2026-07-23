@@ -3,11 +3,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
 import '../../blocs/jobs/jobs_bloc.dart';
 import '../../blocs/jobs/jobs_event.dart';
-import '../../models/job.dart';
 import '../../components/job_card.dart';
 import '../../components/filter_bar.dart';
 import 'job_detail_screen.dart';
-import '../../core/di/service_locator.dart';
 
 class JobsListScreen extends StatefulWidget {
   final bool showCompany;

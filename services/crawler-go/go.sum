@@ -1,0 +1,3 @@
+# Minimal placeholder go.sum for crawler service
+# Run `go mod tidy` inside the service to populate real checksums.
+

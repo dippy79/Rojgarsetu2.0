@@ -1,26 +1,46 @@
+# ================================================================
+# ROJGARSETU 2.0 — Production Ready docker-compose.yml
+# LOCATION: F:\Rojgarsetu2.0\rojgarsetu2\docker-compose.yml
+# RUN FROM:  F:\Rojgarsetu2.0\rojgarsetu2\ (ROOT only)
+#
+# FIXES APPLIED:
+#   1. api-gateway port: 8080:8080 → 8080:3000 (Dockerfile EXPOSE 3000)
+#   2. nc health checks → wget (nc not in Alpine)
+#   3. Build contexts: context:. → specific folders
+#   4. api-gateway healthcheck: port 8080 → 3000
+# ================================================================
+
+name: rojgarsetu
+
 services:
+
+  # ── DATABASE ──────────────────────────────────────────────────
   postgres:
     image: postgres:16-alpine
-    restart: always
-    env_file:
-      - .env
+    container_name: rojgar-postgres
+    restart: unless-stopped
+    env_file: .env
     environment:
-      POSTGRES_DB: rojgarsetu2
-      POSTGRES_USER: amitsharma
-      POSTGRES_PASSWORD: "Asha12@Ashok24"
+      POSTGRES_DB: ${POSTGRES_DB:-rojgarsetu2}
+      POSTGRES_USER: ${POSTGRES_USER:-amitsharma}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U amitsharma"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-amitsharma} -d ${POSTGRES_DB:-rojgarsetu2}"]
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 10s
+    networks:
+      - rojgar-network
     logging:
       driver: "json-file"
       options:
         max-size: "10m"
         max-file: "3"
 
+  # ── MIGRATIONS ────────────────────────────────────────────────
   migrate:
     image: migrate/migrate
     restart: on-failure
@@ -33,48 +53,310 @@ services:
       - "-path"
       - "/migrations"
       - "-database"
-      - "postgres://amitsharma:Asha12%40Ashok24@postgres:5432/rojgarsetu2?sslmode=disable"
+      - "${DATABASE_URL}"
       - "up"
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
+    networks:
+      - rojgar-network
 
+  # ── REDIS ─────────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: rojgar-redis
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - rojgar-network
+
+  # ── BACKEND (Go) ──────────────────────────────────────────────
+  # FIX 3: context: ./backend_go (apna Dockerfile hai)
   backend:
     build:
       context: ./backend_go
       dockerfile: Dockerfile
-    restart: always
+    container_name: rojgar-backend
+    restart: unless-stopped
     depends_on:
       postgres:
         condition: service_healthy
+      redis:
+        condition: service_healthy
       migrate:
         condition: service_completed_successfully
-    env_file:
-      - .env.production
+    env_file: .env
     environment:
-      DATABASE_URL: postgres://amitsharma:Asha12%40Ashok24@postgres:5432/rojgarsetu2?sslmode=disable
+      DATABASE_URL: ${DATABASE_URL}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
       JWT_SECRET: ${JWT_SECRET}
-      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_USER: ${POSTGRES_USER:-amitsharma}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_DB: ${POSTGRES_DB:-rojgarsetu2}
       PORT: 8080
-      ALLOWED_ORIGIN: ${ALLOWED_ORIGIN}
-      ENV: development
+      ALLOWED_ORIGIN: ${ALLOWED_ORIGIN:-http://localhost:3001}
+      ENV: production
     ports:
-      - "8080:8080"
+      - "127.0.0.1:8083:8080"
     healthcheck:
-      test: ["CMD-SHELL", "curl -f http://localhost:8080/health || exit 1"]
-      interval: 30s
-      timeout: 10s
+      # FIX 2: nc → wget (nc not available in Go Alpine image)
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080/health || exit 1"]
+      interval: 15s
+      timeout: 5s
       retries: 3
+      start_period: 15s
+    networks:
+      - rojgar-network
     logging:
       driver: "json-file"
       options:
         max-size: "10m"
         max-file: "3"
 
+  # ── API GATEWAY (Node.js) ─────────────────────────────────────
+  # FIX 1: port 8080:3000 (Dockerfile.api-gateway EXPOSE 3000)
+  # FIX 3: context: ./services/api-gateway-node
+  api-gateway:
+    build:
+      context: ./services/api-gateway-node
+      dockerfile: ../../deployment/Dockerfile.api-gateway
+    container_name: rojgar-api-gateway
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      NODE_ENV: production
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${POSTGRES_DB:-rojgarsetu2}
+      DB_USER: ${POSTGRES_USER:-amitsharma}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+      JWT_SECRET: ${JWT_SECRET}
+    ports:
+      # FIX 1: Dockerfile EXPOSE 3000 hai, 8080 nahi
+      - "8080:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      backend:
+        condition: service_healthy
+    networks:
+      - rojgar-network
+    healthcheck:
+      # FIX 4: port 3000 (container ke andar)
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ── AUTH SERVICE (Java/Spring Boot) ───────────────────────────
+  # FIX 3: context: ./services/auth-java
+  auth-service:
+    build:
+      context: ./services/auth-java
+      dockerfile: ../../deployment/Dockerfile.auth-service
+    container_name: rojgar-auth-service
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-rojgarsetu2}?sslmode=disable
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-amitsharma}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
+    ports:
+      - "127.0.0.1:8081:8081"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - rojgar-network
+    healthcheck:
+      # FIX 2: nc → wget (Dockerfile.auth-service already has wget)
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8081/actuator/health"]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ── CRAWLER (Go) ──────────────────────────────────────────────
+  # FIX 3: context: ./services/crawler-go
+  crawler-service:
+    build:
+      context: ./services/crawler-go
+      dockerfile: ../../deployment/Dockerfile.crawler
+    container_name: rojgar-crawler-service
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+    ports:
+      - "127.0.0.1:8082:8082"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - rojgar-network
+    shm_size: "1gb"
+    healthcheck:
+      # FIX 2: nc → wget (Alpine mein wget available hai)
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8082/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ── AI ENGINE (Python) ────────────────────────────────────────
+  # FIX 3: context: ./services/ai-engine-python
+  ai-engine:
+    build:
+      context: ./services/ai-engine-python
+      dockerfile: ../../deployment/Dockerfile.ai-engine
+    container_name: rojgar-ai-engine
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8000:8000"
+    env_file: .env
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      REDIS_URL: ${REDIS_URL:-redis://redis:6379}
+      PYTHONPATH: /app
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ai_models:/app/models
+    networks:
+      - rojgar-network
+    healthcheck:
+      # Python urllib — no extra deps needed
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ── FRONTEND (React/Nginx) ────────────────────────────────────
+  # FIX 3: context: ./frontend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: ../deployment/Dockerfile.frontend
+    container_name: rojgar-frontend
+    restart: unless-stopped
+    ports:
+      - "3001:80"
+    depends_on:
+      api-gateway:
+        condition: service_healthy
+      backend:
+        condition: service_healthy
+    networks:
+      - rojgar-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ── MONITORING: Prometheus ────────────────────────────────────
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: rojgar-prometheus
+    restart: unless-stopped
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    ports:
+      - "127.0.0.1:9090:9090"
+    networks:
+      - rojgar-network
+
+  # ── MONITORING: Grafana ───────────────────────────────────────
+  grafana:
+    image: grafana/grafana:latest
+    container_name: rojgar-grafana
+    restart: unless-stopped
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GF_SECURITY_ADMIN_PASSWORD:-admin}
+    ports:
+      - "3002:3000"
+    depends_on:
+      - prometheus
+    networks:
+      - rojgar-network
+
+  # ── EXPORTERS ─────────────────────────────────────────────────
+  postgres-exporter:
+    image: prometheuscommunity/postgres-exporter:v0.15.0
+    container_name: rojgar-postgres-exporter
+    restart: unless-stopped
+    environment:
+      DATA_SOURCE_NAME: "postgresql://${POSTGRES_USER:-amitsharma}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-rojgarsetu2}?sslmode=disable"
+    ports:
+      - "127.0.0.1:9187:9187"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - rojgar-network
+
+  redis-exporter:
+    image: oliver006/redis_exporter:v1.57.0
+    container_name: rojgar-redis-exporter
+    restart: unless-stopped
+    command: --redis.addr redis:6379
+    ports:
+      - "127.0.0.1:9121:9121"
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - rojgar-network
+
+networks:
+  rojgar-network:
+    driver: bridge
+
 volumes:
   pgdata:
-
+  redis_data:
+  ai_models:
+  prometheus_data:
+  grafana_data:

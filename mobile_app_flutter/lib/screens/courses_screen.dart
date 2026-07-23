@@ -3,9 +3,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../blocs/courses/courses_bloc.dart';
-import '../../models/course.dart';
-import '../../components/filter_bar.dart';
-import '../../core/di/service_locator.dart';
 
 class CoursesScreen extends StatefulWidget {
   const CoursesScreen({super.key});

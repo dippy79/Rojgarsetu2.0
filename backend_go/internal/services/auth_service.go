@@ -3,7 +3,6 @@ package services
 import (
 	"database/sql"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -11,7 +10,6 @@ import (
 	"github.com/rojgarsetu/backend/config"
 	"github.com/rojgarsetu/backend/internal/db"
 	"github.com/rojgarsetu/backend/internal/middleware"
-	"golang.org/x/crypto/bcrypt"
 )
 
 type AuthService struct {
@@ -65,7 +63,7 @@ func (s *AuthService) Register(c *gin.Context) {
 		Email:    req.Email,
 		Password: req.Password,
 		Role:     req.Role,
-		Phone:    req.Phone,
+		Phone:    sql.NullString{String: req.Phone, Valid: req.Phone != ""},
 	}
 	user, err := s.userSvc.CreateUser(c, userReq)
 	if err != nil {
@@ -118,7 +116,7 @@ func (s *AuthService) Refresh(c *gin.Context) {
 	}
 
 	token, err := s.tokenSvc.GetRefreshToken(c, req.RefreshToken)
-	if err != nil || time.Now().After(token.ExpiresAt.Time) {
+	if err != nil || time.Now().After(token.ExpiresAt) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid refresh token"})
 		return
 	}
@@ -162,4 +160,3 @@ func (s *AuthService) generateJWT(userID, email, role string, expires time.Durat
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	return token.SignedString([]byte(s.cfg.JWT.Secret))
 }
-

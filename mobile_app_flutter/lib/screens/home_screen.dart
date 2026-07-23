@@ -7,8 +7,6 @@ import 'courses_screen.dart';
 import 'gov_jobs_screen.dart';
 import 'videos_screen.dart';
 import '../components/filter_bar.dart';
-import '../models/job.dart';
-import '../core/di/service_locator.dart';
 
 class HomeScreen extends StatefulWidget {
   final String role;

@@ -12,9 +12,6 @@ import 'screens/candidate_profile_screen.dart';
 import 'screens/company_profile_screen.dart';
 import 'screens/my_applications_screen.dart';
 import 'screens/job_applications_screen.dart';
-import 'screens/gov_jobs_screen.dart';
-import 'screens/courses_screen.dart';
-import 'screens/videos_screen.dart';
 import 'blocs/gov_jobs/gov_jobs_bloc.dart';
 import 'blocs/videos/videos_bloc.dart';
 
@@ -81,7 +78,7 @@ class RojgarSetuApp extends StatelessWidget {
       redirect: (context, state) {
         final authState = context.read<AuthBloc>().state;
         final isLoggedIn = authState is AuthAuthenticated;
-        final isAuthPath = state.location == '/login' || state.location == '/register';
+        final isAuthPath = state.uri.toString() == '/login' || state.uri.toString() == '/register';
         if (!isLoggedIn && !isAuthPath) {
           return '/login';
         }

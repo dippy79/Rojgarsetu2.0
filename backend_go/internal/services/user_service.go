@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"database/sql"
@@ -88,8 +89,11 @@ func (s *UserService) Login(ctx context.Context, email, password string) (*db.Us
 	if err = bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(password)); err != nil {
 		return nil, fmt.Errorf("invalid credentials")
 	}
-	updated, _ := s.db.Queries.UpdateLastLogin(ctx, user.ID)
-	return &updated, nil
+	result, err := s.db.Queries.UpdateLastLogin(ctx, user.ID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to update last login: %w", err)
+	}
+	return &result, nil
 }
 
 func (s *UserService) GetUserByID(ctx context.Context, id string) (*db.User, error) {

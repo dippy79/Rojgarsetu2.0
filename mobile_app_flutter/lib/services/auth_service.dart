@@ -1,4 +1,3 @@
-import 'package:dio/dio.dart';
 import 'api_service.dart';
 import '../core/constants/api_constants.dart';
 import '../core/storage/token_storage.dart';
