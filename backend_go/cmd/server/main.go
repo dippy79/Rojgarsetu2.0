@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
 	"time"
 
@@ -73,31 +74,13 @@ func run(cfg *config.Config) error {
 		cancel()
 	}()
 
-	// Initialize database connection and SQLC wrapper
-	sqlDB, err := sql.Open("postgres", dbURL)
-	if err != nil {
-		return fmt.Errorf("failed to open database: %w", err)
-	}
-	ctxPing, pingCancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer pingCancel()
-	if err := sqlDB.PingContext(ctxPing); err != nil {
-		return fmt.Errorf("failed to ping database: %w", err)
-	}
-	database := db.NewPostgresDB(sqlDB)
-	defer sqlDB.Close()
-	logger.Info().Msg("Database connected")
-
-	// Initialize services
-	govJobService := services.NewGovJobService(database)
-	privJobService := services.NewPrivJobService(database)
-	courseService := services.NewCourseService(database)
-	videoService := services.NewVideoService(database)
-
-	// Initialize handlers
-	govJobHandler := handlers.NewGovJobHandler(govJobService)
-	privJobHandler := handlers.NewPrivJobHandler(privJobService)
-	courseHandler := handlers.NewCourseHandler(courseService)
-	videoHandler := handlers.NewVideoHandler(videoService)
+	// Track DB readiness with thread-safe flag
+	var (
+		mu       sync.RWMutex
+		dbReady  bool
+		database *db.PostgresDB
+		sqlDB    *sql.DB
+	)
 
 	middleware.RegisterBuildInfo()
 
@@ -128,37 +111,89 @@ func run(cfg *config.Config) error {
 	// Metrics endpoint
 	router.GET("/metrics", middleware.MetricsHandler())
 
-	// Health check
-	router.GET("/health", func(c *gin.Context) {
+	// Health check - responds immediately with 200 even before DB is ready
+	// Handles both GET and HEAD (the latter is used by Docker wget --spider healthcheck)
+	healthHandler := func(c *gin.Context) {
+		mu.RLock()
+		ready := dbReady
+		mu.RUnlock()
+		status := "healthy"
+		if !ready {
+			status = "starting"
+		}
 		c.JSON(http.StatusOK, gin.H{
-			"status":    "healthy",
+			"status":    status,
 			"service":   "backend-api",
 			"version":   version,
+			"db_ready":  ready,
 			"timestamp": time.Now().Format(time.RFC3339),
 		})
-	})
-
-	// API routes
-	api := router.Group("/api/v1")
-	{
-		// Government Jobs
-		api.GET("/gov-jobs", govJobHandler.GetGovJobs)
-		api.GET("/gov-jobs/:id", govJobHandler.GetGovJobByID)
-
-		// Private Jobs
-		api.GET("/private-jobs", privJobHandler.GetPrivJobs)
-		api.GET("/private-jobs/:id", privJobHandler.GetPrivJobByID)
-
-		// Courses
-		api.GET("/courses", courseHandler.GetCourses)
-		api.GET("/courses/:id", courseHandler.GetCourseByID)
-
-		// Videos
-		api.GET("/videos", videoHandler.GetVideos)
-		api.GET("/videos/:id", videoHandler.GetVideoByID)
 	}
+	router.GET("/health", healthHandler)
+	router.HEAD("/health", healthHandler)
 
-	// Start HTTP server
+	// Attempt database connection in background, then register DB routes
+	go func() {
+		maxRetries := 30
+		for i := 0; i < maxRetries; i++ {
+			select {
+			case <-ctx.Done():
+				return
+			default:
+			}
+
+			sdb, err := sql.Open("postgres", dbURL)
+			if err != nil {
+				logger.Warn().Err(err).Msgf("Failed to open database (attempt %d/%d)", i+1, maxRetries)
+				time.Sleep(2 * time.Second)
+				continue
+			}
+			pingCtx, pingCancel := context.WithTimeout(context.Background(), 5*time.Second)
+			err = sdb.PingContext(pingCtx)
+			pingCancel()
+			if err == nil {
+				mu.Lock()
+				sqlDB = sdb
+				database = db.NewPostgresDB(sdb)
+				dbReady = true
+				mu.Unlock()
+				logger.Info().Msg("Database connected")
+
+				// Initialize services
+				govJobService := services.NewGovJobService(database)
+				privJobService := services.NewPrivJobService(database)
+				courseService := services.NewCourseService(database)
+				videoService := services.NewVideoService(database)
+
+				// Initialize handlers
+				govJobHandler := handlers.NewGovJobHandler(govJobService)
+				privJobHandler := handlers.NewPrivJobHandler(privJobService)
+				courseHandler := handlers.NewCourseHandler(courseService)
+				videoHandler := handlers.NewVideoHandler(videoService)
+
+				// Register DB-dependent routes
+				api := router.Group("/api/v1")
+				{
+					api.GET("/gov-jobs", govJobHandler.GetGovJobs)
+					api.GET("/gov-jobs/:id", govJobHandler.GetGovJobByID)
+					api.GET("/private-jobs", privJobHandler.GetPrivJobs)
+					api.GET("/private-jobs/:id", privJobHandler.GetPrivJobByID)
+					api.GET("/courses", courseHandler.GetCourses)
+					api.GET("/courses/:id", courseHandler.GetCourseByID)
+					api.GET("/videos", videoHandler.GetVideos)
+					api.GET("/videos/:id", videoHandler.GetVideoByID)
+				}
+				logger.Info().Msg("API routes registered")
+				return
+			}
+			sdb.Close()
+			logger.Warn().Err(err).Msgf("Database ping failed (attempt %d/%d) - retrying in 2s", i+1, maxRetries)
+			time.Sleep(2 * time.Second)
+		}
+		logger.Error().Msg("Failed to connect to database after all retries")
+	}()
+
+	// Start HTTP server (independent of DB readiness)
 	srv := &http.Server{
 		Addr:         fmt.Sprintf(":%d", serverPort),
 		Handler:      router,
@@ -202,6 +237,13 @@ func run(cfg *config.Config) error {
 	if err := srv.Shutdown(shutdownCtx); err != nil {
 		return fmt.Errorf("server shutdown failed: %w", err)
 	}
+
+	// Close DB if connected
+	mu.RLock()
+	if sqlDB != nil {
+		sqlDB.Close()
+	}
+	mu.RUnlock()
 
 	logger.Info().Msg("Server shutdown complete")
 	return nil

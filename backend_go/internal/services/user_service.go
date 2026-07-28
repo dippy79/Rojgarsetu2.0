@@ -39,7 +39,8 @@ func (s *UserService) CreateUser(ctx context.Context, req db.RegisterRequest) (*
 	if err != nil {
 		return nil, err
 	}
-	if req.Role == "candidate" {
+	switch req.Role {
+case "candidate":
 		_, err = s.db.Queries.CreateCandidate(ctx, db.CreateCandidateParams{
 			UserID:            uid,
 			Phone:             sql.NullString{},
@@ -62,7 +63,7 @@ func (s *UserService) CreateUser(ctx context.Context, req db.RegisterRequest) (*
 		if err != nil {
 			return nil, fmt.Errorf("failed to create candidate profile: %w", err)
 		}
-	} else if req.Role == "company" {
+	case "company":
 		_, err = s.db.Queries.CreateCompany(ctx, db.CreateCompanyParams{
 			UserID:       uid,
 			Name:         req.Name,
