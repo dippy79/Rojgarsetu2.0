@@ -1,22 +1,37 @@
-MIT License
+END USER LICENSE AGREEMENT (EULA)
 
-Copyright (c) 2024 RojgarSetu Team
+Copyright (c) 2026 RojgarSetu Team. All Rights Reserved.
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+IMPORTANT: PLEASE READ THIS AGREEMENT CAREFULLY BEFORE USING THIS SOFTWARE.
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+1. GRANT OF LICENSE (FREE / COMMUNITY TIER)
+Subject to the terms of this Agreement, the Authors grant you a non-exclusive, 
+non-transferable, free-of-charge license to use, copy, and modify the designated 
+Free / Community Phase components of the Software solely for personal, non-commercial, 
+educational, or internal evaluation purposes.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+2. RESTRICTED FEATURES & AUTHOR PERMISSION
+For any premium/pro features, restricted modules, commercial deployments, or production 
+usage beyond the Free Tier:
+- Prior explicit written permission or a separate commercial agreement from the 
+  Copyright Holders (RojgarSetu Team) is STRICTLY REQUIRED.
+- You are expressly prohibited from selling, sub-licensing, re-distributing, hosting as 
+  a service (SaaS), or commercially exploiting any restricted components without authorization.
 
+3. REDISTRIBUTION & NOTICE REQUIREMENTS
+The above copyright notice, this license agreement, and appropriate permission tags 
+must be included in all copies or substantial portions of the Software.
+
+4. OWNERSHIP & INTELLECTUAL PROPERTY
+The Software is licensed, not sold. All title, ownership rights, and intellectual 
+property rights in and to the Software remain with the Copyright Holders.
+
+5. NO WARRANTY
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, 
+INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A 
+PARTICULAR PURPOSE AND NONINFRINGEMENT.
+
+6. LIMITATION OF LIABILITY
+IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES, 
+OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, 
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
