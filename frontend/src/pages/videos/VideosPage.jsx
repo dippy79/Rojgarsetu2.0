@@ -1,5 +1,5 @@
 // Videos Page
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import VideoCard from '../../components/VideoCard';
 import FilterBar from '../../components/FilterBar';
@@ -17,11 +17,7 @@ const VideosPage = () => {
   const channel = searchParams.get('channel') || '';
   const category = searchParams.get('category') || '';
 
-  useEffect(() => {
-    fetchVideos();
-  }, [page, channel, category]);
-
-  const fetchVideos = async () => {
+  const fetchVideos = useCallback(async () => {
     try {
       setLoading(true);
       const params = new URLSearchParams({
@@ -45,7 +41,11 @@ const VideosPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [page, channel, category]);
+
+  useEffect(() => {
+    fetchVideos();
+  }, [fetchVideos]);
 
   const handleFilterChange = (filters) => {
     const params = new URLSearchParams();
@@ -72,7 +72,7 @@ const VideosPage = () => {
         filters={{ channel, category }}
         onFilterChange={handleFilterChange}
         filterOptions={{
-          channels: ['Naukri', 'LinkedIn', 'Study IQ', 'Unacademy', 'Byju\'s', 'Skill India'],
+          channels: ['Naukri', 'LinkedIn', 'Study IQ', 'Unacademy', "Byju's", 'Skill India'],
           categories: ['Jobs', 'Government', 'Education', 'Skills', 'UPSC', 'SSC', 'Railways']
         }}
       />
@@ -105,4 +105,3 @@ const VideosPage = () => {
 };
 
 export default VideosPage;
-

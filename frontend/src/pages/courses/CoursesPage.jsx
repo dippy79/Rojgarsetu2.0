@@ -1,5 +1,5 @@
 // Courses Page
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import CourseCard from '../../components/CourseCard';
 import FilterBar from '../../components/FilterBar';
@@ -18,11 +18,7 @@ const CoursesPage = () => {
   const mode = searchParams.get('mode') || '';
   const level = searchParams.get('level') || '';
 
-  useEffect(() => {
-    fetchCourses();
-  }, [page, provider, mode, level]);
-
-  const fetchCourses = async () => {
+const fetchCourses = useCallback(async () => {
     try {
       setLoading(true);
       const params = new URLSearchParams({
@@ -47,7 +43,11 @@ const CoursesPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [page, provider, mode, level]);
+
+  useEffect(() => {
+    fetchCourses();
+  }, [fetchCourses]);
 
   const handleFilterChange = (filters) => {
     const params = new URLSearchParams();

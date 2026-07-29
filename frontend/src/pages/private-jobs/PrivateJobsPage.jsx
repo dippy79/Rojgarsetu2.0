@@ -1,5 +1,5 @@
 // Private Jobs Page
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import JobCard from '../../components/JobCard';
 import FilterBar from '../../components/FilterBar';
@@ -19,11 +19,7 @@ const PrivateJobsPage = () => {
   const jobType = searchParams.get('job_type') || '';
   const source = searchParams.get('source') || '';
 
-  useEffect(() => {
-    fetchJobs();
-  }, [page, company, location, jobType, source]);
-
-  const fetchJobs = async () => {
+  const fetchJobs = useCallback(async () => {
     try {
       setLoading(true);
       const params = new URLSearchParams({
@@ -49,7 +45,11 @@ const PrivateJobsPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [page, company, location, jobType, source]);
+
+  useEffect(() => {
+    fetchJobs();
+  }, [fetchJobs]);
 
   const handleFilterChange = (filters) => {
     const params = new URLSearchParams();
@@ -113,4 +113,3 @@ const PrivateJobsPage = () => {
 };
 
 export default PrivateJobsPage;
-
