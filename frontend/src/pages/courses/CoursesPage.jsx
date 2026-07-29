@@ -1,9 +1,9 @@
 // Courses Page
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import CourseCard from '../components/CourseCard';
-import FilterBar from '../components/FilterBar';
-import Pagination from '../components/Pagination';
+import CourseCard from '../../components/CourseCard';
+import FilterBar from '../../components/FilterBar';
+import Pagination from '../../components/Pagination';
 import './Courses.css';
 
 const CoursesPage = () => {

@@ -1,9 +1,9 @@
 // Videos Page
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import VideoCard from '../components/VideoCard';
-import FilterBar from '../components/FilterBar';
-import Pagination from '../components/Pagination';
+import VideoCard from '../../components/VideoCard';
+import FilterBar from '../../components/FilterBar';
+import Pagination from '../../components/Pagination';
 import './Videos.css';
 
 const VideosPage = () => {

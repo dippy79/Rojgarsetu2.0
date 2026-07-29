@@ -1,0 +1,94 @@
+.job-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 1.25rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  border-left: 4px solid transparent;
+}
+
+.job-card.gov-job {
+  border-left-color: #1a237e;
+}
+
+.job-card.priv-job {
+  border-left-color: #00897b;
+}
+
+.job-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+}
+
+.job-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.job-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #1a237e;
+  line-height: 1.4;
+}
+
+.job-source {
+  background: #e8eaf6;
+  color: #283593;
+  padding: 0.25rem 0.6rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.job-details {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  color: #555;
+}
+
+.job-details p {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  background: #f5f7fa;
+  padding: 0.3rem 0.6rem;
+  border-radius: 4px;
+}
+
+.job-actions {
+  margin-top: auto;
+}
+
+.apply-btn {
+  display: inline-block;
+  background: linear-gradient(135deg, #1a237e, #283593);
+  color: #fff;
+  padding: 0.5rem 1.5rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  transition: opacity 0.2s;
+  text-align: center;
+}
+
+.apply-btn:hover {
+  opacity: 0.9;
+}
+
+.job-footer {
+  border-top: 1px solid #eee;
+  padding-top: 0.5rem;
+  font-size: 0.8rem;
+  color: #888;
+}
+

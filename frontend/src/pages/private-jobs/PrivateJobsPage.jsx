@@ -1,9 +1,9 @@
 // Private Jobs Page
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import JobCard from '../components/JobCard';
-import FilterBar from '../components/FilterBar';
-import Pagination from '../components/Pagination';
+import JobCard from '../../components/JobCard';
+import FilterBar from '../../components/FilterBar';
+import Pagination from '../../components/Pagination';
 import './PrivateJobs.css';
 
 const PrivateJobsPage = () => {
