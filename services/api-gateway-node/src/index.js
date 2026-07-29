@@ -1,21 +1,33 @@
 const express = require('express');
-const { createProxyMiddleware, fixRequestBody } = require('http-proxy-middleware');
-const cors = require('cors');
+const { createProxyMiddleware } = require('http-proxy-middleware');
 require('dotenv').config();
 
 const app = express();
-const PORT = parseInt(process.env.PORT || '3000', 10);
+const PORT = process.env.PORT || 8000;
 
-app.use(cors({
-  origin: process.env.ALLOWED_ORIGIN?.split(',') || '*',
-  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true,
+// Dynamic target URLs from env with local fallbacks
+const BACKEND_SERVICE_URL = process.env.BACKEND_SERVICE_URL || 'http://localhost:8080';
+const CRAWLER_SERVICE_URL = process.env.CRAWLER_SERVICE_URL || 'http://localhost:8081';
+
+// Proxy rules for Go Backend
+app.use('/api/v1', createProxyMiddleware({
+  target: BACKEND_SERVICE_URL,
+  changeOrigin: true,
+  pathRewrite: { '^/api/v1': '/api/v1' },
 }));
-app.disable('x-powered-by');
 
-app.get('/health', (_req, res) => {
-  res.status(200).json({ status: 'ok', service: 'rojgarsetu-api-gateway', uptime: process.uptime(), timestamp: new Date().toISOString() });
+// Proxy rules for Crawler Service
+app.use('/api/crawler', createProxyMiddleware({
+  target: CRAWLER_SERVICE_URL,
+  changeOrigin: true,
+}));
+
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'UP', gateway: 'API Gateway Online' });
+});
+
+app.listen(PORT, () => {
+  console.log(`API Gateway running on port ${PORT}`);
 });
 
 // Proxy options with retry
