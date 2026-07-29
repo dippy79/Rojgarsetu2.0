@@ -35,7 +35,7 @@ const proxyOptions = {
   },
 };
 
-const BACKEND_TARGET = process.env.BACKEND_URL || 'http://backend:8083';
+const BACKEND_TARGET = process.env.BACKEND_SERVICE_URL || 'http://backend:8083';
 app.use('/api', createProxyMiddleware({ target: BACKEND_TARGET, pathRewrite: { '^/api': '' }, ...proxyOptions }));
 
 const AUTH_TARGET = process.env.AUTH_URL || 'http://auth-service:8081';

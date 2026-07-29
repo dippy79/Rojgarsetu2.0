@@ -6,24 +6,32 @@ import (
 	"io"
 	"net/http"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
-	"github.com/rojgarsetu/crawler/internal/logger"
+	"github.com/rs/zerolog/log"
 	"golang.org/x/time/rate"
 )
 
 var (
 	crawlerBlocksTotal = promauto.NewCounterVec(
-		prometheus.NewCounterVec(
-			prometheus.CounterOpts{
-				Name: "crawler_requests_blocked_total",
-				Help: "Total blocked crawler requests (403/429/robots.txt)",
-			},
-			[]string{"reason", "domain"},
-		),
+		prometheus.CounterOpts{
+			Name: "crawler_requests_blocked_total",
+			Help: "Total blocked crawler requests (403/429/robots.txt)",
+		},
+		[]string{"reason", "domain"},
 	)
+
+	adaptiveThrottleActive = promauto.NewGauge(
+		prometheus.GaugeOpts{
+			Name: "crawler_adaptive_throttle_active",
+			Help: "Whether adaptive throttling is currently active (1) or not (0)",
+		},
+	)
+
+	defaultDomainLimiter = NewDomainLimiter()
 )
 
 // BaseSource common functionality for all sources
@@ -34,6 +42,7 @@ type BaseSource struct {
 
 // UserAgentRotator rotates through realistic UAs
 type UserAgentRotator struct {
+	mu     sync.Mutex
 	agents []string
 	index  int
 }
@@ -56,44 +65,71 @@ func NewUserAgentRotator() *UserAgentRotator {
 }
 
 func (r *UserAgentRotator) Next() string {
+	r.mu.Lock()
+	defer r.mu.Unlock()
 	agent := r.agents[r.index]
 	r.index = (r.index + 1) % len(r.agents)
 	return agent
 }
 
-// DomainLimiter throttles per domain (10 req/sec max)
+// DomainLimiter throttles per domain, with adaptive backoff on repeated blocks
 type DomainLimiter struct {
-	limiters map[string]*rate.Limiter
-	mu       chan struct{}
+	mu                 sync.RWMutex
+	limiters           map[string]*rate.Limiter
+	throttleMultiplier float64
+	sem                chan struct{}
 }
 
 func NewDomainLimiter() *DomainLimiter {
 	return &DomainLimiter{
-		limiters: make(map[string]*rate.Limiter),
-		mu:       make(chan struct{}, 100), // concurrency limit
+		limiters:           make(map[string]*rate.Limiter),
+		throttleMultiplier: 1.0,
+		sem:                make(chan struct{}, 100),
 	}
 }
 
 func (dl *DomainLimiter) Allow(domain string) bool {
 	select {
-	case dl.mu <- struct{}{}:
-		defer func() { <-dl.mu }()
+	case dl.sem <- struct{}{}:
+		defer func() { <-dl.sem }()
 	default:
 		return false
 	}
 
-	dl.limitersMu.Lock()
-	defer dl.limitersMu.Unlock()
-
+	dl.mu.RLock()
 	limiter, exists := dl.limiters[domain]
+	dl.mu.RUnlock()
+
 	if !exists {
-		limiter = rate.NewLimiter(rateLimit, burst) // adaptive
-		dl.limiters[domain] = limiter
+		dl.mu.Lock()
+		limiter, exists = dl.limiters[domain]
+		if !exists {
+			limiter = rate.NewLimiter(rate.Limit(10*dl.throttleMultiplier), int(20*dl.throttleMultiplier))
+			dl.limiters[domain] = limiter
+		}
+		dl.mu.Unlock()
 	}
+
 	return limiter.Allow()
 }
 
-// CheckRobotsTxt respects robots.txt
+func (dl *DomainLimiter) applyBackoff(domain string) {
+	dl.mu.Lock()
+	defer dl.mu.Unlock()
+
+	dl.throttleMultiplier *= 0.5
+	if dl.throttleMultiplier < 0.1 {
+		dl.throttleMultiplier = 0.1
+	}
+
+	newRate := 10 * dl.throttleMultiplier
+	newBurst := int(20 * dl.throttleMultiplier)
+	dl.limiters[domain] = rate.NewLimiter(rate.Limit(newRate), newBurst)
+	adaptiveThrottleActive.Set(1)
+}
+
+// ---- method-based API (BaseSource) ----
+
 func (b *BaseSource) CheckRobotsTxt(ctx context.Context, path string) bool {
 	robotsURL := b.BaseURL + "/robots.txt"
 	if !strings.HasPrefix(path, "/") {
@@ -103,22 +139,20 @@ func (b *BaseSource) CheckRobotsTxt(ctx context.Context, path string) bool {
 	req, _ := http.NewRequestWithContext(ctx, "GET", robotsURL, nil)
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		logger.Log.Warn().Err(err).Str("robots_url", robotsURL).Msg("Failed to fetch robots.txt")
-		return true // allow if can't check
+		log.Warn().Err(err).Str("robots_url", robotsURL).Msg("Failed to fetch robots.txt")
+		return true
 	}
 	defer resp.Body.Close()
 
 	body, _ := io.ReadAll(resp.Body)
 	robots := string(body)
 
-	// Simple check: if User-agent: * Disallow: /path
-	if strings.Contains(robots, "User-agent: *") && strings.Contains(robots, fmt.Sprintf("Disallow:%s", path)) {
+	if strings.Contains(robots, "User-agent: *") && strings.Contains(robots, fmt.Sprintf("Disallow: %s", path)) {
 		return false
 	}
 	return true
 }
 
-// DoRequest with safeguards
 func (b *BaseSource) DoRequest(ctx context.Context, req *http.Request, domain string, dl *DomainLimiter) (*http.Response, error) {
 	if !dl.Allow(domain) {
 		crawlerBlocksTotal.WithLabelValues("throttle", domain).Inc()
@@ -135,19 +169,59 @@ func (b *BaseSource) DoRequest(ctx context.Context, req *http.Request, domain st
 
 	if resp.StatusCode == 403 || resp.StatusCode == 429 {
 		crawlerBlocksTotal.WithLabelValues("blocked", domain).Inc()
-		logger.Log.Warn().Int("status", resp.StatusCode).Str("domain", domain).Msg("Crawler blocked")
-		adaptiveThrottleActive.Set(1) // metric active=true
-		// Adaptive: halve rate if >5% blocks (simplified check)
-		dl.throttleMultiplier = dl.throttleMultiplier * 0.5
-		if dl.throttleMultiplier < 0.1 {
-			dl.throttleMultiplier = 0.1
-		}
-		rateLimit := 10 * dl.throttleMultiplier
-		burst := int(20 * dl.throttleMultiplier)
-		dl.limiters[domain] = rate.NewLimiter(rate.Limit(rateLimit), burst)
+		log.Warn().Int("status", resp.StatusCode).Str("domain", domain).Msg("Crawler blocked")
+		dl.applyBackoff(domain)
 		time.Sleep(5 * time.Minute)
 		return nil, fmt.Errorf("blocked: %d", resp.StatusCode)
 	}
 
 	return resp, nil
+}
+
+// ---- free-function API (kept for ncs.go / ssc.go compatibility) ----
+
+// SetUserAgentAndCheck sets a rotated User-Agent header on req.
+func SetUserAgentAndCheck(req *http.Request, baseURL string) {
+	uaRotator := NewUserAgentRotator()
+	req.Header.Set("User-Agent", uaRotator.Next())
+}
+
+// CheckRobotsTxt (free function) respects robots.txt for a given base URL + path.
+func CheckRobotsTxt(baseURL, path string) bool {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	robotsURL := baseURL + "/robots.txt"
+	if !strings.HasPrefix(path, "/") {
+		path = "/" + path
+	}
+
+	req, _ := http.NewRequestWithContext(ctx, "GET", robotsURL, nil)
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		log.Warn().Err(err).Str("robots_url", robotsURL).Msg("Failed to fetch robots.txt")
+		return true
+	}
+	defer resp.Body.Close()
+
+	body, _ := io.ReadAll(resp.Body)
+	robots := string(body)
+
+	if strings.Contains(robots, "User-agent: *") && strings.Contains(robots, "Disallow: "+path) {
+		crawlerBlocksTotal.WithLabelValues("robots", baseURL).Inc()
+		return false
+	}
+	return true
+}
+
+// CheckStatusAndPause checks a response for block signals (403/429) and pauses if blocked.
+func CheckStatusAndPause(resp *http.Response, domain string) error {
+	if resp.StatusCode == 403 || resp.StatusCode == 429 {
+		crawlerBlocksTotal.WithLabelValues("blocked", domain).Inc()
+		log.Warn().Int("status", resp.StatusCode).Str("domain", domain).Msg("Crawler blocked")
+		defaultDomainLimiter.applyBackoff(domain)
+		time.Sleep(5 * time.Minute)
+		return fmt.Errorf("blocked: %d", resp.StatusCode)
+	}
+	return nil
 }

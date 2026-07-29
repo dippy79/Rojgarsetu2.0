@@ -29,10 +29,6 @@ type Source interface {
 }
 
 // BaseSource provides common functionality
-type BaseSource struct {
-	NameStr string
-	BaseURL string
-}
 
 func (b *BaseSource) Name() string {
 	return b.NameStr
