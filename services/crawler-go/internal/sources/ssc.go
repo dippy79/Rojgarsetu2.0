@@ -68,13 +68,16 @@ func (s *SSCSource) fetchFromRSS(ctx context.Context) ([]GovJobSource, error) {
 		return nil, fmt.Errorf("throttled")
 	}
 
-	if err := CheckStatusAndPause(resp, "ssc.gov.in"); err != nil {
-		return nil, err
-	}
+	// Execute HTTP Request
+	resp, err := s.client.Do(req)
 	if err != nil {
 		return nil, err
 	}
 	defer resp.Body.Close()
+
+	if err := CheckStatusAndPause(resp, "ssc.gov.in"); err != nil {
+		return nil, err
+	}
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("SSC RSS returned status: %d", resp.StatusCode)
@@ -146,7 +149,7 @@ func (s *SSCSource) fetchFromWebsite(ctx context.Context) ([]GovJobSource, error
 			continue
 		}
 
-		resp, err = s.client.Do(req)
+		resp, err := s.client.Do(req)
 		if err != nil {
 			continue
 		}

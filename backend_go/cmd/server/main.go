@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"sync"
 	"syscall"
 	"time"
@@ -96,17 +97,23 @@ func run(cfg *config.Config) error {
 	// Rate limiting
 	router.Use(middleware.RateLimitMiddleware(cfg.RateLimit))
 
-	// CORS
-	corsMiddleware := cors.New(cors.Config{
-		AllowOrigins:     []string{"http://localhost:3000", "http://127.0.0.1:3000"},
-		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization"},
-		ExposeHeaders:    []string{"Content-Length"},
-		AllowCredentials: true,
-		MaxAge:           12 * time.Hour,
-	})
-	router.Use(corsMiddleware)
-	router.Use(middleware.PrometheusMiddleware())
+	// CORS Configuration (Dynamic via Environment Variables)
+    origins := os.Getenv("CORS_ORIGINS")
+    if origins == "" {
+        origins = "http://localhost:3000,http://localhost:3001,http://127.0.0.1:3000"
+    }
+
+    corsMiddleware := cors.New(cors.Config{
+        AllowOrigins:     strings.Split(origins, ","),
+        AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
+        AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization"},
+        ExposeHeaders:    []string{"Content-Length"},
+        AllowCredentials: true,
+        MaxAge:           12 * time.Hour,
+    })
+    router.Use(corsMiddleware)
+    router.Use(middleware.PrometheusMiddleware())
+	
 
 	// Metrics endpoint
 	router.GET("/metrics", middleware.MetricsHandler())
