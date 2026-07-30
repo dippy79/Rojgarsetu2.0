@@ -22,23 +22,7 @@ jobs:
       - name: Go lint backend
         uses: golangci/golangci-lint-action@v6
         with:
-          working-directory: backend
-
-      - name: Go lint crawler
-        uses: golangci/golangci-lint-action@v6
-        with:
-          working-directory: crawler
-
-      - name: Setup Node for Linting
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-          cache-dependency-path: api-gateway/package-lock.json
-
-      - name: ESLint Node Gateway
-        working-directory: api-gateway
-        run: npm ci && npm run lint
+          working-directory: backend_go
 
   test:
     runs-on: ubuntu-latest
@@ -51,21 +35,8 @@ jobs:
           go-version: ${{ env.GO_VERSION }}
 
       - name: Go test backend
-        working-directory: backend
+        working-directory: backend_go
         run: go test ./...
-
-      - name: Go test crawler
-        working-directory: crawler
-        run: go test ./...
-
-      - name: Setup Node ${{ env.NODE_VERSION }}
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-
-      - name: Test Node gateway
-        working-directory: api-gateway
-        run: npm ci && npm test
 
   build:
     needs: [lint, test]
@@ -83,18 +54,10 @@ jobs:
       - name: Build & push backend
         uses: docker/build-push-action@v6
         with:
-          context: backend
+          context: backend_go
           file: deployment/Dockerfile.backend
           push: true
           tags: ghcr.io/${{ github.repository }}/backend:latest
-
-      - name: Build & push crawler
-        uses: docker/build-push-action@v6
-        with:
-          context: crawler
-          file: deployment/Dockerfile.crawler
-          push: true
-          tags: ghcr.io/${{ github.repository }}/crawler:latest
 
       - name: Build & push frontend
         uses: docker/build-push-action@v6
