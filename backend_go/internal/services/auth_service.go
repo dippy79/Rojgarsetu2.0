@@ -142,7 +142,7 @@ func (s *AuthService) Logout(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
 	}
-	s.tokenSvc.RevokeAllTokensForUser(c, userID)
+	_ = s.tokenSvc.RevokeAllTokensForUser(c, userID)
 	c.JSON(http.StatusOK, gin.H{"message": "Logged out all sessions"})
 }
 
