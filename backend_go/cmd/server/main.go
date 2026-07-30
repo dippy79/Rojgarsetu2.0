@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
 	"strings"
 	"sync"
 	"syscall"
@@ -53,9 +54,10 @@ func main() {
 
 	serverPort = 8083
 	if port := os.Getenv("PORT"); port != "" {
-		fmt.Sscanf(port, "%d", &serverPort)
+		if p, err := strconv.Atoi(port); err == nil {
+			serverPort = p
+		}
 	}
-
 	// Start server
 	if err := run(cfg); err != nil {
 		logger.Fatal().Err(err).Msg("Server failed")
@@ -98,22 +100,21 @@ func run(cfg *config.Config) error {
 	router.Use(middleware.RateLimitMiddleware(cfg.RateLimit))
 
 	// CORS Configuration (Dynamic via Environment Variables)
-    origins := os.Getenv("CORS_ORIGINS")
-    if origins == "" {
-        origins = "http://localhost:3000,http://localhost:3001,http://127.0.0.1:3000"
-    }
+	origins := os.Getenv("CORS_ORIGINS")
+	if origins == "" {
+		origins = "http://localhost:3000,http://localhost:3001,http://127.0.0.1:3000"
+	}
 
-    corsMiddleware := cors.New(cors.Config{
-        AllowOrigins:     strings.Split(origins, ","),
-        AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
-        AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization"},
-        ExposeHeaders:    []string{"Content-Length"},
-        AllowCredentials: true,
-        MaxAge:           12 * time.Hour,
-    })
-    router.Use(corsMiddleware)
-    router.Use(middleware.PrometheusMiddleware())
-	
+	corsMiddleware := cors.New(cors.Config{
+		AllowOrigins:     strings.Split(origins, ","),
+		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization"},
+		ExposeHeaders:    []string{"Content-Length"},
+		AllowCredentials: true,
+		MaxAge:           12 * time.Hour,
+	})
+	router.Use(corsMiddleware)
+	router.Use(middleware.PrometheusMiddleware())
 
 	// Metrics endpoint
 	router.GET("/metrics", middleware.MetricsHandler())

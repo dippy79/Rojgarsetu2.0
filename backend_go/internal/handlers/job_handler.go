@@ -40,7 +40,7 @@ func (h *JobHandler) GetJob(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 		return
 	}
-	h.svc.IncrementViews(c, id) // Fire and forget
+	_=h.svc.IncrementViews(c, id) // Fire and forget
 	c.JSON(http.StatusOK, gin.H{"data": job})
 }
 
