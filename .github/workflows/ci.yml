@@ -44,6 +44,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # GHCR ke liye repository name ko lowercase kar rahe hain
+      - name: Lowercase repo name
+        run: |
+          echo "REPO_LC=${GITHUB_REPOSITORY,,}" >> $GITHUB_ENV
+
       - name: Docker login
         uses: docker/login-action@v3
         with:
@@ -57,7 +62,7 @@ jobs:
           context: backend_go
           file: deployment/Dockerfile.backend
           push: true
-          tags: ghcr.io/${{ github.repository }}/backend:latest
+          tags: ghcr.io/${{ env.REPO_LC }}/backend:latest
 
       - name: Build & push frontend
         uses: docker/build-push-action@v6
@@ -65,4 +70,4 @@ jobs:
           context: frontend
           file: frontend/Dockerfile
           push: true
-          tags: ghcr.io/${{ github.repository }}/frontend:latest
+          tags: ghcr.io/${{ env.REPO_LC }}/frontend:latest
