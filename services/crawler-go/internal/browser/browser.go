@@ -4,11 +4,31 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"os/exec"
 	"time"
 
 	"github.com/chromedp/chromedp"
 	"github.com/rs/zerolog/log"
 )
+
+// GetChromeExecPath returns the Chrome/Chromium binary path dynamically.
+// Detection order: CHROME_BIN env var → system PATH lookup → fallback default.
+func GetChromeExecPath() string {
+	// 1. Check if user set CHROME_BIN explicitly
+	if customPath := os.Getenv("CHROME_BIN"); customPath != "" {
+		return customPath
+	}
+
+	// 2. Try looking up standard executables in system PATH
+	for _, binary := range []string{"google-chrome-stable", "google-chrome", "chromium-browser", "chromium", "chrome"} {
+		if path, err := exec.LookPath(binary); err == nil {
+			return path
+		}
+	}
+
+	// 3. Fallback default for containerized Linux environments
+	return "/usr/bin/chromium-browser"
+}
 
 // Pool manages a pool of browser contexts
 type Pool struct {
@@ -19,11 +39,8 @@ type Pool struct {
 // NewPool creates a new browser pool
 func NewPool(size int) (*Pool, error) {
 
-	// Get Chrome binary path from environment or use default
-	chromeBin := os.Getenv("CHROME_BIN")
-	if chromeBin == "" {
-		chromeBin = "/usr/bin/chromium-browser"
-	}
+	// Get Chrome binary path dynamically
+	chromeBin := GetChromeExecPath()
 
 	log.Info().Str("chromeBin", chromeBin).Msg("Initializing browser pool with Chrome binary")
 
@@ -121,11 +138,8 @@ func (p *Pool) RunBrowserTest() error {
 	log.Info().Msg("=== Browser Test Starting ===")
 	log.Info().Msg("Browser initialized")
 
-	// Get Chrome binary path
-	chromeBin := os.Getenv("CHROME_BIN")
-	if chromeBin == "" {
-		chromeBin = "/usr/bin/chromium-browser"
-	}
+	// Get Chrome binary path dynamically
+	chromeBin := GetChromeExecPath()
 	log.Info().Str("Chrome binary path detected", chromeBin).Msg("Chrome binary path detected")
 
 	// Run navigation test

@@ -5,6 +5,9 @@ on:
     branches: [ main, develop ]
   pull_request:
     branches: [ main ]
+  schedule:
+    - cron: '0 2 * * 0'  # Weekly Sunday 2AM UTC
+  workflow_dispatch:
 
 env:
   GO_VERSION: '1.23'
@@ -45,21 +48,14 @@ jobs:
         with:
           go-version: ${{ env.GO_VERSION }}
         working-directory: services/backend-go
-        run: go test ./... 
-
-      - name: Go test backend
-        uses: actions/setup-go@v5
-        with:
-          go-version: ${{ env.GO_VERSION }}
-        working-directory: services/backend-go
-        run: go test ./... 
+        run: go test ./...
 
       - name: Go test crawler
         uses: actions/setup-go@v5
         with:
           go-version: ${{ env.GO_VERSION }}
         working-directory: services/crawler-go
-        run: go test ./... 
+        run: go test ./...
 
       - name: Test Node gateway
         uses: actions/setup-node@v4
@@ -215,7 +211,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: frontend
-          file: deployment/Dockerfile.frontend
+          file: frontend/Dockerfile
           push: true
           tags: ghcr.io/${{ github.repository }}/frontend:latest
 
@@ -232,8 +228,6 @@ jobs:
   backup-verify:
     runs-on: windows-latest
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
-    schedule:
-      - cron: '0 2 * * 0'  # Weekly Sunday 2AM UTC
     steps:
       - uses: actions/checkout@v4
       
@@ -244,7 +238,6 @@ jobs:
         shell: pwsh
         run: |
           .\scripts\db-dry-run-restore.ps1
-          # Check timing <30min, row counts >100k each, schema tables exist
           if ($LASTEXITCODE -ne 0) { throw 'Restore failed' }
         env:
           S3_BUCKET: ${{ secrets.S3_BACKUP_BUCKET }}
