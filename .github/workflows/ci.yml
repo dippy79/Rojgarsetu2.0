@@ -1,88 +1,248 @@
-name: CI/CD Production
+name: RojgarSetu CI/CD
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, master, develop ]
   pull_request:
-    branches: [ main ]
+    branches: [ main, master ]
+  schedule:
+    - cron: '0 2 * * 0'  # Weekly Sunday 2AM UTC
   workflow_dispatch:
 
+env:
+  GO_VERSION: '1.23'
+  NODE_VERSION: '20'
+  JAVA_VERSION: '17'
+
 jobs:
-  backend:
-    name: Go build &amp; vet
+  lint:
     runs-on: ubuntu-latest
-    defaults:
-      run:
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Go lint backend
+        uses: golangci/golangci-lint-action@v6
+        with:
+          working-directory: services/backend-go
+
+      - name: Go lint crawler
+        uses: golangci/golangci-lint-action@v6
+        with:
+          working-directory: services/crawler-go
+
+      - name: Setup Node for Linting
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: services/api-gateway-node/package-lock.json
+
+      - name: ESLint Node Gateway
+        working-directory: services/api-gateway-node
+        run: npm ci && npm run lint
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Go ${{ env.GO_VERSION }}
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Go test backend
         working-directory: services/backend-go
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
-        with:
-          go-version: &#x27;1.24&#x27;
-          cache: true
-      - run: go mod download
-      - run: go vet ./...
-      - run: go build ./...
+        run: go test ./...
 
-  flutter-analyze:
-    name: Flutter analyze
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: mobile_app_flutter
-    steps:
-      - uses: actions/checkout@v4
-      - uses: subosito/flutter-action@v2
-        with:
-          flutter-version: &#x27;3.24.0&#x27;
-          cache: true
-      - run: flutter pub get
-      - run: flutter analyze
+      - name: Go test crawler
+        working-directory: services/crawler-go
+        run: go test ./...
 
-  flutter-release:
-    name: Build Flutter Release APK
-    if: github.ref == &#x27;refs/heads/main&#x27;
+      - name: Setup Node ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Test Node gateway
+        working-directory: services/api-gateway-node
+        run: npm ci && npm test
+
+  security_scan:
+    needs: test
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: mobile_app_flutter
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Go ${{ env.GO_VERSION }}
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: GoSec Backend
+        uses: securego/gosec-action@v1
+        with:
+          directory: services/backend-go/
+          args: '-confidence high -severity high -out gosec-backend.sarif -fmt sarif'
+
+      - name: GoSec Crawler
+        uses: securego/gosec-action@v1
+        with:
+          directory: services/crawler-go/
+          args: '-confidence high -severity high -out gosec-crawler.sarif -fmt sarif'
+
+      - name: Trivy filesystem scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          severity: 'HIGH,CRITICAL'
+          exit-code: 1
+
+      - name: Build backend for image scan
+        uses: docker/build-push-action@v6
+        with:
+          context: services/backend-go
+          file: deployment/Dockerfile.backend
+          load: true
+          tags: backend_scan:temp
+
+      - name: Trivy backend image
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: backend_scan:temp
+          severity: 'HIGH,CRITICAL'
+          exit-code: 1
+
+      - name: Build crawler for image scan
+        uses: docker/build-push-action@v6
+        with:
+          context: services/crawler-go
+          file: deployment/Dockerfile.crawler
+          load: true
+          tags: crawler_scan:temp
+
+      - name: Trivy crawler image
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: crawler_scan:temp
+          severity: 'HIGH,CRITICAL'
+          exit-code: 1
+
+      - name: Hadolint Backend Dockerfile
+        uses: hadolint/hadolint-action@v3
+        with:
+          dockerfile: deployment/Dockerfile.backend
+          fail-on: high
+
+      - name: Hadolint Crawler Dockerfile
+        uses: hadolint/hadolint-action@v3
+        with:
+          dockerfile: deployment/Dockerfile.crawler
+          fail-on: high
+
+  build:
+    needs: [lint, test, security_scan]
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: subosito/flutter-action@v2
+
+      - name: Docker login
+        uses: docker/login-action@v3
         with:
-          flutter-version: &#x27;3.24.0&#x27;
-          cache: true
-      - run: flutter pub get
-      - name: Build APK
-        run: flutter build apk --release
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build & push backend
+        uses: docker/build-push-action@v6
+        with:
+          context: services/backend-go
+          file: deployment/Dockerfile.backend
+          push: true
+          tags: ghcr.io/${{ github.repository }}/backend:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build & push crawler
+        uses: docker/build-push-action@v6
+        with:
+          context: services/crawler-go
+          file: deployment/Dockerfile.crawler
+          push: true
+          tags: ghcr.io/${{ github.repository }}/crawler:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build & push api-gateway
+        uses: docker/build-push-action@v6
+        with:
+          context: services/api-gateway-node
+          file: deployment/Dockerfile.api-gateway
+          push: true
+          tags: ghcr.io/${{ github.repository }}/api-gateway:latest
+
+      - name: Build & push auth-service
+        uses: docker/build-push-action@v6
+        with:
+          context: services/auth-java
+          file: deployment/Dockerfile.auth-service
+          push: true
+          tags: ghcr.io/${{ github.repository }}/auth-service:latest
+
+      - name: Build & push ai-engine
+        uses: docker/build-push-action@v6
+        with:
+          context: services/ai-engine-python
+          file: deployment/Dockerfile.ai-engine
+          push: true
+          tags: ghcr.io/${{ github.repository }}/ai-engine:latest
+
+      - name: Build & push frontend
+        uses: docker/build-push-action@v6
+        with:
+          context: frontend
+          file: frontend/Dockerfile
+          push: true
+          tags: ghcr.io/${{ github.repository }}/frontend:latest
+
+  deploy-staging:
+    needs: build
+    if: github.ref == 'refs/heads/develop'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to staging
+        run: echo "Deploy to staging K8s (kubectl apply)"
         env:
-          API_BASE_URL: https://api.yourdomain.com
-      - name: Upload APK artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: app-release.apk
-          path: build/app/outputs/flutter-apk/app-release.apk
+          KUBECONFIG: ${{ secrets.KUBECONFIG_STAGING }}
 
-  deploy-vps:
-    name: Deploy to VPS
-    if: github.ref == &#x27;refs/heads/main&#x27;
-    needs: [backend, flutter-analyze, flutter-release]
+  backup-verify:
+    runs-on: windows-latest
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: PowerShell setup
+        uses: microsoft/powershell@v2
+        
+      - name: WAL-G S3 Backup Verify
+        shell: pwsh
+        run: |
+          .\scripts\db-dry-run-restore.ps1
+          if ($LASTEXITCODE -ne 0) { throw 'Restore failed' }
+        env:
+          S3_BUCKET: ${{ secrets.S3_BACKUP_BUCKET }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.S3_ACCESS_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.S3_SECRET_KEY }}
+
+  healthcheck:
+    needs: deploy-staging
     runs-on: ubuntu-latest
     steps:
-      - name: Deploy via SSH
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          script: |
-            cd /opt/rojgarsetu || (echo "Repo not found, clone first" &amp;&amp; exit 1)
-            git pull origin main
-            ./deploy.sh
-            curl -f https://${{ secrets.VPS_HOST }}/health || curl -f http://${{ secrets.VPS_HOST }}/health
-
-# Required GitHub Secrets:
-# VPS_HOST (e.g. your.vps.ip)
-# VPS_USER (ubuntu/root)
-# VPS_SSH_KEY (private key)
-
+      - name: Health check
+        run: |
+          curl -f http://staging.rojgarsetu.com/health
+          curl -f http://staging.rojgarsetu.com/api/v1/gov-jobs
+        env:
+          KUBECONFIG: ${{ secrets.KUBECONFIG_STAGING }}
