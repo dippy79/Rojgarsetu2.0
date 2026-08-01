@@ -60,6 +60,9 @@ func Load() *Config {
 	if cfg.JWT.Secret == "" {
 		panic("JWT_SECRET environment variable required")
 	}
+	if len(cfg.JWT.Secret) < 32 {
+		panic("JWT_SECRET must be at least 32 characters long for security")
+	}
 	expiryStr := os.Getenv("JWT_EXPIRY_SECONDS")
 	expiry, _ := strconv.Atoi(expiryStr)
 	if expiry > 0 {

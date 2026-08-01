@@ -1,1 +1,43 @@
-import 'package:flutter/material.dart';\n\nclass AppTheme {\n  static ThemeData get lightTheme => ThemeData(\n    useMaterial3: true,\n    colorScheme: ColorScheme.fromSeed(\n      seedColor: const Color(0xFF1E88E5), // Blue for jobs\n      brightness: Brightness.light,\n      primary: const Color(0xFF1E88E5),\n      secondary: const Color(0xFFFF8F00), // Orange accent\n    ),\n    scaffoldBackgroundColor: Colors.grey[50],\n    appBarTheme: const AppBarTheme(\n      elevation: 0,\n      centerTitle: true,\n      titleTextStyle: TextStyle(\n        fontSize: 20,\n        fontWeight: FontWeight.bold,\n        color: Colors.white,\n      ),\n    ),\n    elevatedButtonTheme: ElevatedButtonThemeData(\n      style: ElevatedButton.styleFrom(\n        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),\n        shape: RoundedRectangleBorder(\n          borderRadius: BorderRadius.circular(12),\n        ),\n      ),\n    ),\n    inputDecorationTheme: InputDecorationTheme(\n      border: OutlineInputBorder(\n        borderRadius: BorderRadius.circular(12),\n      ),\n      filled: true,\n      fillColor: Colors.white,\n      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),\n    ),\n  );\n\n  static ThemeData get darkTheme => ThemeData(\n    useMaterial3: true,\n    colorScheme: ColorScheme.fromSeed(\n      seedColor: const Color(0xFF1E88E5),\n      brightness: Brightness.dark,\n    ),\n    scaffoldBackgroundColor: Colors.grey[900],\n  );\n}
+import 'package:flutter/material.dart';
+class AppTheme {
+   static ThemeData get lightTheme => ThemeData(
+       useMaterial3: true,
+        colorScheme: ColorScheme.fromSeed(
+           seedColor: const Color(0xFF1E88E5), 
+            brightness: Brightness.light,
+            primary: const Color(0xFF1E88E5),
+             secondary: const Color(0xFFFF8F00),
+               ),
+             scaffoldBackgroundColor: Colors.grey[50],
+            appBarTheme: const AppBarTheme(
+            elevation: 0,
+            centerTitle: true,
+             titleTextStyle: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+               ),
+              ),
+              elevatedButtonTheme: ElevatedButtonThemeData(
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                     ), ),
+                      ),
+                      inputDecorationTheme: InputDecorationTheme(
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),),
+                          filled: true,
+                          fillColor: Colors.white,
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                          ),
+                          );
+                          static ThemeData get darkTheme => ThemeData(
+                            useMaterial3: true,
+                            colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF1E88E5),
+                            brightness: Brightness.dark,
+                            ),
+                            scaffoldBackgroundColor: Colors.grey[900],
+                            );
+                            }

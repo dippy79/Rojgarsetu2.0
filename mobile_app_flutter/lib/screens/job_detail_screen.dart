@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../models/job.dart';
 import '../../components/status_badge.dart';
-import '../../services/api_service.dart';
 import '../../core/di/service_locator.dart';
 import '../../core/constants/api_constants.dart';
 

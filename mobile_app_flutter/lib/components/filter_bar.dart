@@ -53,7 +53,7 @@ class _FilterBarState extends State<FilterBar> {
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 decoration: BoxDecoration(
                   color: _selectedValue == null 
-                    ? theme.colorScheme.primary.withOpacity(0.1)
+                    ? theme.colorScheme. primary.withValues(alpha:0.1)
                     : Colors.grey[100],
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
@@ -86,7 +86,7 @@ class _FilterBarState extends State<FilterBar> {
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
               decoration: BoxDecoration(
                 color: isSelected 
-                  ? theme.colorScheme.primary.withOpacity(0.1)
+                  ? theme.colorScheme.primary.withValues(alpha: 0.1)
                   : Colors.grey[100],
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(

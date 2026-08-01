@@ -1,0 +1,158 @@
+warning: in the working copy of 'services/auth-java/src/main/java/com/rojgarsetu/auth/AuthController.java', LF will be replaced by CRLF the next time Git touches it
+diff --git a/services/auth-java/src/main/java/com/rojgarsetu/auth/AuthController.java b/services/auth-java/src/main/java/com/rojgarsetu/auth/AuthController.java
+index 5048c90..7284a8c 100644
+--- a/services/auth-java/src/main/java/com/rojgarsetu/auth/AuthController.java
++++ b/services/auth-java/src/main/java/com/rojgarsetu/auth/AuthController.java
+@@ -5,6 +5,7 @@ import java.util.Optional;
+ 
+ import org.springframework.beans.factory.annotation.Autowired;
+ import org.springframework.http.ResponseEntity;
++import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+ import org.springframework.web.bind.annotation.PostMapping;
+ import org.springframework.web.bind.annotation.RequestBody;
+ import org.springframework.web.bind.annotation.RequestMapping;
+@@ -17,6 +18,12 @@ public class AuthController {
+     @Autowired
+     private UserRepository userRepository;
+ 
++    @Autowired
++    private BCryptPasswordEncoder passwordEncoder;
++
++    @Autowired
++    private JwtService jwtService;
++
+     // DTO Class to safely map JSON request body without casting issues
+     static class AuthRequest {
+         private String email;
+@@ -41,7 +48,8 @@ public class AuthController {
+             return ResponseEntity.badRequest().body(Map.of("error", "Email already exists"));
+         }
+ 
+-        User user = new User(email, password, "CANDIDATE");
++        String hashed = passwordEncoder.encode(password);
++        User user = new User(email, hashed, "CANDIDATE");
+         userRepository.save(user);
+ 
+         return ResponseEntity.ok(Map.of(
+@@ -62,10 +70,15 @@ public class AuthController {
+         Optional<User> userOpt = userRepository.findByEmail(email);
+         
+         if (userOpt.isPresent()) {
+-            User user = userOpt.get(); // Explicitly returns User, not Object
+-            if (user.getPassword().equals(password)) {
++            User user = userOpt.get();
++            if (passwordEncoder.matches(password, user.getPassword())) {
++                String token = jwtService.generateToken(
++                    user.getId().toString(),
++                    user.getEmail(),
++                    user.getRole() != null ? user.getRole() : "CANDIDATE"
++                );
+                 return ResponseEntity.ok(Map.of(
+-                    "token", "dummy-jwt-token-" + user.getId(),
++                    "token", token,
+                     "role", user.getRole() != null ? user.getRole() : "CANDIDATE"
+                 ));
+             }
+warning: in the working copy of 'services/auth-java/pom.xml', LF will be replaced by CRLF the next time Git touches it
+diff --git a/services/auth-java/pom.xml b/services/auth-java/pom.xml
+index bedcab9..d33e13f 100644
+--- a/services/auth-java/pom.xml
++++ b/services/auth-java/pom.xml
+@@ -31,32 +31,53 @@
+       <artifactId>spring-boot-starter-actuator</artifactId>
+     </dependency>
+ 
+-    <!-- JPA (optional) -->
++    <!-- JPA -->
+     <dependency>
+       <groupId>org.springframework.boot</groupId>
+       <artifactId>spring-boot-starter-data-jpa</artifactId>
+     </dependency>
+ 
+-    <!-- PostgreSQL driver (optional) -->
++    <!-- PostgreSQL driver -->
+     <dependency>
+       <groupId>org.postgresql</groupId>
+       <artifactId>postgresql</artifactId>
+       <scope>runtime</scope>
+     </dependency>
+ 
+-    <!-- Security (optional) -->
++    <!-- Security (BCrypt password hashing) -->
+     <dependency>
+       <groupId>org.springframework.boot</groupId>
+       <artifactId>spring-boot-starter-security</artifactId>
+     </dependency>
+ 
+-    <!-- JWT support (optional) -->
++    <!-- BCrypt -->
++    <dependency>
++      <groupId>org.springframework.security</groupId>
++      <artifactId>spring-security-crypto</artifactId>
++    </dependency>
++
++    <!-- JWT API -->
+     <dependency>
+       <groupId>io.jsonwebtoken</groupId>
+       <artifactId>jjwt-api</artifactId>
+       <version>0.11.5</version>
+     </dependency>
+ 
++    <!-- JWT Implementation (runtime) -->
++    <dependency>
++      <groupId>io.jsonwebtoken</groupId>
++      <artifactId>jjwt-impl</artifactId>
++      <version>0.11.5</version>
++      <scope>runtime</scope>
++    </dependency>
++
++    <!-- JWT Jackson (runtime) -->
++    <dependency>
++      <groupId>io.jsonwebtoken</groupId>
++      <artifactId>jjwt-jackson</artifactId>
++      <version>0.11.5</version>
++      <scope>runtime</scope>
++    </dependency>
+   </dependencies>
+ 
+   <build>
+warning: in the working copy of 'services/auth-java/src/main/resources/application.properties', LF will be replaced by CRLF the next time Git touches it
+diff --git a/services/auth-java/src/main/resources/application.properties b/services/auth-java/src/main/resources/application.properties
+index 2942c43..c12c2e4 100644
+--- a/services/auth-java/src/main/resources/application.properties
++++ b/services/auth-java/src/main/resources/application.properties
+@@ -2,5 +2,32 @@
+ server.address=0.0.0.0
+ server.port=8081
+ 
+-# Expose health endpoint
+-management.endpoints.web.exposure.include=health
++# JWT configuration (shared with backend_go - see JwtService.java for the
++# interoperability contract: same HS256 secret, issuer, audience, and claims).
++jwt.secret=${JWT_SECRET:}
++jwt.issuer=${JWT_ISSUER:rojgarsetu-backend}
++jwt.audience=${JWT_AUDIENCE:rojgarsetu-api}
++jwt.expiry-seconds=${JWT_EXPIRY_SECONDS:86400}
++
++# Database Configuration (via environment variables in Docker)
++spring.datasource.url=${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/rojgarsetu}
++spring.datasource.username=${SPRING_DATASOURCE_USERNAME:postgres}
++spring.datasource.password=${SPRING_DATASOURCE_PASSWORD:postgres}
++spring.datasource.driver-class-name=org.postgresql.Driver
++
++# JPA/Hibernate Configuration
++spring.jpa.database-platform=org.hibernate.dialect.PostgreSQLDialect
++spring.jpa.hibernate.ddl-auto=update
++spring.jpa.show-sql=false
++spring.jpa.properties.hibernate.format_sql=false
++spring.jpa.properties.hibernate.jdbc.batch_size=20
++
++# Actuator - Health endpoint for container healthchecks
++management.endpoints.web.exposure.include=health,info
++management.endpoint.health.show-details=when-authorized
++management.health.defaults.enabled=true
++
++# Logging
++logging.level.root=INFO
++logging.level.org.springframework.security=DEBUG
++logging.level.com.rojgarsetu=DEBUG

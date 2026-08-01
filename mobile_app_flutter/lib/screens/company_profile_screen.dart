@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../core/di/service_locator.dart';
-import '../../services/api_service.dart';
 import '../../core/constants/api_constants.dart';
 
 class CompanyProfileScreen extends StatefulWidget {

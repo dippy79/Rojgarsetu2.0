@@ -54,8 +54,8 @@ func RateLimitMiddleware(rps int) gin.HandlerFunc {
 		if !limiter.Allow() {
 			c.Header("Retry-After", "60")
 			c.JSON(429, gin.H{
-				"status": "error",
-				"code":   429,
+				"status":  "error",
+				"code":    429,
 				"message": "Rate limit exceeded. Please try again later.",
 			})
 			c.Abort()
@@ -65,4 +65,3 @@ func RateLimitMiddleware(rps int) gin.HandlerFunc {
 		c.Next()
 	}
 }
-

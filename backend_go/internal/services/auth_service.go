@@ -2,6 +2,7 @@ package services
 
 import (
 	"database/sql"
+	"errors"
 	"net/http"
 	"time"
 
@@ -67,6 +68,10 @@ func (s *AuthService) Register(c *gin.Context) {
 	}
 	user, err := s.userSvc.CreateUser(c, userReq)
 	if err != nil {
+		if errors.Is(err, ErrCompanyNameExists) {
+			c.JSON(http.StatusConflict, gin.H{"error": ErrCompanyNameExists.Error()})
+			return
+		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}

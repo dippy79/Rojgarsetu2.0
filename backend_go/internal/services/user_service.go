@@ -8,6 +8,7 @@ import (
 	"database/sql"
 
 	"github.com/google/uuid"
+	"github.com/lib/pq"
 	"github.com/sqlc-dev/pqtype"
 	"golang.org/x/crypto/bcrypt"
 
@@ -21,6 +22,11 @@ type UserService struct {
 func NewUserService(d *db.PostgresDB) *UserService {
 	return &UserService{db: d}
 }
+
+// ErrCompanyNameExists is returned when a company registration uses a name that
+// already exists case-insensitively (enforced by the LOWER(name) unique index
+// created in migration 000010).
+var ErrCompanyNameExists = errors.New("a company with this name already exists")
 
 func (s *UserService) CreateUser(ctx context.Context, req db.RegisterRequest) (*db.User, error) {
 	uid := uuid.New()
@@ -40,7 +46,7 @@ func (s *UserService) CreateUser(ctx context.Context, req db.RegisterRequest) (*
 		return nil, err
 	}
 	switch req.Role {
-case "candidate":
+	case "candidate":
 		_, err = s.db.Queries.CreateCandidate(ctx, db.CreateCandidateParams{
 			UserID:            uid,
 			Phone:             sql.NullString{},
@@ -76,6 +82,13 @@ case "candidate":
 			FoundedYear:  sql.NullInt32{},
 		})
 		if err != nil {
+			// Map the case-insensitive unique violation (SQLSTATE 23505 from the
+			// LOWER(name) unique index) to a clean, user-facing error instead of
+			// leaking the raw Postgres error to the API client.
+			var pqErr *pq.Error
+			if errors.As(err, &pqErr) && pqErr.Code.Name() == "unique_violation" {
+				return nil, ErrCompanyNameExists
+			}
 			return nil, fmt.Errorf("failed to create company profile: %w", err)
 		}
 	}

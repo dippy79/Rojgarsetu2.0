@@ -3,6 +3,8 @@ const { createProxyMiddleware } = require('http-proxy-middleware');
 require('dotenv').config();
 
 const app = express();
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 const PORT = process.env.PORT || 8000;
 
 // Dynamic target URLs from env with local fallbacks
@@ -26,9 +28,16 @@ app.get('/health', (req, res) => {
   res.status(200).json({ status: 'UP', gateway: 'API Gateway Online' });
 });
 
-app.listen(PORT, () => {
-  console.log(`API Gateway running on port ${PORT}`);
-});
+// Proxy helper for JSON request bodies
+function fixRequestBody(proxyReq, req) {
+  if (!req.body || Object.keys(req.body).length === 0) {
+    return null;
+  }
+  const bodyData = JSON.stringify(req.body);
+  proxyReq.setHeader('Content-Type', 'application/json');
+  proxyReq.setHeader('Content-Length', Buffer.byteLength(bodyData));
+  return bodyData;
+}
 
 // Proxy options with retry
 const proxyOptions = {
@@ -36,9 +45,10 @@ const proxyOptions = {
   timeout: 30000,
   proxyTimeout: 30000,
   onProxyReq: (proxyReq, req) => {
-    fixRequestBody(proxyReq, req);
     if (req.headers.authorization) proxyReq.setHeader('Authorization', req.headers.authorization);
     proxyReq.setHeader('X-Forwarded-For', req.ip);
+    const bodyData = fixRequestBody(proxyReq, req);
+    if (bodyData) proxyReq.write(bodyData);
   },
   onProxyRes: (proxyRes) => { delete proxyRes.headers['x-powered-by']; },
   onError: (err, _req, res) => {
@@ -48,16 +58,28 @@ const proxyOptions = {
 };
 
 const BACKEND_TARGET = process.env.BACKEND_SERVICE_URL || 'http://backend:8083';
-app.use('/api', createProxyMiddleware({ target: BACKEND_TARGET, pathRewrite: { '^/api': '' }, ...proxyOptions }));
 
-const AUTH_TARGET = process.env.AUTH_URL || 'http://auth-service:8081';
+const AI_TARGET = process.env.AI_ENGINE_URL || process.env.AI_URL || 'http://ai-engine:8000';
+
+app.use('/api/jobs/recommendations/me', createProxyMiddleware({
+  target: AI_TARGET,
+  changeOrigin: true,
+  pathRewrite: { '^/api/jobs/recommendations/me': '/recommend/jobs' },
+  ...proxyOptions,
+}));
+
+app.use('/api', createProxyMiddleware({
+  target: BACKEND_TARGET,
+  pathRewrite: { '^/api': '' },
+  ...proxyOptions,
+  filter: (pathname) => !pathname.startsWith('/api/jobs/recommendations/me'),
+}));
+
+const AUTH_TARGET = process.env.AUTH_SERVICE_URL || process.env.AUTH_URL || 'http://auth-service:8081';
 app.use('/auth', createProxyMiddleware({ target: AUTH_TARGET, pathRewrite: { '^/auth': '' }, ...proxyOptions }));
 
-const AI_TARGET = process.env.AI_URL || 'http://ai-engine:8000';
 app.use('/ai', createProxyMiddleware({ target: AI_TARGET, pathRewrite: { '^/ai': '' }, ...proxyOptions }));
 
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use((_req, res) => res.status(404).json({ error: 'Route not found' }));
 app.use((err, _req, res, _next) => { console.error('[API Gateway] Unhandled error:', err); if (!res.headersSent) res.status(500).json({ error: 'Internal server error' }); });
 
