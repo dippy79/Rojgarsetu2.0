@@ -1,1 +1,7 @@
 com\rojgarsetu\auth\AuthServiceApplication.class
+com\rojgarsetu\auth\authentication.class
+com\rojgarsetu\auth\AuthController$AuthRequest.class
+com\rojgarsetu\auth\SecurityConfig.class
+com\rojgarsetu\auth\UserRepository.class
+com\rojgarsetu\auth\AuthController.class
+com\rojgarsetu\auth\User.class

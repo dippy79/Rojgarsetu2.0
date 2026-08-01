@@ -10,6 +10,15 @@ import (
 	"github.com/rojgarsetu/crawler/internal/sources"
 )
 
+// Max field lengths for sanitized text
+const (
+	maxTitleLen       = 500
+	maxCompanyLen     = 300
+	maxLocationLen    = 300
+	maxEligibilityLen = 2000
+	maxDescriptionLen = 10000
+)
+
 // Job represents a parsed job
 type Job struct {
 	Source         string    `json:"source"`
@@ -25,20 +34,20 @@ type Job struct {
 	PostedAt       time.Time `json:"posted_at"`
 }
 
-// ParseJob converts JobSource to Job
+// ParseJob converts JobSource to Job, sanitizing all text fields
 func ParseJob(source *sources.JobSource) *Job {
 	if source == nil {
 		return nil
 	}
 
 	job := &Job{
-		Source:         source.Source,
-		Title:          strings.TrimSpace(source.Title),
-		Company:        strings.TrimSpace(source.Company),
-		Location:       strings.TrimSpace(source.Location),
+		Source:         strings.TrimSpace(source.Source),
+		Title:          sources.SanitizeString(source.Title, maxTitleLen),
+		Company:        sources.SanitizeString(source.Company, maxCompanyLen),
+		Location:       sources.SanitizeString(source.Location, maxLocationLen),
 		JobType:        normalizeJobType(source.JobType),
-		Eligibility:    strings.TrimSpace(source.Eligibility),
-		Description:    strings.TrimSpace(source.Description),
+		Eligibility:    sources.SanitizeString(source.Eligibility, maxEligibilityLen),
+		Description:    sources.SanitizeString(source.Description, maxDescriptionLen),
 		ApplicationURL: strings.TrimSpace(source.ApplicationURL),
 		PostedAt:       time.Now(),
 	}

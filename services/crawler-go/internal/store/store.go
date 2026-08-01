@@ -51,7 +51,19 @@ func (s *PostgresStore) SaveJob(job *parser.Job) error {
 		return fmt.Errorf("job is nil")
 	}
 
-	companyID, err := s.getOrCreateCompany(job.Company)
+	// Start a database transaction for atomicity
+	tx, err := s.db.Begin()
+	if err != nil {
+		return fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer func() {
+		if err != nil {
+			_ = tx.Rollback()
+			log.Printf("ERROR: transaction rolled back for job '%s': %v", job.Title, err)
+		}
+	}()
+
+	companyID, err := s.getOrCreateCompanyTx(tx, job.Company)
 	if err != nil {
 		log.Printf("ERROR: company insert failed for '%s': %v", job.Company, err)
 		return fmt.Errorf("failed to get/create company: %w", err)
@@ -78,7 +90,7 @@ func (s *PostgresStore) SaveJob(job *parser.Job) error {
 
 	var jobID string
 
-	err = s.db.QueryRow(
+	err = tx.QueryRow(
 		query,
 		job.Title,
 		companyID,
@@ -98,7 +110,53 @@ func (s *PostgresStore) SaveJob(job *parser.Job) error {
 		return fmt.Errorf("failed to save job: %w", err)
 	}
 
+	// Commit the transaction
+	if err := tx.Commit(); err != nil {
+		log.Printf("ERROR: transaction commit failed for '%s': %v", job.Title, err)
+		return fmt.Errorf("failed to commit transaction: %w", err)
+	}
+
 	return nil
+}
+
+func (s *PostgresStore) getOrCreateCompanyTx(tx *sql.Tx, name string) (string, error) {
+
+	name = strings.TrimSpace(name)
+	if name == "" {
+		name = "Unknown Company"
+	}
+
+	// Normalize name for case-insensitive comparison
+	normalizedName := strings.ToLower(name)
+
+	var id string
+
+	// First try to find an existing company with case-insensitive match
+	err := tx.QueryRow(`
+        SELECT id FROM companies WHERE LOWER(name) = $1
+    `, normalizedName).Scan(&id)
+
+	if err == nil {
+		// Found existing company, return its ID
+		return id, nil
+	}
+
+	if err != sql.ErrNoRows {
+		return "", fmt.Errorf("failed to lookup company: %w", err)
+	}
+
+	// Company not found, insert it
+	err = tx.QueryRow(`
+        INSERT INTO companies (name)
+        VALUES ($1)
+        RETURNING id
+    `, name).Scan(&id)
+
+	if err != nil {
+		return "", fmt.Errorf("failed to create company: %w", err)
+	}
+
+	return id, nil
 }
 
 func (s *PostgresStore) getOrCreateCompany(name string) (string, error) {

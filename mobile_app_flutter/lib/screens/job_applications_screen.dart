@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
 import '../../core/di/service_locator.dart';
-import '../../services/api_service.dart';
 import '../../core/constants/api_constants.dart';
 import '../../components/status_badge.dart';
 

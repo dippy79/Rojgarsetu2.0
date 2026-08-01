@@ -68,12 +68,20 @@ func (s *NaukriSource) Fetch(ctx context.Context) ([]JobSource, error) {
 
 		log.Info().Msg("Page loaded successfully")
 
-		// Wait for content to fully load using Action
-		// Naukri uses JavaScript rendering, so we need to wait
-		log.Debug().Msg("Waiting for JavaScript content to render")
-
-		// Wait a bit for dynamic content
-		time.Sleep(3 * time.Second)
+		// Wait for content to fully load using chromedp proper wait conditions
+		// instead of a hardcoded time.Sleep. Wait for the target job card selectors.
+		selectors := []string{".jobTuple", ".srp-jobtuple", "[data-job-id]", ".styles_jobTuple", ".job-card", ".job-card-wrapper", ".tuple", "article", ".jobTupleHeader"}
+		waitCtx, waitCancel := context.WithTimeout(ctx, 10*time.Second)
+		for _, sel := range selectors {
+			err := chromedp.Run(waitCtx,
+				chromedp.WaitVisible(sel, chromedp.ByQuery),
+			)
+			if err == nil {
+				log.Debug().Str("selector", sel).Msg("Found visible element via WaitVisible")
+				break
+			}
+		}
+		waitCancel()
 
 		// Get page content using chromedp.Run
 		var html string
@@ -215,6 +223,7 @@ func (s *NaukriSource) Crawl(ctx context.Context) error {
 		// Load page and get HTML
 		err := chromedp.Run(ctx,
 			chromedp.Navigate("https://www.naukri.com/jobs-in-india"),
+			chromedp.WaitVisible(".jobTuple, .srp-jobtuple, [data-job-id], .styles_jobTuple, .job-card, .job-card-wrapper, .tuple, article, .jobTupleHeader", chromedp.ByQueryAll),
 			chromedp.OuterHTML("html", &html),
 		)
 
@@ -239,3 +248,4 @@ func (s *NaukriSource) Crawl(ctx context.Context) error {
 		return nil
 	})
 }
+

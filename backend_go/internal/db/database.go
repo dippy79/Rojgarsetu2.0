@@ -1,4 +1,4 @@
-﻿// Code generated manually. DO NOT EDIT SQLC FILES.
+// Code generated manually. DO NOT EDIT SQLC FILES.
 package db
 
 import (
@@ -12,11 +12,17 @@ import (
 // PostgresDB wraps *Queries and adds helper methods with filters + pagination.
 type PostgresDB struct {
 	Queries *Queries
+	DB      *sql.DB
 }
 
 // NewPostgresDB creates a PostgresDB from a *sql.DB connection.
 func NewPostgresDB(db *sql.DB) *PostgresDB {
-	return &PostgresDB{Queries: New(db)}
+	return &PostgresDB{Queries: New(db), DB: db}
+}
+
+// GetDB returns the underlying *sql.DB connection for raw queries
+func (p *PostgresDB) GetDB() *sql.DB {
+	return p.DB
 }
 
 // ── pagination helper ────────────────────────────────────────────────────────

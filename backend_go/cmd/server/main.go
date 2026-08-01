@@ -16,6 +16,9 @@ import (
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/golang-migrate/migrate/v4"
+	_ "github.com/golang-migrate/migrate/v4/database/postgres"
+	_ "github.com/golang-migrate/migrate/v4/source/file"
 	_ "github.com/lib/pq"
 	"github.com/rojgarsetu/backend/config"
 	"github.com/rojgarsetu/backend/internal/db"
@@ -47,6 +50,11 @@ func main() {
 		return
 	}
 
+	if err := runMigrations(dbURL); err != nil {
+		logger.Fatal().Err(err).Msg("Database migration failed")
+		return
+	}
+
 	redisURL = os.Getenv("REDIS_URL")
 	if redisURL == "" {
 		redisURL = "redis://localhost:6379"
@@ -62,6 +70,35 @@ func main() {
 	if err := run(cfg); err != nil {
 		logger.Fatal().Err(err).Msg("Server failed")
 	}
+}
+
+func runMigrations(dbURL string) error {
+	migrationsPath := os.Getenv("MIGRATIONS_PATH")
+	if migrationsPath == "" {
+		migrationsPath = "file://./migrations"
+	}
+	logger.Info().Str("migrations_path", migrationsPath).Msg("Running database migrations")
+
+	m, err := migrate.New(migrationsPath, dbURL)
+	if err != nil {
+		return fmt.Errorf("failed to initialize migrations: %w", err)
+	}
+	defer func() {
+		if _, err := m.Close(); err != nil {
+			logger.Warn().Err(err).Msg("failed to close migration instance")
+		}
+	}()
+
+	if err := m.Up(); err != nil {
+		if err == migrate.ErrNoChange {
+			logger.Info().Msg("Database migrations already up to date")
+			return nil
+		}
+		return fmt.Errorf("migration up failed: %w", err)
+	}
+
+	logger.Info().Msg("Database migrations applied successfully")
+	return nil
 }
 
 func run(cfg *config.Config) error {
@@ -172,12 +209,14 @@ func run(cfg *config.Config) error {
 				privJobService := services.NewPrivJobService(database)
 				courseService := services.NewCourseService(database)
 				videoService := services.NewVideoService(database)
+				searchService := services.NewSearchService(database)
 
 				// Initialize handlers
 				govJobHandler := handlers.NewGovJobHandler(govJobService)
 				privJobHandler := handlers.NewPrivJobHandler(privJobService)
 				courseHandler := handlers.NewCourseHandler(courseService)
 				videoHandler := handlers.NewVideoHandler(videoService)
+				searchHandler := handlers.NewSearchHandler(searchService)
 
 				// Register DB-dependent routes
 				api := router.Group("/api/v1")
@@ -190,6 +229,8 @@ func run(cfg *config.Config) error {
 					api.GET("/courses/:id", courseHandler.GetCourseByID)
 					api.GET("/videos", videoHandler.GetVideos)
 					api.GET("/videos/:id", videoHandler.GetVideoByID)
+					api.POST("/search", searchHandler.Search)
+					api.GET("/search", searchHandler.SearchGET)
 				}
 				logger.Info().Msg("API routes registered")
 				return

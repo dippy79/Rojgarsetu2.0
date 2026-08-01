@@ -8,7 +8,9 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"unicode"
 
+	"github.com/PuerkitoBio/goquery"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/rs/zerolog/log"
@@ -224,4 +226,58 @@ func CheckStatusAndPause(resp *http.Response, domain string) error {
 		return fmt.Errorf("blocked: %d", resp.StatusCode)
 	}
 	return nil
+}
+
+// SanitizeString strips HTML tags using goquery, trims whitespace, normalizes
+// whitespace runs, and limits length to maxLen. Uses goquery (already vendored
+// for naukri.go) rather than a regex `<[^>]*>` approach, because regex-based
+// tag stripping fails on malformed/nested HTML fragments commonly found in
+// scraped web data.
+func SanitizeString(input string, maxLen int) string {
+	if input == "" {
+		return ""
+	}
+
+	// Use goquery to parse HTML and extract clean text content.
+	// goquery.NewDocumentFromReader internally uses html.Parse which handles
+	// malformed/nested HTML correctly.
+	doc, err := goquery.NewDocumentFromReader(strings.NewReader(input))
+	if err != nil {
+		// If parsing fails (e.g. binary data), fall back to a simple
+		// whitespace-trimmed version of the input.
+		return strings.TrimSpace(input)
+	}
+
+	// Extract all text nodes, joined with spaces.
+	text := doc.Text()
+
+	// Normalize whitespace: collapse runs of whitespace to single space.
+	// Also trim leading/trailing whitespace.
+	var b strings.Builder
+	b.Grow(len(text))
+	inSpace := false
+	for _, r := range text {
+		if unicode.IsSpace(r) {
+			if !inSpace {
+				b.WriteRune(' ')
+				inSpace = true
+			}
+		} else {
+			b.WriteRune(r)
+			inSpace = false
+		}
+	}
+	result := strings.TrimSpace(b.String())
+
+	// Limit length to maxLen. If truncated, try to cut at a word boundary.
+	if maxLen > 0 && len(result) > maxLen {
+		truncated := result[:maxLen]
+		// Back up to the last space to avoid cutting mid-word (if possible).
+		if lastSpace := strings.LastIndex(truncated, " "); lastSpace > maxLen/2 {
+			truncated = truncated[:lastSpace]
+		}
+		result = truncated + "..."
+	}
+
+	return result
 }

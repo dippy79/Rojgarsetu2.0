@@ -5,6 +5,7 @@ import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -16,6 +17,12 @@ public class AuthController {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private BCryptPasswordEncoder passwordEncoder;
+
+    @Autowired
+    private JwtService jwtService;
 
     // DTO Class to safely map JSON request body without casting issues
     static class AuthRequest {
@@ -41,7 +48,8 @@ public class AuthController {
             return ResponseEntity.badRequest().body(Map.of("error", "Email already exists"));
         }
 
-        User user = new User(email, password, "CANDIDATE");
+        String hashed = passwordEncoder.encode(password);
+        User user = new User(email, hashed, "CANDIDATE");
         userRepository.save(user);
 
         return ResponseEntity.ok(Map.of(
@@ -62,10 +70,15 @@ public class AuthController {
         Optional<User> userOpt = userRepository.findByEmail(email);
         
         if (userOpt.isPresent()) {
-            User user = userOpt.get(); // Explicitly returns User, not Object
-            if (user.getPassword().equals(password)) {
+            User user = userOpt.get();
+            if (passwordEncoder.matches(password, user.getPassword())) {
+                String token = jwtService.generateToken(
+                    user.getId().toString(),
+                    user.getEmail(),
+                    user.getRole() != null ? user.getRole() : "CANDIDATE"
+                );
                 return ResponseEntity.ok(Map.of(
-                    "token", "dummy-jwt-token-" + user.getId(),
+                    "token", token,
                     "role", user.getRole() != null ? user.getRole() : "CANDIDATE"
                 ));
             }

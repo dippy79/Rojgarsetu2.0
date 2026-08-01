@@ -11,6 +11,7 @@ part 'courses_state.dart';
 
 class CoursesBloc extends Bloc<CoursesEvent, CoursesState> {
   final ApiService _apiService = sl<ApiService>();
+  
 
   CoursesBloc() : super(CoursesInitial()) {
     on<FetchCourses>(_onFetchCourses);
