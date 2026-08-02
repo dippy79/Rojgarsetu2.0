@@ -11,6 +11,11 @@
 --
 -- WARNING: This migration will DELETE duplicate company rows. Ensure
 -- you have a backup before running on production.
+--
+-- NOTE: an earlier version of this migration also re-pointed a generic
+-- "jobs" table, but no such table exists in this schema (crawler-scraped
+-- jobs live in company_jobs / jobs_government / jobs_private, all handled
+-- separately). That step has been removed.
 
 BEGIN;
 
@@ -37,21 +42,12 @@ updated_jobs AS (
     FROM non_canonical nc
     WHERE company_jobs.company_id = nc.duplicate_id
     RETURNING company_jobs.id
-),
--- Step 4: Update the jobs table (crawler-scraped jobs) to re-point
--- to canonical company IDs (if they reference companies directly)
-updated_jobs_table AS (
-    UPDATE jobs
-    SET company_id = nc.canonical_id
-    FROM non_canonical nc
-    WHERE jobs.company_id = nc.duplicate_id
-    RETURNING jobs.id
 )
--- Step 5: Delete the non-canonical duplicate company rows
+-- Step 4: Delete the non-canonical duplicate company rows
 DELETE FROM companies
 WHERE id IN (SELECT duplicate_id FROM non_canonical);
 
--- Step 6: Create the unique index on LOWER(name) to prevent future duplicates
+-- Step 5: Create the unique index on LOWER(name) to prevent future duplicates
 -- Using a unique index instead of a UNIQUE constraint because it allows
 -- easier online creation and can be used by ON CONFLICT in INSERT statements.
 CREATE UNIQUE INDEX IF NOT EXISTS idx_companies_name_lower_unique

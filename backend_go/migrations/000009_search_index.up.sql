@@ -4,6 +4,32 @@
 
 CREATE EXTENSION IF NOT EXISTS pg_trgm;
 
+-- Create jobs_private table (missing from earlier migrations — required by
+-- priv_jobs.sql.go's GetPrivJobs/GetPrivJobByID/GetPrivJobsCount queries)
+CREATE TABLE IF NOT EXISTS jobs_private (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    company TEXT NOT NULL,
+    title TEXT NOT NULL,
+    location TEXT,
+    url TEXT,
+    salary TEXT,
+    experience TEXT,
+    job_type TEXT,
+    skills TEXT[],
+    description TEXT,
+    source TEXT NOT NULL,
+    is_active BOOLEAN DEFAULT true,
+    posted_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_jobs_private_company ON jobs_private(company);
+CREATE INDEX IF NOT EXISTS idx_jobs_private_location ON jobs_private(location);
+CREATE INDEX IF NOT EXISTS idx_jobs_private_source ON jobs_private(source);
+CREATE INDEX IF NOT EXISTS idx_jobs_private_is_active ON jobs_private(is_active);
+CREATE INDEX IF NOT EXISTS idx_jobs_private_created_at ON jobs_private(created_at DESC);
+
 -- Add tsvector columns for full-text search on company_jobs
 ALTER TABLE company_jobs ADD COLUMN IF NOT EXISTS search_vector tsvector;
 
