@@ -33,6 +33,7 @@ class JobRecord(BaseModel):
     skills: Optional[List[str]] = []
     description: Optional[str] = ""
     job_type: Optional[str] = ""
+    source_table: Optional[str] = ""
 
 
 def get_db_connection():
@@ -56,21 +57,49 @@ def fetch_jobs_from_db() -> List[JobRecord]:
         with conn.cursor() as cur:
             cur.execute("""
                 SELECT
-                    cj.id::text,
-                    cj.title,
-                    COALESCE(cj.location, '') as location,
-                    COALESCE(cj.skills, '{}') as skills,
-                    COALESCE(cj.description, '') as description,
-                    COALESCE(cj.job_type, '') as job_type
+                    cj.id::text AS id,
+                    COALESCE(cj.title, '') AS title,
+                    COALESCE(cj.location, '') AS location,
+                    COALESCE(cj.skills, '{}') AS skills,
+                    COALESCE(cj.description, '') AS description,
+                    COALESCE(cj.job_type, '') AS job_type,
+                    'company_jobs' AS source_table
                 FROM company_jobs cj
                 WHERE cj.is_active = true
-                ORDER BY cj.created_at DESC
+
+                UNION ALL
+
+                SELECT
+                    pj.id::text AS id,
+                    COALESCE(pj.title, '') AS title,
+                    COALESCE(pj.location, '') AS location,
+                    COALESCE(pj.skills, '{}') AS skills,
+                    COALESCE(pj.description, '') AS description,
+                    COALESCE(pj.job_type, '') AS job_type,
+                    'jobs_private' AS source_table
+                FROM jobs_private pj
+                WHERE pj.is_active = true
+
+                UNION ALL
+
+                SELECT
+                    gj.id::text AS id,
+                    COALESCE(gj.title, '') AS title,
+                    COALESCE(gj.location, '') AS location,
+                    '{}'::text[] AS skills,
+                    TRIM(
+                        COALESCE(gj.eligibility, '') || ' ' || COALESCE(gj.department, '')
+                    ) AS description,
+                    '' AS job_type,
+                    'jobs_government' AS source_table
+                FROM jobs_government gj
+                WHERE gj.is_active = true
                 LIMIT 200
             """)
             rows = cur.fetchall()
             jobs = []
             for row in rows:
-                job_id, title, location, skills, description, job_type = row
+                job_id, title, location, skills, description, job_type, source_table = row
                 # skills comes from PostgreSQL as a list (text[])
                 if isinstance(skills, str):
                     # Handle case where it's returned as a string
@@ -83,7 +112,8 @@ def fetch_jobs_from_db() -> List[JobRecord]:
                     location=location or "",
                     skills=skills_list,
                     description=description or "",
-                    job_type=job_type or ""
+                    job_type=job_type or "",
+                    source_table=source_table or ""
                 ))
             return jobs
     except Exception as e:
@@ -178,6 +208,7 @@ def recommend_jobs_from_db(user_skills: List[str], preferred_locations: List[str
                 "title": job.title,
                 "location": job.location,
                 "job_type": job.job_type,
+                "source_table": job.source_table,
                 "match_score": round(score, 2),
                 "matched_skills": list(user_skills_set.intersection(job_skills_set))
             })
