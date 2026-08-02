@@ -29,3 +29,4 @@ ALTER TABLE company_jobs DROP COLUMN IF EXISTS search_vector;
 ALTER TABLE jobs_government DROP COLUMN IF EXISTS search_vector;
 ALTER TABLE jobs_private DROP COLUMN IF EXISTS search_vector;
 
+DROP TABLE IF EXISTS jobs_private;

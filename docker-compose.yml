@@ -147,8 +147,9 @@
     environment:
       CHROME_BIN: /usr/bin/chromium-browser
       PORT: 8080
-      POSTGRES_URL: postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-rojgarsetu}?sslmode=disable
+      DATABASE_URL: ${DATABASE_URL}
       REDIS_URL: redis://redis:6379
+      CRAWL_INTERVAL_HOURS: 6
     depends_on:
       postgres:
         condition: service_healthy
