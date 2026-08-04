@@ -33,7 +33,13 @@ func (h *VideoHandler) GetVideos(c *gin.Context) {
 	}
 
 	pagination := db.NewPagination(page, limit, total)
-	c.JSON(http.StatusOK, db.SuccessResponse(videos, &pagination))
+
+	respVideos := make([]VideoResponse, 0, len(videos))
+	for _, v := range videos {
+		respVideos = append(respVideos, toVideoResponse(v))
+	}
+
+	c.JSON(http.StatusOK, db.SuccessResponse(respVideos, &pagination))
 }
 
 func (h *VideoHandler) GetVideoByID(c *gin.Context) {
@@ -45,5 +51,5 @@ func (h *VideoHandler) GetVideoByID(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, db.SuccessResponse(video, nil))
+	c.JSON(http.StatusOK, db.SuccessResponse(toVideoByIDResponse(*video), nil))
 }

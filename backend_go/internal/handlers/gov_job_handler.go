@@ -34,7 +34,13 @@ func (h *GovJobHandler) GetGovJobs(c *gin.Context) {
 	}
 
 	pagination := db.NewPagination(page, limit, total)
-	c.JSON(http.StatusOK, db.SuccessResponse(jobs, &pagination))
+
+	respJobs := make([]GovJobResponse, 0, len(jobs))
+	for _, j := range jobs {
+		respJobs = append(respJobs, toGovJobResponse(j))
+	}
+
+	c.JSON(http.StatusOK, db.SuccessResponse(respJobs, &pagination))
 }
 
 func (h *GovJobHandler) GetGovJobByID(c *gin.Context) {
@@ -46,5 +52,5 @@ func (h *GovJobHandler) GetGovJobByID(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, db.SuccessResponse(job, nil))
+	c.JSON(http.StatusOK, db.SuccessResponse(toGovJobByIDResponse(*job), nil))
 }

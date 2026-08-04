@@ -34,7 +34,13 @@ func (h *CourseHandler) GetCourses(c *gin.Context) {
 	}
 
 	pagination := db.NewPagination(page, limit, total)
-	c.JSON(http.StatusOK, db.SuccessResponse(courses, &pagination))
+
+	respCourses := make([]CourseResponse, 0, len(courses))
+	for _, c := range courses {
+		respCourses = append(respCourses, toCourseResponse(c))
+	}
+
+	c.JSON(http.StatusOK, db.SuccessResponse(respCourses, &pagination))
 }
 
 func (h *CourseHandler) GetCourseByID(c *gin.Context) {
@@ -46,5 +52,5 @@ func (h *CourseHandler) GetCourseByID(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, db.SuccessResponse(course, nil))
+	c.JSON(http.StatusOK, db.SuccessResponse(toCourseByIDResponse(*course), nil))
 }

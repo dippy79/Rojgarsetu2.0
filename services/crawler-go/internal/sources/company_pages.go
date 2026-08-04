@@ -2,8 +2,11 @@ package sources
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
+	"regexp"
 	"strings"
 	"time"
 
@@ -153,7 +156,145 @@ func (s *CompanyPagesSource) parseHTMLJobs(html, companyName, baseURL string) []
 		}
 	}
 
+	// If no jobs found via regex (e.g. server-rendered page with JSON-LD),
+	// try parsing structured data embedded in <script type="application/ld+json">.
+	if len(jobs) == 0 {
+		jobs = s.parseJSONLDJobs(html, companyName, baseURL)
+	}
+
 	return jobs
+}
+
+// jsonLDJob mirrors the subset of schema.org JobPosting we care about.
+type jsonLDJob struct {
+	Context        string `json:"@context"`
+	Type           string `json:"@type"`
+	Title          string `json:"title"`
+	Description    string `json:"description"`
+	DatePosted     string `json:"datePosted"`
+	ValidThrough   string `json:"validThrough"`
+	EmploymentType string `json:"employmentType"`
+	HiringOrg      struct {
+		Name string `json:"name"`
+	} `json:"hiringOrganization"`
+	JobLocation struct {
+		Type    string `json:"@type"`
+		Address struct {
+			AddressLocality string `json:"addressLocality"`
+			AddressRegion   string `json:"addressRegion"`
+			AddressCountry  string `json:"addressCountry"`
+		} `json:"address"`
+	} `json:"jobLocation"`
+	BaseSalary struct {
+		Currency string `json:"currency"`
+		Value    struct {
+			MinValue float64 `json:"minValue"`
+			MaxValue float64 `json:"maxValue"`
+		} `json:"value"`
+	} `json:"baseSalary"`
+}
+
+// parseJSONLDJobs extracts schema.org JobPosting entries from JSON-LD blocks
+// embedded in the server-rendered HTML. This is a defensive fallback for
+// companies that expose job data via structured data rather than static
+// HTML anchors.
+func (s *CompanyPagesSource) parseJSONLDJobs(html, companyName, baseURL string) []PrivJobSource {
+	var jobs []PrivJobSource
+
+	// Match each <script type="application/ld+json">...</script> block.
+	ldRe := regexp.MustCompile(`(?s)<script[^>]*type=["']application/ld\+json["'][^>]*>(.*?)</script>`)
+	blocks := ldRe.FindAllStringSubmatch(html, -1)
+
+	for _, block := range blocks {
+		if len(block) < 2 {
+			continue
+		}
+		raw := strings.TrimSpace(block[1])
+
+		// Try to unmarshal a single JobPosting object.
+		var single jsonLDJob
+		if err := json.Unmarshal([]byte(raw), &single); err == nil && single.isJobPosting() {
+			if job := s.jsonLDToPrivJob(single, companyName, baseURL); job != nil {
+				jobs = append(jobs, *job)
+			}
+			continue
+		}
+
+		// Try to unmarshal an array of JobPosting objects.
+		var arr []jsonLDJob
+		if err := json.Unmarshal([]byte(raw), &arr); err == nil {
+			for _, item := range arr {
+				if !item.isJobPosting() {
+					continue
+				}
+				if job := s.jsonLDToPrivJob(item, companyName, baseURL); job != nil {
+					jobs = append(jobs, *job)
+				}
+			}
+		}
+	}
+
+	if len(jobs) > 0 {
+		log.Info().Int("jsonldJobs", len(jobs)).Str("company", companyName).Msg("Parsed jobs from JSON-LD")
+	}
+	return jobs
+}
+
+func (j *jsonLDJob) isJobPosting() bool {
+	return j.Type == "JobPosting" && j.Title != ""
+}
+
+func (s *CompanyPagesSource) jsonLDToPrivJob(j jsonLDJob, companyName, baseURL string) *PrivJobSource {
+	// Resolve the company name: prefer the JSON-LD hiring organization name,
+	// falling back to the configured company name.
+	company := companyName
+	if j.HiringOrg.Name != "" {
+		company = j.HiringOrg.Name
+	}
+
+	// Derive location from the JSON-LD address, if present.
+	location := ""
+	if j.JobLocation.Address.AddressLocality != "" {
+		location = j.JobLocation.Address.AddressLocality
+		if j.JobLocation.Address.AddressRegion != "" {
+			location += ", " + j.JobLocation.Address.AddressRegion
+		}
+	}
+
+	var postedAt *time.Time
+	if t, err := time.Parse(time.RFC3339, j.DatePosted); err == nil {
+		postedAt = &t
+	}
+
+	salary := ""
+	if j.BaseSalary.Value.MinValue > 0 || j.BaseSalary.Value.MaxValue > 0 {
+		if j.BaseSalary.Value.MinValue > 0 && j.BaseSalary.Value.MaxValue > 0 {
+			salary = fmt.Sprintf("%.0f-%.0f %s", j.BaseSalary.Value.MinValue, j.BaseSalary.Value.MaxValue, j.BaseSalary.Currency)
+		} else if j.BaseSalary.Value.MinValue > 0 {
+			salary = fmt.Sprintf("%.0f %s", j.BaseSalary.Value.MinValue, j.BaseSalary.Currency)
+		}
+	}
+
+	desc := SanitizeString(j.Description, 2000)
+
+	job := &PrivJobSource{
+		Source:      "company_" + strings.ToLower(strings.ReplaceAll(company, " ", "_")),
+		Company:     company,
+		Title:       j.Title,
+		Location:    location,
+		URL:         baseURL, // fallback; callers with a real URL should override
+		Salary:      salary,
+		Experience:  "",
+		JobType:     normalizeJobType(j.EmploymentType),
+		Description: desc,
+		PostedAt:    postedAt,
+		CreatedAt:   time.Now(),
+	}
+
+	if isValidPrivJob(job) {
+		return job
+	}
+	return nil
 }
 
 // Name returns the source name

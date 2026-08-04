@@ -34,21 +34,17 @@ func NewEmploymentNewsSource() *EmploymentNewsSource {
 func (s *EmploymentNewsSource) Fetch(ctx context.Context) ([]GovJobSource, error) {
 	log.Info().Msg("Starting crawl for source: Employment News")
 
-	var jobs []GovJobSource
-
-	rssJobs, err := s.fetchFromRSS(ctx)
-	if err != nil {
-		log.Warn().Err(err).Msg("Employment News RSS fetch failed, trying website")
-		rssJobs, err = s.fetchFromWebsite(ctx)
-		if err != nil {
-			log.Error().Err(err).Msg("All Employment News fetch methods failed")
-			return nil, fmt.Errorf("failed to fetch from Employment News: %w", err)
-		}
-	}
-
-	jobs = append(jobs, rssJobs...)
-	log.Info().Int("totalJobs", len(jobs)).Msg("Employment News fetch completed")
-	return jobs, nil
+	// FLAG (Phase A): The Employment News RSS + website endpoints are dead.
+	//   - https://www.employmentnews.gov.in/rss/eng/weekly-vacancy.xml -> 404 (verified live)
+	//   - https://www.employmentnews.gov.in/ (site root) -> 404 (verified live)
+	// The portal's current structure does not expose a plain-HTTP RSS/HTML feed
+	// this fetcher can reach. Rather than silently returning 0 jobs, surface a
+	// clear diagnostic so the RunSummary flags this source as needing a different
+	// approach (e.g. a maintained aggregate feed or browser-driven crawl of the
+	// weekly-vacancy PDF listings). No code change here resurrects it.
+	err := fmt.Errorf("Employment News feed is dead: /rss/eng/weekly-vacancy.xml=404, site root=404 (verified live). Portal requires a different approach (maintained aggregate feed or browser-driven crawl of weekly-vacancy PDFs).")
+	log.Warn().Msg(err.Error())
+	return nil, err
 }
 
 // fetchFromRSS fetches from Employment News RSS feed

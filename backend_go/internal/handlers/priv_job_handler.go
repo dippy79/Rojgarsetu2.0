@@ -35,7 +35,13 @@ func (h *PrivJobHandler) GetPrivJobs(c *gin.Context) {
 	}
 
 	pagination := db.NewPagination(page, limit, total)
-	c.JSON(http.StatusOK, db.SuccessResponse(jobs, &pagination))
+
+	respJobs := make([]PrivJobResponse, 0, len(jobs))
+	for _, j := range jobs {
+		respJobs = append(respJobs, toPrivJobResponse(j))
+	}
+
+	c.JSON(http.StatusOK, db.SuccessResponse(respJobs, &pagination))
 }
 
 func (h *PrivJobHandler) GetPrivJobByID(c *gin.Context) {
@@ -47,5 +53,5 @@ func (h *PrivJobHandler) GetPrivJobByID(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, db.SuccessResponse(job, nil))
+	c.JSON(http.StatusOK, db.SuccessResponse(toPrivJobByIDResponse(*job), nil))
 }

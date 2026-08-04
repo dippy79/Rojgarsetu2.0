@@ -47,22 +47,18 @@ func NewNCSSource() *NCSSource {
 func (s *NCSSource) Fetch(ctx context.Context) ([]GovJobSource, error) {
 	log.Info().Msg("Starting crawl for source: NCS (National Career Service)")
 
-	var jobs []GovJobSource
-
-	// Try RSS feed first
-	rssJobs, err := s.fetchFromRSS(ctx)
-	if err != nil {
-		log.Warn().Err(err).Msg("RSS fetch failed, trying alternative")
-		rssJobs, err = s.fetchFromAlternative(ctx)
-		if err != nil {
-			log.Error().Err(err).Msg("All NCS fetch methods failed")
-			return nil, fmt.Errorf("failed to fetch from NCS: %w", err)
-		}
-	}
-
-	jobs = append(jobs, rssJobs...)
-	log.Info().Int("totalJobs", len(jobs)).Msg("NCS fetch completed")
-	return jobs, nil
+	// FLAG (Phase A): The legacy NCS endpoints are dead.
+	//   - https://www.ncs.gov.in/feeds/rss/jobs  -> 404 (verified live)
+	//   - https://www.ncs.gov.in/_v/api/JobSearch/ -> 404 (verified live)
+	//   - https://www.ncs.gov.in/ (site root)  -> 404
+	// The current NCS portal (a JS Single-Page App) does not expose a plain-HTTP
+	// RSS/JSON feed that this fetcher can reach. Rather than silently returning 0
+	// jobs, we surface a clear diagnostic so the RunSummary flags this source as
+	// needing a different approach (e.g. a browser-driven crawl of the NCS portal,
+	// or a maintained aggregate feed). No code change here resurrects it.
+	err := fmt.Errorf("NCS job feed is dead: /feeds/rss/jobs=404, /_v/api/JobSearch/=404, site root=404 (all verified live). NCS portal is a JS SPA requiring a different approach (browser-driven crawl or maintained feed).")
+	log.Warn().Msg(err.Error())
+	return nil, err
 }
 
 // fetchFromRSS fetches jobs from NCS RSS feed

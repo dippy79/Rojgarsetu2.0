@@ -26,7 +26,10 @@ func NewSSCSource() *SSCSource {
 		client: &http.Client{
 			Timeout: 30 * time.Second,
 		},
-		rssURL: "https://ssc.gov.in/rss feeds/Monthly.xml",
+		// Verified live: the SSURL is https://ssc.gov.in/rss%20feeds/Monthly.xml
+		// (200). The old hardcoded value had a literal space which broke the
+		// robots.txt path check and the request. Encoded as %20.
+		rssURL: "https://ssc.gov.in/rss%20feeds/Monthly.xml",
 	}
 }
 
@@ -60,7 +63,7 @@ func (s *SSCSource) fetchFromRSS(ctx context.Context) ([]GovJobSource, error) {
 	}
 
 	SetUserAgentAndCheck(req, s.BaseURL)
-	if !CheckRobotsTxt(s.BaseURL, s.rssURL) {
+	if !CheckRobotsTxt(s.BaseURL, "/rss%20feeds/Monthly.xml") {
 		return nil, fmt.Errorf("blocked by robots.txt")
 	}
 	dl := NewDomainLimiter()
