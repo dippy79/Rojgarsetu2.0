@@ -83,6 +83,7 @@ func RunAll(
 		sources.NewNSDCSource(),
 		sources.NewCourseraSource(),
 		sources.NewUdemySource(),
+		sources.NewGeeksforGeeksSource(),
 	}
 	for _, s := range courseSources {
 		summary.SourcesRun++
