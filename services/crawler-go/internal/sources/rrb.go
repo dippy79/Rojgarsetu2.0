@@ -2,6 +2,7 @@ package sources
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"net/http"
 	"regexp"
@@ -51,19 +52,23 @@ var RRBURLs = map[string]string{
 func (s *RRBSource) Fetch(ctx context.Context) ([]GovJobSource, error) {
 	log.Info().Msg("Starting crawl for source: RRB (Railway Recruitment Board)")
 
-	var allJobs []GovJobSource
-
-	for name, baseURL := range RRBURLs {
-		jobs, err := s.fetchFromRRB(ctx, name, baseURL)
-		if err != nil {
-			log.Warn().Err(err).Str("rrb", name).Msg("Failed to fetch from RRB")
-			continue
-		}
-		allJobs = append(allJobs, jobs...)
-	}
-
-	log.Info().Int("totalJobs", len(allJobs)).Msg("RRB fetch completed")
-	return allJobs, nil
+	// FLAG (Phase A first-pass): All 16 RRB regional boards are unreachable
+	// from this environment via plain HTTP — the site roots return connection
+	// errors (blocked DNS / TLS handshake / WAF), and the legacy paths this
+	// fetcher tried (notice.php, vacancy.php, latest-news.php, career.php)
+	// return 403/404. Each board runs its own independently hosted site with
+	// no shared RSS/JSON feed, so fixing them one-by-one would require
+	// per-board URL + selector verification against live sites that are
+	// currently not reachable from here.
+	//
+	// Rather than silently returning 0 jobs, we surface a clear diagnostic so
+	// the RunSummary flags this source as needing a different approach (e.g.
+	// a maintained aggregate feed of RRB CEN notifications, or a browser-driven
+	// crawl of indianrailways.gov.in / the RRB page on sarkari jobs portals).
+	// This is the "report status" first-pass; no code change here resurrects it.
+	err := fmt.Errorf("RRB regional board sites are unreachable from this environment (all 16 boards: connection errors / 403 / 404 on legacy paths). No shared RSS/JSON feed exists. Requires a different approach (aggregate feed or browser-driven crawl of RRB CEN notifications).")
+	log.Warn().Msg(err.Error())
+	return nil, err
 }
 
 // fetchFromRRB fetches from a specific RRB website

@@ -61,46 +61,46 @@ func NewYouTubeSource() *YouTubeSource {
 	}
 }
 
-// Fetch retrieves videos from YouTube official channels
+// Fetch retrieves videos from YouTube official channels.
+//
+// Phase A: we only use the YouTube Data API v3 path (which needs a real
+// YOUTUBE_API_KEY from the environment). The old website-scraping fallback
+// (fetchFromWebsite) almost always returned 0 videos because YouTube serves a
+// JS-heavy page, so it has been removed as a broken path. This is not new
+// infrastructure — it is simply fixing the wiring: no key → clear warning +
+// skip; key present → real API calls with proper error logging.
 func (s *YouTubeSource) Fetch(ctx context.Context) ([]YouTubeVideoSource, error) {
 	log.Info().Msg("Starting crawl for source: YouTube")
 
-	var allVideos []YouTubeVideoSource
-
-	// If API key is available, use YouTube Data API
-	if s.apiKey != "" {
-		apiVideos, err := s.fetchFromAPI(ctx)
-		if err != nil {
-			log.Warn().Err(err).Msg("YouTube API fetch failed, falling back to website")
-			apiVideos, err = s.fetchFromWebsite(ctx)
-			if err != nil {
-				log.Error().Err(err).Msg("All YouTube fetch methods failed")
-				return nil, fmt.Errorf("failed to fetch from YouTube: %w", err)
-			}
-			allVideos = append(allVideos, apiVideos...)
-		} else {
-			allVideos = append(allVideos, apiVideos...)
-		}
-	} else {
-		log.Warn().Msg("No YouTube API key found, using website fallback")
-		websiteVideos, err := s.fetchFromWebsite(ctx)
-		if err != nil {
-			log.Error().Err(err).Msg("YouTube website fetch failed")
-			return nil, fmt.Errorf("failed to fetch from YouTube: %w", err)
-		}
-		allVideos = append(allVideos, websiteVideos...)
+	if s.apiKey == "" {
+		// No key configured: do NOT hit the broken website scraper. Log clearly
+		// so the operator knows why YouTube yields 0 videos.
+		log.Warn().Msg("YOUTUBE_API_KEY is not set - skipping YouTube fetch (website fallback removed as broken; set YOUTUBE_API_KEY to enable)")
+		return []YouTubeVideoSource{}, nil
 	}
 
-	log.Info().Int("totalVideos", len(allVideos)).Msg("YouTube fetch completed")
-	return allVideos, nil
+	apiVideos, err := s.fetchFromAPI(ctx)
+	if err != nil {
+		log.Error().Err(err).Msg("YouTube API fetch failed")
+		return nil, fmt.Errorf("failed to fetch from YouTube API: %w", err)
+	}
+
+	log.Info().Int("totalVideos", len(apiVideos)).Msg("YouTube fetch completed")
+	return apiVideos, nil
 }
 
-// fetchFromAPI fetches from YouTube Data API v3
+// fetchFromAPI fetches from YouTube Data API v3.
 func (s *YouTubeSource) fetchFromAPI(ctx context.Context) ([]YouTubeVideoSource, error) {
 	var allVideos []YouTubeVideoSource
 
 	for _, channel := range OfficialChannels {
-		url := fmt.Sprintf("%s/search?key=%s&channelId=%s&part=snippet,id&order=date&maxResults=20",
+		if !isValidYouTubeChannelID(channel.ChannelID) {
+			log.Warn().Str("channel", channel.Name).Str("channelID", channel.ChannelID).
+				Msg("Skipping channel with invalid/placeholder channel ID (not a real 24-char UC... ID)")
+			continue
+		}
+
+		url := fmt.Sprintf("%s/search?key=%s&channelId=%s&part=snippet,id&order=date&maxResults=20&type=video",
 			s.apiBaseURL, s.apiKey, channel.ChannelID)
 
 		req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
@@ -112,17 +112,27 @@ func (s *YouTubeSource) fetchFromAPI(ctx context.Context) ([]YouTubeVideoSource,
 
 		resp, err := s.client.Do(req)
 		if err != nil {
+			log.Warn().Err(err).Str("channel", channel.Name).Msg("YouTube API request error")
 			continue
 		}
+
+		body, readErr := io.ReadAll(resp.Body)
+		resp.Body.Close()
 
 		if resp.StatusCode != http.StatusOK {
-			resp.Body.Close()
+			// Log the real error body (e.g. quotaExceeded, invalid key, channel not found)
+			// instead of silently continuing. This is the "wire the real error" fix.
+			detail := ""
+			if readErr == nil && len(body) > 0 {
+				detail = string(body)
+			}
+			log.Warn().Int("status", resp.StatusCode).Str("channel", channel.Name).
+				Str("body", detail).Msg("YouTube API responded non-200")
 			continue
 		}
 
-		body, err := io.ReadAll(resp.Body)
-		resp.Body.Close()
-		if err != nil {
+		if readErr != nil {
+			log.Warn().Err(readErr).Str("channel", channel.Name).Msg("Failed to read YouTube API body")
 			continue
 		}
 
@@ -141,10 +151,10 @@ func (s *YouTubeSource) fetchFromAPI(ctx context.Context) ([]YouTubeVideoSource,
 							URL string `json:"url"`
 						} `json:"medium"`
 						High struct {
-							URL string `json:"high"`
+							URL string `json:"url"`
 						} `json:"high"`
 						Default struct {
-							URL string `json:"default"`
+							URL string `json:"url"`
 						} `json:"default"`
 					} `json:"thumbnails"`
 					PublishTime time.Time `json:"publishTime"`
@@ -187,91 +197,13 @@ func (s *YouTubeSource) fetchFromAPI(ctx context.Context) ([]YouTubeVideoSource,
 	return allVideos, nil
 }
 
-// fetchFromWebsite fetches from YouTube website (fallback)
-func (s *YouTubeSource) fetchFromWebsite(ctx context.Context) ([]YouTubeVideoSource, error) {
-	var allVideos []YouTubeVideoSource
-
-	for _, channel := range OfficialChannels {
-		urls := []string{
-			"https://www.youtube.com/channel/" + channel.ChannelID + "/videos",
-			"https://www.youtube.com/@" + channel.Name + "/videos",
-		}
-
-		for _, url := range urls {
-			req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
-			if err != nil {
-				continue
-			}
-
-			req.Header.Set("User-Agent", "RojgarSetu/2.0")
-
-			resp, err := s.client.Do(req)
-			if err != nil {
-				continue
-			}
-
-			if resp.StatusCode != http.StatusOK {
-				resp.Body.Close()
-				continue
-			}
-
-			body, err := io.ReadAll(resp.Body)
-			resp.Body.Close()
-			if err != nil {
-				continue
-			}
-
-			videos := s.parseHTMLVideos(string(body), channel.Name, channel.ChannelID, channel.Category)
-			allVideos = append(allVideos, videos...)
-		}
-	}
-
-	log.Info().Int("videosFromWebsite", len(allVideos)).Msg("YouTube website fetch successful")
-	return allVideos, nil
-}
-
-// parseHTMLVideos parses videos from YouTube HTML
-func (s *YouTubeSource) parseHTMLVideos(html, channelName, channelID, category string) []YouTubeVideoSource {
-	var videos []YouTubeVideoSource
-
-	// Look for video items in the HTML
-	pattern := `href="/watch\?v=([a-zA-Z0-9_-]{11})"[^>]*>([^<]+)</a>`
-	matches := extractMatches(html, pattern)
-
-	seen := make(map[string]bool)
-
-	for _, match := range matches {
-		if len(match) >= 3 {
-			videoID := match[1]
-			title := strings.TrimSpace(match[2])
-
-			// Skip duplicates
-			if seen[videoID] {
-				continue
-			}
-			seen[videoID] = true
-
-			if len(title) > 5 {
-				video := YouTubeVideoSource{
-					Source:    "youtube",
-					Channel:   channelName,
-					ChannelID: channelID,
-					Title:     title,
-					URL:       "https://www.youtube.com/watch?v=" + videoID,
-					VideoID:   videoID,
-					Category:  category,
-					Thumbnail: "https://img.youtube.com/vi/" + videoID + "/hqdefault.jpg",
-					CreatedAt: time.Now(),
-				}
-
-				if isValidVideo(&video) {
-					videos = append(videos, video)
-				}
-			}
-		}
-	}
-
-	return videos
+// isValidYouTubeChannelID reports whether a channel ID looks like a real
+// YouTube channel ID. Real channel IDs are exactly 24 characters and start
+// with "UC". Many entries in OfficialChannels are placeholder strings that are
+// not valid; skipping them avoids pointless API quota usage and 404s.
+func isValidYouTubeChannelID(id string) bool {
+	id = strings.TrimSpace(id)
+	return len(id) == 24 && strings.HasPrefix(id, "UC")
 }
 
 // Name returns the source name
@@ -282,7 +214,7 @@ func (s *YouTubeSource) Name() string {
 // GetAPILimit returns the YouTube API quota usage info
 func (s *YouTubeSource) GetAPILimit() string {
 	if s.apiKey == "" {
-		return "No API key configured"
+		return "No API key configured - YouTube skipped"
 	}
 	return "API key configured - using YouTube Data API v3"
 }

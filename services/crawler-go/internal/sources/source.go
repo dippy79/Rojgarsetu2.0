@@ -19,6 +19,7 @@ type JobSource struct {
 	Description    string
 	ApplicationURL string
 	PostedAt       *time.Time
+	Skills         []string
 }
 
 // Source interface for job sources

@@ -237,6 +237,15 @@ func (s *PostgresStore) SaveCourse(course *sources.CourseSource) error {
 		rating = strconv.FormatFloat(*course.Rating, 'f', 2, 64)
 	}
 
+	// courses.skills is TEXT[] NOT NULL DEFAULT '{}'. Passing pq.Array(nil)
+	// yields SQL NULL, which violates the NOT NULL constraint and drops the
+	// whole row. Normalize an empty/nil skills slice to an empty array so the
+	// upsert succeeds even when the source provides no skills (e.g. Coursera).
+	skills := course.Skills
+	if skills == nil {
+		skills = []string{}
+	}
+
 	query := `
 	INSERT INTO courses
 	(provider, title, url, duration, mode, level, skills, description,
@@ -271,7 +280,7 @@ func (s *PostgresStore) SaveCourse(course *sources.CourseSource) error {
 		course.Duration,
 		course.Mode,
 		course.Level,
-		pq.Array(course.Skills),
+		pq.Array(skills),
 		course.Description,
 		course.ThumbnailURL,
 		course.Price,

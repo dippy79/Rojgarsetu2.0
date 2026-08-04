@@ -154,12 +154,36 @@ func (s *NaukriSource) Fetch(ctx context.Context) ([]JobSource, error) {
 						location = sel.Find(".location, .locationTxt, .location-info, .locationTag").First().Text()
 					}
 
+					// Skills: Naukri renders skill tags inside the job card
+					// (e.g. span.tag / .skill-tag / .tag-li / [data-skill]). We
+					// collect them from several common containers and dedupe.
+					var skills []string
+					seenSkill := make(map[string]bool)
+					skillSelections := []string{
+						".tag, .skill-tag, .skills, .skill, .tag-li",
+						"[data-skill], [data-skill-name]",
+						".skill-tag, .tagList span, .tags span",
+					}
+					for _, skillSel := range skillSelections {
+						sel.Find(skillSel).Each(func(_ int, tag *goquery.Selection) {
+							skill := strings.TrimSpace(tag.Text())
+							if skill != "" && !seenSkill[skill] {
+								seenSkill[skill] = true
+								skills = append(skills, skill)
+							}
+						})
+						if len(skills) > 0 {
+							break
+						}
+					}
+
 					jobs = append(jobs, JobSource{
 						Source:         "naukri",
 						Title:          strings.TrimSpace(title),
 						Company:        strings.TrimSpace(company),
 						Location:       strings.TrimSpace(location),
 						ApplicationURL: url,
+						Skills:         skills,
 					})
 				}
 			})
@@ -248,4 +272,3 @@ func (s *NaukriSource) Crawl(ctx context.Context) error {
 		return nil
 	})
 }
-

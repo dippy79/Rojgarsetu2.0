@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/rs/zerolog/log"
@@ -50,69 +52,147 @@ func (s *CourseraSource) Fetch(ctx context.Context) ([]CourseSource, error) {
 	return courses, nil
 }
 
-// fetchFromAPI fetches from Coursera API
+// fetchFromAPI fetches from Coursera API.
+//
+// Verified live (response shape as of this fix):
+//
+//	GET https://api.coursera.org/api/courses.v1?limit=3&fields=name,slug,startDate,photoUrl,level
+//	200 OK
+//	{
+//	  "elements": [
+//	    {
+//	      "courseType": "v2.ondemand",
+//	      "photoUrl": "https://...",
+//	      "id": "l31la3mKEe-zFg7heHyXOQ",
+//	      "slug": "googlecloud-...",
+//	      "level": "BEGINNER",
+//	      "partnerIds": ["443"],
+//	      "name": "...",
+//	      "startDate": 1727880158838   // <-- Unix epoch MILLISECONDS (number), not a string
+//	    }
+//	  ],
+//	  "paging": {"next": "2", "total": 23330},
+//	  "linked": {}
+//	}
+//
+// Important gotchas handled here:
+//  1. The `description` field is NOT a valid courses.v1 field and causes a 404,
+//     so we do NOT request it.
+//  2. `startDate` is a Unix epoch-ms NUMBER (or absent), not a string. We decode
+//     it as json.RawMessage so we can accept BOTH a number and (defensively) a
+//     string, then normalize to an ISO date string for CourseSource.StartDate.
 func (s *CourseraSource) fetchFromAPI(ctx context.Context) ([]CourseSource, error) {
-	// Coursera has a public API but requires authentication for full access
-	// Try with limited parameters
-	req, err := http.NewRequestWithContext(ctx, "GET", s.apiURL+"?fields=description,photoUrl,slug,startDate,level", nil)
-	if err != nil {
-		return nil, err
-	}
+	var allCourses []CourseSource
 
-	req.Header.Set("User-Agent", "RojgarSetu/2.0")
+	// Fetch a few pages so we actually get usable volume, not just 20 courses.
+	for page := 0; page < 3; page++ {
+		offset := page * 20
+		url := fmt.Sprintf("%s?limit=20&start=%d&fields=name,slug,startDate,photoUrl,level",
+			s.apiURL, offset)
 
-	resp, err := s.client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("Coursera API returned status: %d", resp.StatusCode)
-	}
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	var courseraData struct {
-		Elements []struct {
-			ID          string `json:"id"`
-			Name        string `json:"name"`
-			Description string `json:"description"`
-			Slug        string `json:"slug"`
-			Level       string `json:"level"`
-			PhotoURL    string `json:"photoUrl"`
-			StartDate   string `json:"startDate"`
-		} `json:"elements"`
-	}
-
-	if err := json.Unmarshal(body, &courseraData); err != nil {
-		return nil, err
-	}
-
-	var courses []CourseSource
-	for _, c := range courseraData.Elements {
-		course := CourseSource{
-			Source:       "coursera",
-			Provider:     "Coursera",
-			Title:        cleanString(c.Name),
-			URL:          "https://www.coursera.org/learn/" + c.Slug,
-			Level:        normalizeCourseLevel(c.Level),
-			Description:  cleanString(c.Description),
-			ThumbnailURL: c.PhotoURL,
-			IsFree:       false,
-			CreatedAt:    time.Now(),
+		req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+		if err != nil {
+			return nil, err
 		}
 
-		if course.Title != "" && isValidCourse(&course) {
-			courses = append(courses, course)
+		req.Header.Set("User-Agent", "RojgarSetu/2.0")
+		req.Header.Set("Accept", "application/json")
+
+		resp, err := s.client.Do(req)
+		if err != nil {
+			return nil, err
+		}
+		defer resp.Body.Close()
+
+		if resp.StatusCode != http.StatusOK {
+			return nil, fmt.Errorf("Coursera API returned status: %d for url %s", resp.StatusCode, url)
+		}
+
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return nil, err
+		}
+
+		var coursData struct {
+			Elements []struct {
+				Name      string          `json:"name"`
+				Slug      string          `json:"slug"`
+				Level     string          `json:"level"`
+				PhotoURL  string          `json:"photoUrl"`
+				StartDate json.RawMessage `json:"startDate"`
+			} `json:"elements"`
+		}
+
+		if err := json.Unmarshal(body, &coursData); err != nil {
+			return nil, err
+		}
+
+		if len(coursData.Elements) == 0 {
+			break
+		}
+
+		for _, c := range coursData.Elements {
+			course := CourseSource{
+				Source:       "coursera",
+				Provider:     "Coursera",
+				Title:        cleanString(c.Name),
+				URL:          "https://www.coursera.org/learn/" + c.Slug,
+				Level:        normalizeCourseLevel(c.Level),
+				ThumbnailURL: c.PhotoURL,
+				StartDate:    parseCourseraStartDate(c.StartDate),
+				IsFree:       false,
+				CreatedAt:    time.Now(),
+			}
+
+			if course.Title != "" && isValidCourse(&course) {
+				allCourses = append(allCourses, course)
+			}
 		}
 	}
 
-	log.Info().Int("coursesFromAPI", len(courses)).Msg("Coursera API fetch successful")
-	return courses, nil
+	log.Info().Int("coursesFromAPI", len(allCourses)).Msg("Coursera API fetch successful")
+	return allCourses, nil
+}
+
+// parseCourseraStartDate normalizes Coursera's `startDate` into an ISO date
+// string pointer for CourseSource.StartDate.
+//
+// Coursera returns a Unix epoch in MILLISECONDS as a JSON number (e.g.
+// 1727880158838), but historically also emitted ISO 8601 strings. We decode the
+// raw JSON token and accept both shapes defensively so a future API change does
+// not break the whole fetch.
+func parseCourseraStartDate(raw json.RawMessage) *string {
+	if len(raw) == 0 {
+		return nil
+	}
+
+	trimmed := strings.TrimSpace(string(raw))
+
+	// Shape 1: numeric epoch milliseconds (the current API shape).
+	if trimmed != "null" && trimmed != "" && trimmed[0] != '"' {
+		if ms, err := strconv.ParseInt(trimmed, 10, 64); err == nil {
+			t := time.UnixMilli(ms)
+			iso := t.UTC().Format(time.RFC3339)
+			return &iso
+		}
+		// Not a number; fall through and try string parsing below.
+	}
+
+	// Shape 2: string (ISO 8601 or date-only) — defensive for API shape changes.
+	var dateStr string
+	if err := json.Unmarshal(raw, &dateStr); err != nil {
+		return nil
+	}
+	dateStr = strings.TrimSpace(dateStr)
+	if dateStr == "" || dateStr == "null" {
+		return nil
+	}
+
+	parsed := parseDateString(dateStr)
+	if parsed != nil {
+		return parsed
+	}
+	return nil
 }
 
 // fetchFromWebsite fetches from Coursera website

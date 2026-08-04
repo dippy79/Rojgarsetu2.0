@@ -1,0 +1,300 @@
+{"level":"info","totalJobs":6,"time":"2026-08-03T17:17:51Z","message":"UPSC fetch completed"}
+{"level":"info","time":"2026-08-03T17:17:51Z","message":"Starting crawl for source: RRB (Railway Recruitment Board)"}
+{"level":"warn","time":"2026-08-03T17:17:51Z","message":"RRB regional board sites are unreachable from this environment (all 16 boards: connection errors / 403 / 404 on legacy paths). No shared RSS/JSON feed exists. Requires a different approach (aggregate feed or browser-driven crawl of RRB CEN notifications)."}
+{"level":"info","time":"2026-08-03T17:17:51Z","message":"Starting crawl for source: SSC"}
+{"level":"warn","error":"XML syntax error on line 2: attribute name without = in element","time":"2026-08-03T17:17:52Z","message":"SSC RSS fetch failed, trying website"}
+{"level":"info","jobsFromWebsite":0,"time":"2026-08-03T17:17:53Z","message":"SSC website fetch successful"}
+{"level":"info","totalJobs":0,"time":"2026-08-03T17:17:53Z","message":"SSC fetch completed"}
+{"level":"info","time":"2026-08-03T17:17:53Z","message":"Starting crawl for source: NCS (National Career Service)"}
+{"level":"warn","time":"2026-08-03T17:17:53Z","message":"NCS job feed is dead: /feeds/rss/jobs=404, /_v/api/JobSearch/=404, site root=404 (all verified live). NCS portal is a JS SPA requiring a different approach (browser-driven crawl or maintained feed)."}
+{"level":"info","time":"2026-08-03T17:17:53Z","message":"Starting crawl for source: Employment News"}
+{"level":"warn","time":"2026-08-03T17:17:53Z","message":"Employment News feed is dead: /rss/eng/weekly-vacancy.xml=404, site root=404 (verified live). Portal requires a different approach (maintained aggregate feed or browser-driven crawl of weekly-vacancy PDFs)."}
+{"level":"info","time":"2026-08-03T17:17:53Z","message":"Starting crawl for source: Indeed"}
+{"level":"warn","error":"Indeed RSS returned status: 403","time":"2026-08-03T17:17:53Z","message":"Indeed RSS fetch failed"}
+{"level":"info","jobsFromWebsite":0,"time":"2026-08-03T17:17:53Z","message":"Indeed website fetch successful"}
+{"level":"info","totalJobs":0,"time":"2026-08-03T17:17:53Z","message":"Indeed fetch completed"}
+{"level":"info","time":"2026-08-03T17:17:53Z","message":"Starting crawl for source: LinkedIn"}
+{"level":"warn","error":"LinkedIn RSS returned status: 404","time":"2026-08-03T17:17:53Z","message":"LinkedIn RSS fetch failed"}
+{"level":"warn","time":"2026-08-03T17:17:53Z","message":"LinkedIn alternative fetch not available - requires authentication"}
+{"level":"info","totalJobs":0,"time":"2026-08-03T17:17:53Z","message":"LinkedIn fetch completed"}
+{"level":"info","time":"2026-08-03T17:17:53Z","message":"Starting crawl for source: Google Jobs"}
+{"level":"info","jobsFromGoogleCareers":0,"time":"2026-08-03T17:17:56Z","message":"Google Careers fetch successful"}
+{"level":"info","totalJobs":0,"time":"2026-08-03T17:17:56Z","message":"Google Jobs fetch completed"}
+{"level":"info","time":"2026-08-03T17:17:56Z","message":"Starting crawl for source: Company Pages"}
+{"level":"info","jobs":0,"company":"Wipro","time":"2026-08-03T17:17:59Z","message":"Company fetch successful"}
+{"level":"info","jobs":0,"company":"Accenture","time":"2026-08-03T17:18:00Z","message":"Company fetch successful"}
+{"level":"info","jobs":0,"company":"Cognizant","time":"2026-08-03T17:18:01Z","message":"Company fetch successful"}
+{"level":"info","jobs":0,"company":"Tech Mahindra","time":"2026-08-03T17:18:01Z","message":"Company fetch successful"}
+{"level":"info","jobs":0,"company":"HCL","time":"2026-08-03T17:18:04Z","message":"Company fetch successful"}
+{"level":"info","jobs":0,"company":"IBM","time":"2026-08-03T17:18:05Z","message":"Company fetch successful"}
+{"level":"info","jobs":0,"company":"Microsoft","time":"2026-08-03T17:18:06Z","message":"Company fetch successful"}
+{"level":"warn","error":"Get \"https://www.adobe.com/careers.html\": stream error: stream ID 1; INTERNAL_ERROR; received from peer","company":"Adobe","time":"2026-08-03T17:18:06Z","message":"Failed to fetch from company"}
+{"level":"info","jobs":0,"company":"Salesforce","time":"2026-08-03T17:18:07Z","message":"Company fetch successful"}
+{"level":"info","jobs":0,"company":"Meta","time":"2026-08-03T17:18:08Z","message":"Company fetch successful"}
+{"level":"info","jobs":1,"company":"Oracle","time":"2026-08-03T17:18:08Z","message":"Company fetch successful"}
+{"level":"info","totalJobs":1,"time":"2026-08-03T17:18:08Z","message":"Company Pages fetch completed"}
+{"level":"info","time":"2026-08-03T17:18:08Z","message":"Starting crawl for source: naukri"}
+{"level":"debug","time":"2026-08-03T17:18:08Z","message":"Browser context created"}
+{"level":"info","time":"2026-08-03T17:18:08Z","message":"Navigating to Naukri jobs page"}
+{"level":"info","testTitle":"Example Domain","time":"2026-08-03T17:18:10Z","message":"Test navigation successful - browser is working"}
+{"level":"info","time":"2026-08-03T17:18:10Z","message":"Navigating to naukri.com/jobs-in-india"}
+{"level":"info","URL":"https://www.naukri.com/jobs-in-india","time":"2026-08-03T17:18:10Z","message":"URL being crawled"}
+{"level":"info","time":"2026-08-03T17:18:10Z","message":"Page loaded successfully"}
+2026/08/03 17:18:13 ERROR: could not unmarshal event: unknown ClientNavigationReason value: initialFrameNavigation
+2026/08/03 17:18:13 ERROR: could not unmarshal event: unknown ClientNavigationReason value: initialFrameNavigation
+2026/08/03 17:18:13 ERROR: could not unmarshal event: unknown ClientNavigationReason value: initialFrameNavigation
+2026/08/03 17:18:13 ERROR: could not unmarshal event: unknown ClientNavigationReason value: initialFrameNavigation
+{"level":"info","htmlLength":383880,"time":"2026-08-03T17:18:20Z","message":"Got HTML content"}
+{"level":"info","selector":"[data-job-id]","jobsFound":20,"time":"2026-08-03T17:18:20Z","message":"Found jobs with selector"}
+{"level":"info","jobsExtracted":20,"time":"2026-08-03T17:18:20Z","message":"Job elements found"}
+{"level":"info","time":"2026-08-03T17:18:20Z","message":"Sample Job Found"}
+{"level":"info","Title":"Customer Support Representative","time":"2026-08-03T17:18:20Z","message":"Sample Job Found - Title"}
+{"level":"info","Company":"Trigent Software","time":"2026-08-03T17:18:20Z","message":"Sample Job Found - Company"}
+{"level":"info","Location":"Mumbai, Pune, Bengaluru","time":"2026-08-03T17:18:20Z","message":"Sample Job Found - Location"}
+{"level":"info","totalJobs":20,"time":"2026-08-03T17:18:20Z","message":"Fetch completed"}
+{"level":"info","time":"2026-08-03T17:18:21Z","message":"Starting crawl for source: NPTEL"}
+{"level":"warn","status":404,"url":"https://nptel.ac.in/courses.html","time":"2026-08-03T17:18:21Z","message":"NPTEL non-200 response"}
+{"level":"info","coursesFromWebsite":0,"time":"2026-08-03T17:18:21Z","message":"NPTEL website fetch successful"}
+{"level":"info","totalCourses":0,"time":"2026-08-03T17:18:21Z","message":"NPTEL fetch completed"}
+{"level":"info","time":"2026-08-03T17:18:21Z","message":"Starting crawl for source: SWAYAM"}
+{"level":"warn","time":"2026-08-03T17:18:21Z","message":"SWAYAM home page contained no embedded course data - flagged as decision point, returning 0 courses"}
+{"level":"info","time":"2026-08-03T17:18:21Z","message":"Starting crawl for source: NSDC"}
+{"level":"info","coursesFromWebsite":0,"time":"2026-08-03T17:18:22Z","message":"NSDC website fetch successful"}
+{"level":"info","totalCourses":0,"time":"2026-08-03T17:18:22Z","message":"NSDC fetch completed"}
+{"level":"info","time":"2026-08-03T17:18:22Z","message":"Starting crawl for source: Coursera"}
+{"level":"info","coursesFromAPI":60,"time":"2026-08-03T17:18:24Z","message":"Coursera API fetch successful"}
+{"level":"info","totalCourses":60,"time":"2026-08-03T17:18:24Z","message":"Coursera fetch completed"}
+2026/08/03 17:18:24 ERROR saving course from coursera: failed to save course 'Getting started with the Vertex AI Gemini 1.5 Pro Model': pq: null value in column "skills" of relation "courses" violates not-null constraint (23502)
+2026/08/03 17:18:24 ERROR saving course from coursera: failed to save course 'SPSS: Apply & Interpret Logistic Regression Models': pq: null value in column "skills" of relation "courses" violates not-null constraint (23502)
+2026/08/03 17:18:24 ERROR saving course from coursera: failed to save course 'Securing Compute Engine Applications and Resources using Chrome Enterprise Premium': pq: null value in column "skills" of relation "courses" violates not-null constraint (23502)
+2026/08/03 17:18:24 ERROR saving course from coursera: failed to save course 'Intégrer des applications dans votre Dashboard Hootsuite': pq: null value in column "skills" of relation "courses" violates not-null constraint (23502)
+2026/08/03 17:18:24 ERROR saving course from coursera: failed to save course 'Overcoming Challenges in Self and Society': pq: null value in column "skills" of relation "courses" violates not-null constraint (23502)
+2026/08/03 17:18:24 ERROR saving course from coursera: failed to save course 'كيفية استعمال التطبيق هووتسويت': pq: null value in column "skills" of relation "courses" violates not-null constraint (23502)
+2026/08/03 17:18:24 ERROR saving course from coursera: failed to save course 'Gamification': pq: null value in column "skills" of relation "courses" violates not-null constraint (23502)
+2026/08/03 17:18:24 ERROR saving course from coursera: failed to save course 'CompTIA Cybersecurity Analyst (CySA+) CS0-003: Unit 2': pq: null value in column "skills" of relation "courses" violates not-null constraint (23502)
+2026/08/03 17:18:24 ERROR saving course from coursera: failed to save course 'Dealing With Missing Data': pq: null value in column "skills" of relation "courses" violates not-null constraint (23502)
+2026/08/03 17:18:24 ERROR saving course from coursera: failed to save course 'Unordered Data Structures': pq: null value in column "skills" of relation "courses" violates not-null constraint (23502)
+2026/08/03 17:18:24 ERROR saving course from coursera: failed to save course 'Migrating to Cloud SQL from Amazon RDS for MySQL Using Database Migration Service': pq: null value in column "skills" of relation "courses" violates not-null constraint (23502)
+2026/08/03 17:18:24 ERROR saving course from coursera: failed to save course 'Vital Signs: Understanding What the Body Is Telling Us': pq: null value in column "skills" of relation "courses" violates not-null constraint (23502)
+2026/08/03 17:18:24 ERROR saving course from coursera: failed to save course 'FinTech Disruptive Innovation: Implications for Society': pq: null value in column "skills" of relation "courses" violates not-null constraint (23502)
+2026/08/03 17:18:24 ERROR saving course from coursera: failed to save course 'Develop Code with Gemini in BigQuery': pq: null value in column "skills" of relation "courses" violates not-null constraint (23502)
+2026/08/03 17:18:24 ERROR saving course from coursera: failed to save course 'The Linux Essentials': pq: null value in column "skills" of relation "courses" violates not-null constraint (23502)
+2026/08/03 17:18:24 ERROR saving course from coursera: failed to save course 'Sensation, Perception, and Consciousness': pq: null value in column "skills" of relation "courses" violates not-null constraint (23502)
+2026/08/03 17:18:24 ERROR saving course from coursera: failed to save course 'Get Started with iOS App Development': pq: null value in column "skills" of relation "courses" violates not-null constraint (23502)
+2026/08/03 17:18:24 ERROR saving course from coursera: failed to save course 'Create Amazing Macros in Affinity Photo': pq: null value in column "skills" of relation "courses" violates not-null constraint (23502)
+2026/08/03 17:18:24 ERROR saving course from coursera: failed to save course 'Inteligencia Artificial Generativa para Docentes': pq: null value in column "skills" of relation "courses" violates not-null constraint (23502)
+2026/08/03 17:18:24 ERROR saving course from coursera: failed to save course 'Inventory Management: Analyze, Optimize & Control': pq: null value in column "skills" of relation "courses" violates not-null constraint (23502)
+2026/08/03 17:18:24 ERROR saving course from coursera: failed to save course 'Modern Art & Ideas': pq: null value in column "skills" of relation "courses" violates not-null constraint (23502)
+2026/08/03 17:18:24 ERROR saving course from coursera: failed to save course 'Brand Identity and Vector Graphics': pq: null value in column "skills" of relation "courses" violates not-null constraint (23502)
+2026/08/03 17:18:24 ERROR saving course from coursera: failed to save course 'The Evolving Universe': pq: null value in column "skills" of relation "courses" violates not-null constraint (23502)
+2026/08/03 17:18:24 ERROR saving course from coursera: failed to save course 'CyberSec First Responder (CFR-310)': pq: null value in column "skills" of relation "courses" violates not-null constraint (23502)
+2026/08/03 17:18:24 ERROR saving course from coursera: failed to save course 'Use SurveyMonkey to Create a Survey and Analyze Results': pq: null value in column "skills" of relation "courses" violates not-null constraint (23502)
+2026/08/03 17:18:24 ERROR saving course from coursera: failed to save course 'Star Schemas & Track Changes': pq: null value in column "skills" of relation "courses" violates not-null constraint (23502)
+2026/08/03 17:18:24 ERROR saving course from coursera: failed to save course 'Advanced Corporate Finance Strategies': pq: null value in column "skills" of relation "courses" violates not-null constraint (23502)
+2026/08/03 17:18:24 ERROR saving course from coursera: failed to save course 'Performing Data Aggregation using SQL Aggregate Functions': pq: null value in column "skills" of relation "courses" violates not-null constraint (23502)
+2026/08/03 17:18:24 ERROR saving course from coursera: failed to save course 'Inteligencia Artificial para personajes en Unreal Engine': pq: null value in column "skills" of relation "courses" violates not-null constraint (23502)
+2026/08/03 17:18:24 ERROR saving course from coursera: failed to save course 'Advancing Mask Technology for Semiconductors': pq: null value in column "skills" of relation "courses" violates not-null constraint (23502)
+2026/08/03 17:18:24 ERROR saving course from coursera: failed to save course 'Developing AI Policy': pq: null value in column "skills" of relation "courses" violates not-null constraint (23502)
+2026/08/03 17:18:24 ERROR saving course from coursera: failed to save course 'Adobe Dreamweaver CC (2017): Part 1': pq: null value in column "skills" of relation "courses" violates not-null constraint (23502)
+2026/08/03 17:18:24 ERROR saving course from coursera: failed to save course 'GenAI for Talent Acquisition: Smarter Candidate Screening': pq: null value in column "skills" of relation "courses" violates not-null constraint (23502)
+2026/08/03 17:18:24 ERROR saving course from coursera: failed to save course 'Оценка облигаций': pq: null value in column "skills" of relation "courses" violates not-null constraint (23502)
+2026/08/03 17:18:24 ERROR saving course from coursera: failed to save course 'Machine Learning in the Enterprise - Français': pq: null value in column "skills" of relation "courses" violates not-null constraint (23502)
+2026/08/03 17:18:24 ERROR saving course from coursera: failed to save course 'Unlock Multimodal Search': pq: null value in column "skills" of relation "courses" violates not-null constraint (23502)
+2026/08/03 17:18:24 ERROR saving course from coursera: failed to save course 'Chemical Process Safety': pq: null value in column "skills" of relation "courses" violates not-null constraint (23502)
+2026/08/03 17:18:24 ERROR saving course from coursera: failed to save course 'PostgreSQL 17: Core Concepts and Advanced SQL Techniques': pq: null value in column "skills" of relation "courses" violates not-null constraint (23502)
+2026/08/03 17:18:24 ERROR saving course from coursera: failed to save course 'Consulting Presentations and Storytelling': pq: null value in column "skills" of relation "courses" violates not-null constraint (23502)
+2026/08/03 17:18:24 ERROR saving course from coursera: failed to save course 'إختيار الهدف المثالي للحملات الإعلانية على Facebook': pq: null value in column "skills" of relation "courses" violates not-null constraint (23502)
+2026/08/03 17:18:24 ERROR saving course from coursera: failed to save course 'Qualitative Research Interviews': pq: null value in column "skills" of relation "courses" violates not-null constraint (23502)
+2026/08/03 17:18:24 ERROR saving course from coursera: failed to save course 'The Zero Trust Framework': pq: null value in column "skills" of relation "courses" violates not-null constraint (23502)
+2026/08/03 17:18:24 ERROR saving course from coursera: failed to save course 'Negotiation: Remember Levers and Record Notes': pq: null value in column "skills" of relation "courses" violates not-null constraint (23502)
+2026/08/03 17:18:24 ERROR saving course from coursera: failed to save course 'Bond and Equity Valuation Strategies': pq: null value in column "skills" of relation "courses" violates not-null constraint (23502)
+2026/08/03 17:18:24 ERROR saving course from coursera: failed to save course 'Analyze and Create Your AI Marketing Plan': pq: null value in column "skills" of relation "courses" violates not-null constraint (23502)
+2026/08/03 17:18:24 ERROR saving course from coursera: failed to save course 'AI-Assisted Code Modernization': pq: null value in column "skills" of relation "courses" violates not-null constraint (23502)
+2026/08/03 17:18:24 ERROR saving course from coursera: failed to save course 'Master After Effects: Analyze & Create Dynamic Motion': pq: null value in column "skills" of relation "courses" violates not-null constraint (23502)
+2026/08/03 17:18:24 ERROR saving course from coursera: failed to save course 'Growing and Sustaining Online Communities': pq: null value in column "skills" of relation "courses" violates not-null constraint (23502)
+2026/08/03 17:18:24 ERROR saving course from coursera: failed to save course 'Product Management: Developing and Delivering a New Product': pq: null value in column "skills" of relation "courses" violates not-null constraint (23502)
+2026/08/03 17:18:24 ERROR saving course from coursera: failed to save course 'Introduction to Image Generation - Français': pq: null value in column "skills" of relation "courses" violates not-null constraint (23502)
+2026/08/03 17:18:24 ERROR saving course from coursera: failed to save course 'Memory, Encryption, and Protecting Data in Android': pq: null value in column "skills" of relation "courses" violates not-null constraint (23502)
+2026/08/03 17:18:24 ERROR saving course from coursera: failed to save course 'Fundamentals of Blockchain Architecture': pq: null value in column "skills" of relation "courses" violates not-null constraint (23502)
+2026/08/03 17:18:24 ERROR saving course from coursera: failed to save course '2026 Mobile App Marketing With ASO, And Monetization': pq: null value in column "skills" of relation "courses" violates not-null constraint (23502)
+2026/08/03 17:18:24 ERROR saving course from coursera: failed to save course 'Vulnerability Assessment and Management': pq: null value in column "skills" of relation "courses" violates not-null constraint (23502)
+2026/08/03 17:18:24 ERROR saving course from coursera: failed to save course 'Debugging Apps on Google Kubernetes Engine': pq: null value in column "skills" of relation "courses" violates not-null constraint (23502)
+2026/08/03 17:18:24 ERROR saving course from coursera: failed to save course 'Simulate with Monte Carlo': pq: null value in column "skills" of relation "courses" violates not-null constraint (23502)
+2026/08/03 17:18:24 ERROR saving course from coursera: failed to save course 'Cómo empezar con Facebook Commerce Manager': pq: null value in column "skills" of relation "courses" violates not-null constraint (23502)
+2026/08/03 17:18:24 ERROR saving course from coursera: failed to save course 'English for Social Analysis': pq: null value in column "skills" of relation "courses" violates not-null constraint (23502)
+2026/08/03 17:18:24 ERROR saving course from coursera: failed to save course 'Researcher Management and Leadership Training': pq: null value in column "skills" of relation "courses" violates not-null constraint (23502)
+2026/08/03 17:18:24 ERROR saving course from coursera: failed to save course 'Introduction to Enterprise Computing': pq: null value in column "skills" of relation "courses" violates not-null constraint (23502)
+{"level":"info","time":"2026-08-03T17:18:24Z","message":"Starting crawl for source: Udemy"}
+{"level":"info","coursesFromWebsite":0,"time":"2026-08-03T17:18:27Z","message":"Udemy website fetch successful"}
+{"level":"info","totalCourses":0,"time":"2026-08-03T17:18:27Z","message":"Udemy fetch completed"}
+{"level":"info","time":"2026-08-03T17:18:27Z","message":"Starting crawl for source: YouTube"}
+{"level":"warn","time":"2026-08-03T17:18:27Z","message":"YOUTUBE_API_KEY is not set - skipping YouTube fetch (website fallback removed as broken; set YOUTUBE_API_KEY to enable)"}
+2026/08/03 17:18:27 === crawl complete: 16 sources run, 13 succeeded, 3 failed, 27 total saved in 38s
+2026/08/03 17:18:27   [OK]   upsc: fetched=6 saved=6
+2026/08/03 17:18:27   [FAIL] rrb: fetch: RRB regional board sites are unreachable from this environment (all 16 boards: connection errors / 403 / 404 on legacy paths). No shared RSS/JSON feed exists. Requires a different approach (aggregate feed or browser-driven crawl of RRB CEN notifications).
+2026/08/03 17:18:27   [OK]   ssc: fetched=0 saved=0
+2026/08/03 17:18:27   [FAIL] ncs: fetch: NCS job feed is dead: /feeds/rss/jobs=404, /_v/api/JobSearch/=404, site root=404 (all verified live). NCS portal is a JS SPA requiring a different approach (browser-driven crawl or maintained feed).
+2026/08/03 17:18:27   [FAIL] employment_news: fetch: Employment News feed is dead: /rss/eng/weekly-vacancy.xml=404, site root=404 (verified live). Portal requires a different approach (maintained aggregate feed or browser-driven crawl of weekly-vacancy PDFs).
+2026/08/03 17:18:27   [OK]   indeed: fetched=0 saved=0
+2026/08/03 17:18:27   [OK]   linkedin: fetched=0 saved=0
+2026/08/03 17:18:27   [OK]   google_jobs: fetched=0 saved=0
+2026/08/03 17:18:27   [OK]   company_pages: fetched=1 saved=1
+2026/08/03 17:18:27   [OK]   naukri: fetched=20 saved=20
+2026/08/03 17:18:27   [OK]   nptel: fetched=0 saved=0
+2026/08/03 17:18:27   [OK]   swayam: fetched=0 saved=0
+2026/08/03 17:18:27   [OK]   nsdc: fetched=0 saved=0
+2026/08/03 17:18:27   [OK]   coursera: fetched=60 saved=0
+2026/08/03 17:18:27   [OK]   udemy: fetched=0 saved=0
+2026/08/03 17:18:27   [OK]   youtube: fetched=0 saved=0
+2026/08/03 17:25:04 === starting crawl run ===
+{"level":"info","time":"2026-08-03T17:25:04Z","message":"Starting crawl for source: UPSC"}
+{"level":"warn","error":"UPSC RSS returned status: 404","time":"2026-08-03T17:25:05Z","message":"UPSC RSS fetch failed, trying website"}
+{"level":"info","jobsFromWebsite":6,"time":"2026-08-03T17:25:05Z","message":"UPSC website fetch successful"}
+{"level":"info","totalJobs":6,"time":"2026-08-03T17:25:05Z","message":"UPSC fetch completed"}
+{"level":"info","time":"2026-08-03T17:25:05Z","message":"Starting crawl for source: RRB (Railway Recruitment Board)"}
+{"level":"warn","time":"2026-08-03T17:25:05Z","message":"RRB regional board sites are unreachable from this environment (all 16 boards: connection errors / 403 / 404 on legacy paths). No shared RSS/JSON feed exists. Requires a different approach (aggregate feed or browser-driven crawl of RRB CEN notifications)."}
+{"level":"info","time":"2026-08-03T17:25:05Z","message":"Starting crawl for source: SSC"}
+{"level":"warn","error":"XML syntax error on line 2: attribute name without = in element","time":"2026-08-03T17:25:06Z","message":"SSC RSS fetch failed, trying website"}
+{"level":"info","jobsFromWebsite":0,"time":"2026-08-03T17:25:07Z","message":"SSC website fetch successful"}
+{"level":"info","totalJobs":0,"time":"2026-08-03T17:25:07Z","message":"SSC fetch completed"}
+{"level":"info","time":"2026-08-03T17:25:07Z","message":"Starting crawl for source: NCS (National Career Service)"}
+{"level":"warn","time":"2026-08-03T17:25:07Z","message":"NCS job feed is dead: /feeds/rss/jobs=404, /_v/api/JobSearch/=404, site root=404 (all verified live). NCS portal is a JS SPA requiring a different approach (browser-driven crawl or maintained feed)."}
+{"level":"info","time":"2026-08-03T17:25:07Z","message":"Starting crawl for source: Employment News"}
+{"level":"warn","time":"2026-08-03T17:25:07Z","message":"Employment News feed is dead: /rss/eng/weekly-vacancy.xml=404, site root=404 (verified live). Portal requires a different approach (maintained aggregate feed or browser-driven crawl of weekly-vacancy PDFs)."}
+{"level":"info","time":"2026-08-03T17:25:07Z","message":"Starting crawl for source: Indeed"}
+{"level":"warn","error":"expected element type <rss> but have <html>","time":"2026-08-03T17:25:08Z","message":"Indeed RSS fetch failed"}
+{"level":"info","jobsFromWebsite":0,"time":"2026-08-03T17:25:12Z","message":"Indeed website fetch successful"}
+{"level":"info","totalJobs":0,"time":"2026-08-03T17:25:12Z","message":"Indeed fetch completed"}
+{"level":"info","time":"2026-08-03T17:25:12Z","message":"Starting crawl for source: LinkedIn"}
+{"level":"warn","error":"LinkedIn RSS returned status: 404","time":"2026-08-03T17:25:13Z","message":"LinkedIn RSS fetch failed"}
+{"level":"warn","time":"2026-08-03T17:25:13Z","message":"LinkedIn alternative fetch not available - requires authentication"}
+{"level":"info","totalJobs":0,"time":"2026-08-03T17:25:13Z","message":"LinkedIn fetch completed"}
+{"level":"info","time":"2026-08-03T17:25:13Z","message":"Starting crawl for source: Google Jobs"}
+{"level":"info","jobsFromGoogleCareers":0,"time":"2026-08-03T17:25:15Z","message":"Google Careers fetch successful"}
+{"level":"info","totalJobs":0,"time":"2026-08-03T17:25:15Z","message":"Google Jobs fetch completed"}
+{"level":"info","time":"2026-08-03T17:25:15Z","message":"Starting crawl for source: Company Pages"}
+{"level":"info","jobs":0,"company":"Wipro","time":"2026-08-03T17:25:18Z","message":"Company fetch successful"}
+{"level":"info","jobs":0,"company":"Accenture","time":"2026-08-03T17:25:19Z","message":"Company fetch successful"}
+{"level":"info","jobs":0,"company":"Cognizant","time":"2026-08-03T17:25:20Z","message":"Company fetch successful"}
+{"level":"info","jobs":0,"company":"Tech Mahindra","time":"2026-08-03T17:25:20Z","message":"Company fetch successful"}
+{"level":"info","jobs":0,"company":"HCL","time":"2026-08-03T17:25:22Z","message":"Company fetch successful"}
+{"level":"info","jobs":0,"company":"IBM","time":"2026-08-03T17:25:24Z","message":"Company fetch successful"}
+{"level":"info","jobs":0,"company":"Microsoft","time":"2026-08-03T17:25:24Z","message":"Company fetch successful"}
+{"level":"warn","error":"Get \"https://www.adobe.com/careers.html\": stream error: stream ID 1; INTERNAL_ERROR; received from peer","company":"Adobe","time":"2026-08-03T17:25:24Z","message":"Failed to fetch from company"}
+{"level":"info","jobs":0,"company":"Salesforce","time":"2026-08-03T17:25:26Z","message":"Company fetch successful"}
+{"level":"info","jobs":0,"company":"Meta","time":"2026-08-03T17:25:27Z","message":"Company fetch successful"}
+{"level":"info","jobs":1,"company":"Oracle","time":"2026-08-03T17:25:27Z","message":"Company fetch successful"}
+{"level":"info","totalJobs":1,"time":"2026-08-03T17:25:27Z","message":"Company Pages fetch completed"}
+{"level":"info","time":"2026-08-03T17:25:27Z","message":"Starting crawl for source: naukri"}
+{"level":"debug","time":"2026-08-03T17:25:27Z","message":"Browser context created"}
+{"level":"info","time":"2026-08-03T17:25:27Z","message":"Navigating to Naukri jobs page"}
+{"level":"info","testTitle":"Example Domain","time":"2026-08-03T17:25:28Z","message":"Test navigation successful - browser is working"}
+{"level":"info","time":"2026-08-03T17:25:28Z","message":"Navigating to naukri.com/jobs-in-india"}
+{"level":"info","URL":"https://www.naukri.com/jobs-in-india","time":"2026-08-03T17:25:28Z","message":"URL being crawled"}
+{"level":"info","time":"2026-08-03T17:25:29Z","message":"Page loaded successfully"}
+2026/08/03 17:25:31 ERROR: could not unmarshal event: unknown ClientNavigationReason value: initialFrameNavigation
+2026/08/03 17:25:31 ERROR: could not unmarshal event: unknown ClientNavigationReason value: initialFrameNavigation
+2026/08/03 17:25:31 ERROR: could not unmarshal event: unknown ClientNavigationReason value: initialFrameNavigation
+2026/08/03 17:25:31 ERROR: could not unmarshal event: unknown ClientNavigationReason value: initialFrameNavigation
+{"level":"info","htmlLength":382836,"time":"2026-08-03T17:25:39Z","message":"Got HTML content"}
+{"level":"info","selector":"[data-job-id]","jobsFound":20,"time":"2026-08-03T17:25:39Z","message":"Found jobs with selector"}
+{"level":"info","jobsExtracted":20,"time":"2026-08-03T17:25:39Z","message":"Job elements found"}
+{"level":"info","time":"2026-08-03T17:25:39Z","message":"Sample Job Found"}
+{"level":"info","Title":"Customer Support Representative","time":"2026-08-03T17:25:39Z","message":"Sample Job Found - Title"}
+{"level":"info","Company":"Trigent Software","time":"2026-08-03T17:25:39Z","message":"Sample Job Found - Company"}
+{"level":"info","Location":"Mumbai, Pune, Bengaluru","time":"2026-08-03T17:25:39Z","message":"Sample Job Found - Location"}
+{"level":"info","totalJobs":20,"time":"2026-08-03T17:25:39Z","message":"Fetch completed"}
+{"level":"info","time":"2026-08-03T17:25:39Z","message":"Starting crawl for source: NPTEL"}
+{"level":"warn","status":404,"url":"https://nptel.ac.in/courses.html","time":"2026-08-03T17:25:39Z","message":"NPTEL non-200 response"}
+{"level":"info","coursesFromWebsite":0,"time":"2026-08-03T17:25:39Z","message":"NPTEL website fetch successful"}
+{"level":"info","totalCourses":0,"time":"2026-08-03T17:25:39Z","message":"NPTEL fetch completed"}
+{"level":"info","time":"2026-08-03T17:25:39Z","message":"Starting crawl for source: SWAYAM"}
+{"level":"warn","time":"2026-08-03T17:25:40Z","message":"SWAYAM home page contained no embedded course data - flagged as decision point, returning 0 courses"}
+{"level":"info","time":"2026-08-03T17:25:40Z","message":"Starting crawl for source: NSDC"}
+{"level":"info","coursesFromWebsite":0,"time":"2026-08-03T17:25:40Z","message":"NSDC website fetch successful"}
+{"level":"info","totalCourses":0,"time":"2026-08-03T17:25:40Z","message":"NSDC fetch completed"}
+{"level":"info","time":"2026-08-03T17:25:40Z","message":"Starting crawl for source: Coursera"}
+{"level":"info","coursesFromAPI":60,"time":"2026-08-03T17:25:42Z","message":"Coursera API fetch successful"}
+{"level":"info","totalCourses":60,"time":"2026-08-03T17:25:42Z","message":"Coursera fetch completed"}
+2026/08/03 17:25:42 ERROR saving course from coursera: failed to save course 'Getting started with the Vertex AI Gemini 1.5 Pro Model': pq: null value in column "skills" of relation "courses" violates not-null constraint (23502)
+2026/08/03 17:25:42 ERROR saving course from coursera: failed to save course 'SPSS: Apply & Interpret Logistic Regression Models': pq: null value in column "skills" of relation "courses" violates not-null constraint (23502)
+2026/08/03 17:25:42 ERROR saving course from coursera: failed to save course 'Securing Compute Engine Applications and Resources using Chrome Enterprise Premium': pq: null value in column "skills" of relation "courses" violates not-null constraint (23502)
+2026/08/03 17:25:42 ERROR saving course from coursera: failed to save course 'Intégrer des applications dans votre Dashboard Hootsuite': pq: null value in column "skills" of relation "courses" violates not-null constraint (23502)
+2026/08/03 17:25:42 ERROR saving course from coursera: failed to save course 'Overcoming Challenges in Self and Society': pq: null value in column "skills" of relation "courses" violates not-null constraint (23502)
+2026/08/03 17:25:42 ERROR saving course from coursera: failed to save course 'كيفية استعمال التطبيق هووتسويت': pq: null value in column "skills" of relation "courses" violates not-null constraint (23502)
+2026/08/03 17:25:42 ERROR saving course from coursera: failed to save course 'Gamification': pq: null value in column "skills" of relation "courses" violates not-null constraint (23502)
+2026/08/03 17:25:42 ERROR saving course from coursera: failed to save course 'CompTIA Cybersecurity Analyst (CySA+) CS0-003: Unit 2': pq: null value in column "skills" of relation "courses" violates not-null constraint (23502)
+2026/08/03 17:25:42 ERROR saving course from coursera: failed to save course 'Dealing With Missing Data': pq: null value in column "skills" of relation "courses" violates not-null constraint (23502)
+2026/08/03 17:25:42 ERROR saving course from coursera: failed to save course 'Unordered Data Structures': pq: null value in column "skills" of relation "courses" violates not-null constraint (23502)
+2026/08/03 17:25:42 ERROR saving course from coursera: failed to save course 'Migrating to Cloud SQL from Amazon RDS for MySQL Using Database Migration Service': pq: null value in column "skills" of relation "courses" violates not-null constraint (23502)
+2026/08/03 17:25:42 ERROR saving course from coursera: failed to save course 'Vital Signs: Understanding What the Body Is Telling Us': pq: null value in column "skills" of relation "courses" violates not-null constraint (23502)
+2026/08/03 17:25:42 ERROR saving course from coursera: failed to save course 'FinTech Disruptive Innovation: Implications for Society': pq: null value in column "skills" of relation "courses" violates not-null constraint (23502)
+2026/08/03 17:25:42 ERROR saving course from coursera: failed to save course 'Develop Code with Gemini in BigQuery': pq: null value in column "skills" of relation "courses" violates not-null constraint (23502)
+2026/08/03 17:25:42 ERROR saving course from coursera: failed to save course 'The Linux Essentials': pq: null value in column "skills" of relation "courses" violates not-null constraint (23502)
+2026/08/03 17:25:42 ERROR saving course from coursera: failed to save course 'Sensation, Perception, and Consciousness': pq: null value in column "skills" of relation "courses" violates not-null constraint (23502)
+2026/08/03 17:25:42 ERROR saving course from coursera: failed to save course 'Get Started with iOS App Development': pq: null value in column "skills" of relation "courses" violates not-null constraint (23502)
+2026/08/03 17:25:42 ERROR saving course from coursera: failed to save course 'Create Amazing Macros in Affinity Photo': pq: null value in column "skills" of relation "courses" violates not-null constraint (23502)
+2026/08/03 17:25:42 ERROR saving course from coursera: failed to save course 'Inteligencia Artificial Generativa para Docentes': pq: null value in column "skills" of relation "courses" violates not-null constraint (23502)
+2026/08/03 17:25:42 ERROR saving course from coursera: failed to save course 'Inventory Management: Analyze, Optimize & Control': pq: null value in column "skills" of relation "courses" violates not-null constraint (23502)
+2026/08/03 17:25:42 ERROR saving course from coursera: failed to save course 'Modern Art & Ideas': pq: null value in column "skills" of relation "courses" violates not-null constraint (23502)
+2026/08/03 17:25:42 ERROR saving course from coursera: failed to save course 'Brand Identity and Vector Graphics': pq: null value in column "skills" of relation "courses" violates not-null constraint (23502)
+2026/08/03 17:25:42 ERROR saving course from coursera: failed to save course 'The Evolving Universe': pq: null value in column "skills" of relation "courses" violates not-null constraint (23502)
+2026/08/03 17:25:42 ERROR saving course from coursera: failed to save course 'CyberSec First Responder (CFR-310)': pq: null value in column "skills" of relation "courses" violates not-null constraint (23502)
+2026/08/03 17:25:42 ERROR saving course from coursera: failed to save course 'Use SurveyMonkey to Create a Survey and Analyze Results': pq: null value in column "skills" of relation "courses" violates not-null constraint (23502)
+2026/08/03 17:25:42 ERROR saving course from coursera: failed to save course 'Star Schemas & Track Changes': pq: null value in column "skills" of relation "courses" violates not-null constraint (23502)
+2026/08/03 17:25:42 ERROR saving course from coursera: failed to save course 'Advanced Corporate Finance Strategies': pq: null value in column "skills" of relation "courses" violates not-null constraint (23502)
+2026/08/03 17:25:42 ERROR saving course from coursera: failed to save course 'Performing Data Aggregation using SQL Aggregate Functions': pq: null value in column "skills" of relation "courses" violates not-null constraint (23502)
+2026/08/03 17:25:42 ERROR saving course from coursera: failed to save course 'Inteligencia Artificial para personajes en Unreal Engine': pq: null value in column "skills" of relation "courses" violates not-null constraint (23502)
+2026/08/03 17:25:42 ERROR saving course from coursera: failed to save course 'Advancing Mask Technology for Semiconductors': pq: null value in column "skills" of relation "courses" violates not-null constraint (23502)
+2026/08/03 17:25:42 ERROR saving course from coursera: failed to save course 'Developing AI Policy': pq: null value in column "skills" of relation "courses" violates not-null constraint (23502)
+2026/08/03 17:25:42 ERROR saving course from coursera: failed to save course 'Adobe Dreamweaver CC (2017): Part 1': pq: null value in column "skills" of relation "courses" violates not-null constraint (23502)
+2026/08/03 17:25:42 ERROR saving course from coursera: failed to save course 'GenAI for Talent Acquisition: Smarter Candidate Screening': pq: null value in column "skills" of relation "courses" violates not-null constraint (23502)
+2026/08/03 17:25:42 ERROR saving course from coursera: failed to save course 'Оценка облигаций': pq: null value in column "skills" of relation "courses" violates not-null constraint (23502)
+2026/08/03 17:25:42 ERROR saving course from coursera: failed to save course 'Machine Learning in the Enterprise - Français': pq: null value in column "skills" of relation "courses" violates not-null constraint (23502)
+2026/08/03 17:25:42 ERROR saving course from coursera: failed to save course 'Unlock Multimodal Search': pq: null value in column "skills" of relation "courses" violates not-null constraint (23502)
+2026/08/03 17:25:42 ERROR saving course from coursera: failed to save course 'Chemical Process Safety': pq: null value in column "skills" of relation "courses" violates not-null constraint (23502)
+2026/08/03 17:25:42 ERROR saving course from coursera: failed to save course 'PostgreSQL 17: Core Concepts and Advanced SQL Techniques': pq: null value in column "skills" of relation "courses" violates not-null constraint (23502)
+2026/08/03 17:25:42 ERROR saving course from coursera: failed to save course 'Consulting Presentations and Storytelling': pq: null value in column "skills" of relation "courses" violates not-null constraint (23502)
+2026/08/03 17:25:42 ERROR saving course from coursera: failed to save course 'إختيار الهدف المثالي للحملات الإعلانية على Facebook': pq: null value in column "skills" of relation "courses" violates not-null constraint (23502)
+2026/08/03 17:25:42 ERROR saving course from coursera: failed to save course 'Qualitative Research Interviews': pq: null value in column "skills" of relation "courses" violates not-null constraint (23502)
+2026/08/03 17:25:42 ERROR saving course from coursera: failed to save course 'The Zero Trust Framework': pq: null value in column "skills" of relation "courses" violates not-null constraint (23502)
+2026/08/03 17:25:42 ERROR saving course from coursera: failed to save course 'Negotiation: Remember Levers and Record Notes': pq: null value in column "skills" of relation "courses" violates not-null constraint (23502)
+2026/08/03 17:25:42 ERROR saving course from coursera: failed to save course 'Bond and Equity Valuation Strategies': pq: null value in column "skills" of relation "courses" violates not-null constraint (23502)
+2026/08/03 17:25:42 ERROR saving course from coursera: failed to save course 'Analyze and Create Your AI Marketing Plan': pq: null value in column "skills" of relation "courses" violates not-null constraint (23502)
+2026/08/03 17:25:42 ERROR saving course from coursera: failed to save course 'AI-Assisted Code Modernization': pq: null value in column "skills" of relation "courses" violates not-null constraint (23502)
+2026/08/03 17:25:42 ERROR saving course from coursera: failed to save course 'Master After Effects: Analyze & Create Dynamic Motion': pq: null value in column "skills" of relation "courses" violates not-null constraint (23502)
+2026/08/03 17:25:42 ERROR saving course from coursera: failed to save course 'Growing and Sustaining Online Communities': pq: null value in column "skills" of relation "courses" violates not-null constraint (23502)
+2026/08/03 17:25:42 ERROR saving course from coursera: failed to save course 'Product Management: Developing and Delivering a New Product': pq: null value in column "skills" of relation "courses" violates not-null constraint (23502)
+2026/08/03 17:25:42 ERROR saving course from coursera: failed to save course 'Introduction to Image Generation - Français': pq: null value in column "skills" of relation "courses" violates not-null constraint (23502)
+2026/08/03 17:25:42 ERROR saving course from coursera: failed to save course 'Memory, Encryption, and Protecting Data in Android': pq: null value in column "skills" of relation "courses" violates not-null constraint (23502)
+2026/08/03 17:25:42 ERROR saving course from coursera: failed to save course 'Fundamentals of Blockchain Architecture': pq: null value in column "skills" of relation "courses" violates not-null constraint (23502)
+2026/08/03 17:25:42 ERROR saving course from coursera: failed to save course '2026 Mobile App Marketing With ASO, And Monetization': pq: null value in column "skills" of relation "courses" violates not-null constraint (23502)
+2026/08/03 17:25:42 ERROR saving course from coursera: failed to save course 'Vulnerability Assessment and Management': pq: null value in column "skills" of relation "courses" violates not-null constraint (23502)
+2026/08/03 17:25:42 ERROR saving course from coursera: failed to save course 'Debugging Apps on Google Kubernetes Engine': pq: null value in column "skills" of relation "courses" violates not-null constraint (23502)
+2026/08/03 17:25:42 ERROR saving course from coursera: failed to save course 'Simulate with Monte Carlo': pq: null value in column "skills" of relation "courses" violates not-null constraint (23502)
+2026/08/03 17:25:42 ERROR saving course from coursera: failed to save course 'Cómo empezar con Facebook Commerce Manager': pq: null value in column "skills" of relation "courses" violates not-null constraint (23502)
+2026/08/03 17:25:42 ERROR saving course from coursera: failed to save course 'English for Social Analysis': pq: null value in column "skills" of relation "courses" violates not-null constraint (23502)
+2026/08/03 17:25:42 ERROR saving course from coursera: failed to save course 'Researcher Management and Leadership Training': pq: null value in column "skills" of relation "courses" violates not-null constraint (23502)
+2026/08/03 17:25:42 ERROR saving course from coursera: failed to save course 'Introduction to Enterprise Computing': pq: null value in column "skills" of relation "courses" violates not-null constraint (23502)
+{"level":"info","time":"2026-08-03T17:25:42Z","message":"Starting crawl for source: Udemy"}
+{"level":"info","coursesFromWebsite":0,"time":"2026-08-03T17:25:42Z","message":"Udemy website fetch successful"}
+{"level":"info","totalCourses":0,"time":"2026-08-03T17:25:42Z","message":"Udemy fetch completed"}
+{"level":"info","time":"2026-08-03T17:25:42Z","message":"Starting crawl for source: YouTube"}
+{"level":"warn","time":"2026-08-03T17:25:42Z","message":"YOUTUBE_API_KEY is not set - skipping YouTube fetch (website fallback removed as broken; set YOUTUBE_API_KEY to enable)"}
+2026/08/03 17:25:42 === crawl complete: 16 sources run, 13 succeeded, 3 failed, 27 total saved in 39s
+2026/08/03 17:25:42   [OK]   upsc: fetched=6 saved=6
+2026/08/03 17:25:42   [FAIL] rrb: fetch: RRB regional board sites are unreachable from this environment (all 16 boards: connection errors / 403 / 404 on legacy paths). No shared RSS/JSON feed exists. Requires a different approach (aggregate feed or browser-driven crawl of RRB CEN notifications).
+2026/08/03 17:25:42   [OK]   ssc: fetched=0 saved=0
+2026/08/03 17:25:42   [FAIL] ncs: fetch: NCS job feed is dead: /feeds/rss/jobs=404, /_v/api/JobSearch/=404, site root=404 (all verified live). NCS portal is a JS SPA requiring a different approach (browser-driven crawl or maintained feed).
+2026/08/03 17:25:42   [FAIL] employment_news: fetch: Employment News feed is dead: /rss/eng/weekly-vacancy.xml=404, site root=404 (verified live). Portal requires a different approach (maintained aggregate feed or browser-driven crawl of weekly-vacancy PDFs).
+2026/08/03 17:25:42   [OK]   indeed: fetched=0 saved=0
+2026/08/03 17:25:42   [OK]   linkedin: fetched=0 saved=0
+2026/08/03 17:25:42   [OK]   google_jobs: fetched=0 saved=0
+2026/08/03 17:25:42   [OK]   company_pages: fetched=1 saved=1
+2026/08/03 17:25:42   [OK]   naukri: fetched=20 saved=20
+2026/08/03 17:25:42   [OK]   nptel: fetched=0 saved=0
+2026/08/03 17:25:42   [OK]   swayam: fetched=0 saved=0
+2026/08/03 17:25:42   [OK]   nsdc: fetched=0 saved=0
+2026/08/03 17:25:42   [OK]   coursera: fetched=60 saved=0
+2026/08/03 17:25:42   [OK]   udemy: fetched=0 saved=0
+2026/08/03 17:25:42   [OK]   youtube: fetched=0 saved=0

@@ -62,6 +62,8 @@ func RunAll(
 		sources.NewLinkedInSource(),
 		sources.NewGoogleJobsSource(),
 		sources.NewCompanyPagesSource(),
+		sources.NewGreenhouseSource(),
+		sources.NewLeverSource(),
 	}
 	for _, s := range privSources {
 		summary.SourcesRun++
@@ -191,7 +193,7 @@ func jobSourceToPriv(j *sources.JobSource) *sources.PrivJobSource {
 		Salary:      "",
 		Experience:  "",
 		JobType:     j.JobType,
-		Skills:      nil,
+		Skills:      j.Skills,
 		Description: j.Description,
 		PostedAt:    j.PostedAt,
 		CreatedAt:   time.Now(),

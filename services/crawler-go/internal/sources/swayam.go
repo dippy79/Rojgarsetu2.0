@@ -2,7 +2,6 @@ package sources
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -26,170 +25,78 @@ func NewSWAYAMSource() *SWAYAMSource {
 		client: &http.Client{
 			Timeout: 30 * time.Second,
 		},
-		apiURL: "https://swayam.gov.in/api/courses",
+		apiURL: "https://swayam.gov.in/",
 	}
 }
 
-// Fetch retrieves courses from SWAYAM
+// Fetch retrieves courses from SWAYAM.
+//
+// Verified live endpoint status (Phase A):
+//   - /explore      → 404 (dead)
+//   - /api/courses  → 404 (dead)
+//   - /             → 200, but a static landing page with no JSON-LD, no course
+//     anchors, and no SPA data-bootstrap. Course catalog is loaded client-side
+//     (JS-rendered) from an internal/CDN API (assets served from apis.com).
+//
+// Decision point (per approved plan): fixing SWAYAM requires JS rendering
+// (chromedp) or an official data-access agreement. We deliberately do NOT wire
+// chromedp into this source because that would add browser-pool contention
+// with Naukri. Returning 0 courses with a clear log so RunSummary is honest.
 func (s *SWAYAMSource) Fetch(ctx context.Context) ([]CourseSource, error) {
 	log.Info().Msg("Starting crawl for source: SWAYAM")
 
-	var courses []CourseSource
-
-	apiCourses, err := s.fetchFromAPI(ctx)
+	// Single reachability probe so RunSummary logs reflect a live check.
+	probe, err := s.fetchHomeForData(ctx)
 	if err != nil {
-		log.Warn().Err(err).Msg("SWAYAM API fetch failed, trying website")
-		apiCourses, err = s.fetchFromWebsite(ctx)
-		if err != nil {
-			log.Error().Err(err).Msg("All SWAYAM fetch methods failed")
-			return nil, fmt.Errorf("failed to fetch from SWAYAM: %w", err)
-		}
+		log.Warn().Err(err).Msg("SWAYAM home fetch failed")
+		return nil, fmt.Errorf("failed to fetch from SWAYAM: %w", err)
 	}
 
-	courses = append(courses, apiCourses...)
-	log.Info().Int("totalCourses", len(courses)).Msg("SWAYAM fetch completed")
-	return courses, nil
+	if probe {
+		log.Warn().Msg("SWAYAM course catalog is JS-rendered / requires internal API - flagged as decision point, returning 0 courses")
+	} else {
+		log.Warn().Msg("SWAYAM home page contained no embedded course data - flagged as decision point, returning 0 courses")
+	}
+
+	return []CourseSource{}, nil
 }
 
-// fetchFromAPI fetches from SWAYAM API
-func (s *SWAYAMSource) fetchFromAPI(ctx context.Context) ([]CourseSource, error) {
+// fetchHomeForData fetches the SWAYAM home page and reports whether any
+// directly-parseable course data (JSON-LD blocks or /course/ anchors) exists.
+func (s *SWAYAMSource) fetchHomeForData(ctx context.Context) (bool, error) {
 	req, err := http.NewRequestWithContext(ctx, "GET", s.apiURL, nil)
 	if err != nil {
-		return nil, err
+		return false, err
 	}
-
 	req.Header.Set("User-Agent", "RojgarSetu/2.0")
 
 	resp, err := s.client.Do(req)
 	if err != nil {
-		return nil, err
+		return false, err
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("SWAYAM API returned status: %d", resp.StatusCode)
+		return false, fmt.Errorf("SWAYAM home returned status: %d", resp.StatusCode)
 	}
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, err
+		return false, err
+	}
+	html := string(body)
+
+	if len(extractMatches(html, `<script[^>]*type="application/ld\+json"[^>]*>`)) > 0 {
+		return true, nil
+	}
+	if len(extractMatches(html, `href="[^"]*/course/[^"]*"`)) > 0 {
+		return true, nil
+	}
+	if strings.Contains(html, "__NEXT_DATA__") || strings.Contains(html, "window.__INITIAL") {
+		return true, nil
 	}
 
-	var swayamData struct {
-		Courses []struct {
-			Title       string `json:"title"`
-			Description string `json:"description"`
-			Duration    string `json:"duration"`
-			Level       string `json:"level"`
-			URL         string `json:"url"`
-			Thumbnail   string `json:"thumbnail"`
-			StartDate   string `json:"startDate"`
-		} `json:"courses"`
-	}
-
-	if err := json.Unmarshal(body, &swayamData); err != nil {
-		return nil, err
-	}
-
-	var courses []CourseSource
-	for _, c := range swayamData.Courses {
-		course := CourseSource{
-			Source:       "swayam",
-			Provider:     "SWAYAM",
-			Title:        cleanString(c.Title),
-			URL:          "https://swayam.gov.in" + c.URL,
-			Duration:     c.Duration,
-			Level:        normalizeCourseLevel(c.Level),
-			Description:  cleanString(c.Description),
-			ThumbnailURL: c.Thumbnail,
-			IsFree:       true,
-			CreatedAt:    time.Now(),
-		}
-
-		if course.Title != "" && isValidCourse(&course) {
-			courses = append(courses, course)
-		}
-	}
-
-	log.Info().Int("coursesFromAPI", len(courses)).Msg("SWAYAM API fetch successful")
-	return courses, nil
-}
-
-// fetchFromWebsite fetches from SWAYAM website
-func (s *SWAYAMSource) fetchFromWebsite(ctx context.Context) ([]CourseSource, error) {
-	urls := []string{
-		"https://swayam.gov.in/explore",
-		"https://swayam.gov.in/courses",
-	}
-
-	var allCourses []CourseSource
-
-	for _, url := range urls {
-		req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
-		if err != nil {
-			continue
-		}
-
-		req.Header.Set("User-Agent", "RojgarSetu/2.0")
-
-		resp, err := s.client.Do(req)
-		if err != nil {
-			continue
-		}
-
-		if resp.StatusCode != http.StatusOK {
-			resp.Body.Close()
-			continue
-		}
-
-		body, err := io.ReadAll(resp.Body)
-		resp.Body.Close()
-		if err != nil {
-			continue
-		}
-
-		courses := s.parseHTMLCourses(string(body))
-		allCourses = append(allCourses, courses...)
-	}
-
-	log.Info().Int("coursesFromWebsite", len(allCourses)).Msg("SWAYAM website fetch successful")
-	return allCourses, nil
-}
-
-// parseHTMLCourses parses courses from SWAYAM HTML
-func (s *SWAYAMSource) parseHTMLCourses(html string) []CourseSource {
-	var courses []CourseSource
-
-	patterns := []string{
-		`<a[^>]*href="(/course/[^"]*)"[^>]*>.*?<h3[^>]*>([^<]*)</h3>`,
-		`<div[^>]*class="[^"]*course[^"]*"[^>]*>.*?<a[^>]*href="([^"]*)"[^>]*>([^<]*)</a>`,
-	}
-
-	for _, pattern := range patterns {
-		matches := extractMatches(html, pattern)
-		for _, match := range matches {
-			if len(match) >= 3 {
-				link := strings.TrimSpace(match[1])
-				title := strings.TrimSpace(match[2])
-
-				if len(title) > 5 {
-					course := CourseSource{
-						Source:    "swayam",
-						Provider:  "SWAYAM",
-						Title:     title,
-						URL:       "https://swayam.gov.in" + link,
-						IsFree:    true,
-						CreatedAt: time.Now(),
-					}
-					if isValidCourse(&course) {
-						courses = append(courses, course)
-					}
-				}
-			}
-		}
-	}
-
-	return courses
+	return false, nil
 }
 
 // Name returns the source name
