@@ -24,6 +24,7 @@ func (h *VideoHandler) GetVideos(c *gin.Context) {
 	filter := db.VideoFilter{
 		Channel:  c.Query("channel"),
 		Category: c.Query("category"),
+		Language: c.Query("language"),
 	}
 
 	videos, total, err := h.service.GetVideos(filter, page, limit)

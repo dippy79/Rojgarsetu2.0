@@ -47,6 +47,7 @@ func (p *PostgresDB) GetGovJobs(f GovJobFilter, page, limit int) ([]GetGovJobsRo
 		Column1: f.Department,
 		Column2: f.Location,
 		Column3: f.Source,
+		Column4: f.Language,
 	})
 	if err != nil {
 		return nil, 0, err
@@ -56,6 +57,7 @@ func (p *PostgresDB) GetGovJobs(f GovJobFilter, page, limit int) ([]GetGovJobsRo
 		Column1: f.Department,
 		Column2: f.Location,
 		Column3: f.Source,
+		Column4: f.Language,
 		Limit:   int32(limit),
 		Offset:  int32(offset),
 	})
@@ -88,6 +90,7 @@ func (p *PostgresDB) GetPrivJobs(f PrivJobFilter, page, limit int) ([]GetPrivJob
 		Column2: f.Location,
 		Column3: f.Source,
 		Column4: f.JobType,
+		Column5: f.Language,
 	})
 	if err != nil {
 		return nil, 0, err
@@ -98,6 +101,7 @@ func (p *PostgresDB) GetPrivJobs(f PrivJobFilter, page, limit int) ([]GetPrivJob
 		Column2: f.Location,
 		Column3: f.Source,
 		Column4: f.JobType,
+		Column5: f.Language,
 		Limit:   int32(limit),
 		Offset:  int32(offset),
 	})
@@ -129,6 +133,7 @@ func (p *PostgresDB) GetCourses(f CourseFilter, page, limit int) ([]GetCoursesRo
 		Column1: f.Provider,
 		Column2: f.Mode,
 		Column3: f.Level,
+		Column4: f.Language,
 	})
 	if err != nil {
 		return nil, 0, err
@@ -138,6 +143,7 @@ func (p *PostgresDB) GetCourses(f CourseFilter, page, limit int) ([]GetCoursesRo
 		Column1: f.Provider,
 		Column2: f.Mode,
 		Column3: f.Level,
+		Column4: f.Language,
 		Limit:   int32(limit),
 		Offset:  int32(offset),
 	})
@@ -168,6 +174,7 @@ func (p *PostgresDB) GetVideos(f VideoFilter, page, limit int) ([]GetVideosRow, 
 	total, err := p.Queries.GetVideosCount(context.Background(), GetVideosCountParams{
 		Column1: f.Channel,
 		Column2: f.Category,
+		Column3: f.Language,
 	})
 	if err != nil {
 		return nil, 0, err
@@ -176,6 +183,7 @@ func (p *PostgresDB) GetVideos(f VideoFilter, page, limit int) ([]GetVideosRow, 
 	rows, err := p.Queries.GetVideos(context.Background(), GetVideosParams{
 		Column1: f.Channel,
 		Column2: f.Category,
+		Column3: f.Language,
 		Limit:   int32(limit),
 		Offset:  int32(offset),
 	})

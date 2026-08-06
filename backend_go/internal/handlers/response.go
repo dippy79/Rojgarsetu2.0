@@ -56,6 +56,7 @@ type PrivJobResponse struct {
 	Skills      []string   `json:"skills"`
 	Description string     `json:"description"`
 	Source      string     `json:"source"`
+	Language    string     `json:"language"`
 	PostedAt    *time.Time `json:"posted_at"`
 	CreatedAt   *time.Time `json:"created_at"`
 }
@@ -73,6 +74,7 @@ func toPrivJobResponse(r db.GetPrivJobsRow) PrivJobResponse {
 		Skills:      r.Skills,
 		Description: nullStr(r.Description),
 		Source:      r.Source,
+		Language:    nullStr(r.Language),
 		PostedAt:    nullTimePtr(r.PostedAt),
 		CreatedAt:   nullTimePtr(r.CreatedAt),
 	}
@@ -91,6 +93,7 @@ func toPrivJobByIDResponse(r db.GetPrivJobByIDRow) PrivJobResponse {
 		Skills:      r.Skills,
 		Description: nullStr(r.Description),
 		Source:      r.Source,
+		Language:    nullStr(r.Language),
 		PostedAt:    nullTimePtr(r.PostedAt),
 		CreatedAt:   nullTimePtr(r.CreatedAt),
 	}
@@ -108,6 +111,7 @@ type GovJobResponse struct {
 	Eligibility  string     `json:"eligibility"`
 	VacancyCount *int32     `json:"vacancy_count"`
 	Salary       string     `json:"salary"`
+	Language     string     `json:"language"`
 	ExamDate     *time.Time `json:"exam_date"`
 	CreatedAt    *time.Time `json:"created_at"`
 }
@@ -124,6 +128,7 @@ func toGovJobResponse(r db.GetGovJobsRow) GovJobResponse {
 		Eligibility:  nullStr(r.Eligibility),
 		VacancyCount: nullInt32Ptr(r.VacancyCount),
 		Salary:       nullStr(r.Salary),
+		Language:     nullStr(r.Language),
 		ExamDate:     nullTimePtr(r.ExamDate),
 		CreatedAt:    nullTimePtr(r.CreatedAt),
 	}
@@ -141,6 +146,7 @@ func toGovJobByIDResponse(r db.GetGovJobByIDRow) GovJobResponse {
 		Eligibility:  nullStr(r.Eligibility),
 		VacancyCount: nullInt32Ptr(r.VacancyCount),
 		Salary:       nullStr(r.Salary),
+		Language:     nullStr(r.Language),
 		ExamDate:     nullTimePtr(r.ExamDate),
 		CreatedAt:    nullTimePtr(r.CreatedAt),
 	}
@@ -161,6 +167,7 @@ type CourseResponse struct {
 	Price        string     `json:"price"`
 	IsFree       bool       `json:"is_free"`
 	Source       string     `json:"source"`
+	Language     string     `json:"language"`
 	CreatedAt    *time.Time `json:"created_at"`
 }
 
@@ -179,6 +186,7 @@ func toCourseResponse(r db.GetCoursesRow) CourseResponse {
 		Price:        nullStr(r.Price),
 		IsFree:       nullBool(r.IsFree),
 		Source:       r.Source,
+		Language:     nullStr(r.Language),
 		CreatedAt:    nullTimePtr(r.CreatedAt),
 	}
 }
@@ -198,6 +206,7 @@ func toCourseByIDResponse(r db.GetCourseByIDRow) CourseResponse {
 		Price:        nullStr(r.Price),
 		IsFree:       nullBool(r.IsFree),
 		Source:       r.Source,
+		Language:     nullStr(r.Language),
 		CreatedAt:    nullTimePtr(r.CreatedAt),
 	}
 }
@@ -217,6 +226,7 @@ type VideoResponse struct {
 	ViewCount   *int64     `json:"view_count"`
 	LikeCount   *int64     `json:"like_count"`
 	Category    string     `json:"category"`
+	Language    string     `json:"language"`
 	CreatedAt   *time.Time `json:"created_at"`
 }
 
@@ -235,6 +245,7 @@ func toVideoResponse(r db.GetVideosRow) VideoResponse {
 		ViewCount:   nullInt64Ptr(r.ViewCount),
 		LikeCount:   nullInt64Ptr(r.LikeCount),
 		Category:    nullStr(r.Category),
+		Language:    nullStr(r.Language),
 		CreatedAt:   nullTimePtr(r.CreatedAt),
 	}
 }
@@ -254,6 +265,7 @@ func toVideoByIDResponse(r db.GetVideoByIDRow) VideoResponse {
 		ViewCount:   nullInt64Ptr(r.ViewCount),
 		LikeCount:   nullInt64Ptr(r.LikeCount),
 		Category:    nullStr(r.Category),
+		Language:    nullStr(r.Language),
 		CreatedAt:   nullTimePtr(r.CreatedAt),
 	}
 }

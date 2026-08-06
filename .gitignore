@@ -8,6 +8,12 @@
 *.jks
 *.keystore
 
+# Secrets & DB URLs
+dburl.txt
+**/password.txt
+**/secrets/
+*.secret
+
 # Secrets
 **/secrets/
 **/secret.yaml
@@ -30,6 +36,32 @@ dist/
 
 # Logs
 *.log
+*_out.txt
+build_err.txt
+
+# Debug / test artifacts
+rec_*.json
+fix_*.json
+search_*.json
+v1_*.json
+v2_*.json
+crawl_summary.json
+gh_*.json
+lever_*.json
+live_*.html
+rec_*.jpg
+lang_dist_out.txt
+lang_verify*.txt
+ps_after.txt
+task1_diff.txt
+*_diff.txt
+
+# Virtual envs & build caches
+.venv/
+venv/
+.dart_tool/
+build/
+*.exe
 
 # K8s
 kubeconfig

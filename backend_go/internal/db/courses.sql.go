@@ -15,7 +15,7 @@ import (
 
 const getCourseByID = `-- name: GetCourseByID :one
 SELECT id, provider, title, url, duration, mode, level, skills,
-       description, thumbnail_url, price, is_free, source, created_at
+       description, thumbnail_url, price, is_free, source, language, created_at
 FROM courses 
 WHERE id = $1 AND is_active = true
 `
@@ -34,6 +34,7 @@ type GetCourseByIDRow struct {
 	Price        sql.NullString `json:"price"`
 	IsFree       sql.NullBool   `json:"is_free"`
 	Source       string         `json:"source"`
+	Language     sql.NullString `json:"language"`
 	CreatedAt    sql.NullTime   `json:"created_at"`
 }
 
@@ -54,6 +55,7 @@ func (q *Queries) GetCourseByID(ctx context.Context, id uuid.UUID) (GetCourseByI
 		&i.Price,
 		&i.IsFree,
 		&i.Source,
+		&i.Language,
 		&i.CreatedAt,
 	)
 	return i, err
@@ -61,20 +63,22 @@ func (q *Queries) GetCourseByID(ctx context.Context, id uuid.UUID) (GetCourseByI
 
 const getCourses = `-- name: GetCourses :many
 SELECT id, provider, title, url, duration, mode, level, skills,
-       description, thumbnail_url, price, is_free, source, created_at
+       description, thumbnail_url, price, is_free, source, language, created_at
 FROM courses 
 WHERE is_active = true
   AND ($1::text = '' OR provider ILIKE '%' || $1 || '%')
   AND ($2::text = '' OR mode = $2)
   AND ($3::text = '' OR level = $3)
+  AND ($4::text = '' OR language = $4)
 ORDER BY created_at DESC 
-LIMIT $4 OFFSET $5
+LIMIT $5 OFFSET $6
 `
 
 type GetCoursesParams struct {
 	Column1 string `json:"column_1"`
 	Column2 string `json:"column_2"`
 	Column3 string `json:"column_3"`
+	Column4 string `json:"column_4"`
 	Limit   int32  `json:"limit"`
 	Offset  int32  `json:"offset"`
 }
@@ -93,6 +97,7 @@ type GetCoursesRow struct {
 	Price        sql.NullString `json:"price"`
 	IsFree       sql.NullBool   `json:"is_free"`
 	Source       string         `json:"source"`
+	Language     sql.NullString `json:"language"`
 	CreatedAt    sql.NullTime   `json:"created_at"`
 }
 
@@ -101,6 +106,7 @@ func (q *Queries) GetCourses(ctx context.Context, arg GetCoursesParams) ([]GetCo
 		arg.Column1,
 		arg.Column2,
 		arg.Column3,
+		arg.Column4,
 		arg.Limit,
 		arg.Offset,
 	)
@@ -125,6 +131,7 @@ func (q *Queries) GetCourses(ctx context.Context, arg GetCoursesParams) ([]GetCo
 			&i.Price,
 			&i.IsFree,
 			&i.Source,
+			&i.Language,
 			&i.CreatedAt,
 		); err != nil {
 			return nil, err
@@ -145,16 +152,23 @@ SELECT COUNT(*) FROM courses WHERE is_active = true
   AND ($1::text = '' OR provider ILIKE '%' || $1 || '%')
   AND ($2::text = '' OR mode = $2)
   AND ($3::text = '' OR level = $3)
+  AND ($4::text = '' OR language = $4)
 `
 
 type GetCoursesCountParams struct {
 	Column1 string `json:"column_1"`
 	Column2 string `json:"column_2"`
 	Column3 string `json:"column_3"`
+	Column4 string `json:"column_4"`
 }
 
 func (q *Queries) GetCoursesCount(ctx context.Context, arg GetCoursesCountParams) (int64, error) {
-	row := q.db.QueryRowContext(ctx, getCoursesCount, arg.Column1, arg.Column2, arg.Column3)
+	row := q.db.QueryRowContext(ctx, getCoursesCount,
+		arg.Column1,
+		arg.Column2,
+		arg.Column3,
+		arg.Column4,
+	)
 	var count int64
 	err := row.Scan(&count)
 	return count, err

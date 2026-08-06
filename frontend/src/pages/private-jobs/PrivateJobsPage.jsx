@@ -13,11 +13,12 @@ const PrivateJobsPage = () => {
   const [pagination, setPagination] = useState({ page: 1, limit: 20, total: 0, totalPages: 0 });
   const [searchParams, setSearchParams] = useSearchParams();
 
-  const page = parseInt(searchParams.get('page')) || 1;
+const page = parseInt(searchParams.get('page')) || 1;
   const company = searchParams.get('company') || '';
   const location = searchParams.get('location') || '';
   const jobType = searchParams.get('job_type') || '';
   const source = searchParams.get('source') || '';
+  const language = searchParams.get('language') || '';
 
   const fetchJobs = useCallback(async () => {
     try {
@@ -30,6 +31,7 @@ const PrivateJobsPage = () => {
       if (location) params.append('location', location);
       if (jobType) params.append('job_type', jobType);
       if (source) params.append('source', source);
+      if (language) params.append('language', language);
 
       const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/v1/private-jobs?${params}`);
       const data = await response.json();
@@ -45,7 +47,7 @@ const PrivateJobsPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [page, company, location, jobType, source]);
+  }, [page, company, location, jobType, source, language]);
 
   useEffect(() => {
     fetchJobs();
@@ -57,6 +59,7 @@ const PrivateJobsPage = () => {
     if (filters.location) params.append('location', filters.location);
     if (filters.jobType) params.append('job_type', filters.jobType);
     if (filters.source) params.append('source', filters.source);
+    if (filters.language) params.append('language', filters.language);
     params.append('page', '1');
     setSearchParams(params);
   };
@@ -74,14 +77,26 @@ const PrivateJobsPage = () => {
         <p>Find the best private sector job opportunities</p>
       </div>
 
-      <FilterBar
-        filters={{ company, location, jobType, source }}
+<FilterBar
+        filters={{ company, location, jobType, source, language }}
         onFilterChange={handleFilterChange}
         filterOptions={{
           companies: ['TCS', 'Infosys', 'Wipro', 'Amazon', 'Google', 'Microsoft', 'Flipkart'],
           locations: ['Delhi', 'Mumbai', 'Bangalore', 'Chennai', 'Kolkata', 'Hyderabad', 'Pune', 'Remote'],
           jobTypes: ['full-time', 'part-time', 'contract', 'internship', 'remote'],
-          sources: ['linkedin', 'indeed', 'google_jobs', 'company_pages']
+          sources: ['linkedin', 'indeed', 'google_jobs', 'company_pages'],
+          languages: [
+            { code: 'en', label: 'English' },
+            { code: 'hi', label: 'Hindi' },
+            { code: 'ta', label: 'Tamil' },
+            { code: 'te', label: 'Telugu' },
+            { code: 'bn', label: 'Bengali' },
+            { code: 'mr', label: 'Marathi' },
+            { code: 'gu', label: 'Gujarati' },
+            { code: 'kn', label: 'Kannada' },
+            { code: 'ml', label: 'Malayalam' },
+            { code: 'pa', label: 'Punjabi' }
+          ]
         }}
       />
 

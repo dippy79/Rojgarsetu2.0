@@ -24,6 +24,7 @@ DATABASE_URL = os.getenv(
 class RecommendationRequest(BaseModel):
     user_skills: List[str] = []
     preferred_locations: Optional[List[str]] = []
+    preferred_language: Optional[str] = ""
 
 
 class JobRecord(BaseModel):
@@ -34,6 +35,7 @@ class JobRecord(BaseModel):
     description: Optional[str] = ""
     job_type: Optional[str] = ""
     source_table: Optional[str] = ""
+    language: Optional[str] = ""
 
 
 def get_db_connection():
@@ -47,59 +49,82 @@ def get_db_connection():
         return None
 
 
-def fetch_jobs_from_db() -> List[JobRecord]:
-    """Fetch available jobs from the company_jobs table."""
+def fetch_jobs_from_db(language: str = "") -> List[JobRecord]:
+    """Fetch available jobs from the job tables, filtered by language if provided.
+
+    When ``language`` is non-empty, only rows tagged with that language code are
+    returned. The filter is pushed down into each UNION branch so the result set
+    is genuinely narrowed. A single global LIMIT is applied to the whole UNION via
+    a subquery so the cap is not accidentally applied to only one branch.
+    """
     conn = get_db_connection()
     if not conn:
         return []
 
+    # If a language was requested, attach a SQL predicate to each branch.
+    # Uses '%' formatting (not .format/f-string) so the SQL array literal
+    # '{}' does not need brace-escaping. The language value itself is passed
+    # as a bound parameter, never interpolated directly (SQL-injection safe).
+    lang_predicate = "AND language = %(lang)s" if language else ""
+    params = {"lang": language} if language else {}
+
+    sql = """
+        SELECT * FROM (
+            SELECT
+                cj.id::text AS id,
+                COALESCE(cj.title, '') AS title,
+                COALESCE(cj.location, '') AS location,
+                COALESCE(cj.skills, '{}') AS skills,
+                COALESCE(cj.description, '') AS description,
+                COALESCE(cj.job_type, '') AS job_type,
+                COALESCE(cj.language, '') AS language,
+                'company_jobs' AS source_table
+            FROM company_jobs cj
+            WHERE cj.is_active = true
+            %s
+
+            UNION ALL
+
+            SELECT
+                pj.id::text AS id,
+                COALESCE(pj.title, '') AS title,
+                COALESCE(pj.location, '') AS location,
+                COALESCE(pj.skills, '{}') AS skills,
+                COALESCE(pj.description, '') AS description,
+                COALESCE(pj.job_type, '') AS job_type,
+                COALESCE(pj.language, '') AS language,
+                'jobs_private' AS source_table
+            FROM jobs_private pj
+            WHERE pj.is_active = true
+            %s
+
+            UNION ALL
+
+            SELECT
+                gj.id::text AS id,
+                COALESCE(gj.title, '') AS title,
+                COALESCE(gj.location, '') AS location,
+                '{}'::text[] AS skills,
+                TRIM(
+                    COALESCE(gj.eligibility, '') || ' ' || COALESCE(gj.department, '')
+                ) AS description,
+                '' AS job_type,
+                COALESCE(gj.language, '') AS language,
+                'jobs_government' AS source_table
+            FROM jobs_government gj
+            WHERE gj.is_active = true
+            %s
+        ) AS all_jobs
+        LIMIT 200
+    """ % (lang_predicate, lang_predicate, lang_predicate)
+
     try:
         with conn.cursor() as cur:
-            cur.execute("""
-                SELECT
-                    cj.id::text AS id,
-                    COALESCE(cj.title, '') AS title,
-                    COALESCE(cj.location, '') AS location,
-                    COALESCE(cj.skills, '{}') AS skills,
-                    COALESCE(cj.description, '') AS description,
-                    COALESCE(cj.job_type, '') AS job_type,
-                    'company_jobs' AS source_table
-                FROM company_jobs cj
-                WHERE cj.is_active = true
-
-                UNION ALL
-
-                SELECT
-                    pj.id::text AS id,
-                    COALESCE(pj.title, '') AS title,
-                    COALESCE(pj.location, '') AS location,
-                    COALESCE(pj.skills, '{}') AS skills,
-                    COALESCE(pj.description, '') AS description,
-                    COALESCE(pj.job_type, '') AS job_type,
-                    'jobs_private' AS source_table
-                FROM jobs_private pj
-                WHERE pj.is_active = true
-
-                UNION ALL
-
-                SELECT
-                    gj.id::text AS id,
-                    COALESCE(gj.title, '') AS title,
-                    COALESCE(gj.location, '') AS location,
-                    '{}'::text[] AS skills,
-                    TRIM(
-                        COALESCE(gj.eligibility, '') || ' ' || COALESCE(gj.department, '')
-                    ) AS description,
-                    '' AS job_type,
-                    'jobs_government' AS source_table
-                FROM jobs_government gj
-                WHERE gj.is_active = true
-                LIMIT 200
-            """)
+            cur.execute(sql, params)
             rows = cur.fetchall()
             jobs = []
             for row in rows:
-                job_id, title, location, skills, description, job_type, source_table = row
+                job_id, title, location, skills, description, job_type, language, source_table = row
                 # skills comes from PostgreSQL as a list (text[])
                 if isinstance(skills, str):
                     # Handle case where it's returned as a string
@@ -113,7 +138,8 @@ def fetch_jobs_from_db() -> List[JobRecord]:
                     skills=skills_list,
                     description=description or "",
                     job_type=job_type or "",
-                    source_table=source_table or ""
+                    source_table=source_table or "",
+                    language=language or ""
                 ))
             return jobs
     except Exception as e:
@@ -146,7 +172,7 @@ def calculate_keyword_overlap(user_skills: set, job_text: str) -> float:
     return round(len(intersection) / len(user_skills), 2)
 
 
-def recommend_jobs_from_db(user_skills: List[str], preferred_locations: List[str]) -> dict:
+def recommend_jobs_from_db(user_skills: List[str], preferred_locations: List[str], preferred_language: str = "") -> dict:
     """Core recommendation logic: fetch jobs from DB and score them."""
     # Validate input
     if not user_skills:
@@ -168,8 +194,11 @@ def recommend_jobs_from_db(user_skills: List[str], preferred_locations: List[str
     # Normalize preferred locations
     preferred_locations_lower = [loc.lower().strip() for loc in preferred_locations if loc.strip()]
 
-    # Fetch jobs from database
-    jobs = fetch_jobs_from_db()
+    # Normalize preferred language (lowercase, trimmed)
+    preferred_language = (preferred_language or "").strip().lower()
+
+    # Fetch jobs from database, filtering by language in SQL (early, precise).
+    jobs = fetch_jobs_from_db(language=preferred_language)
     if not jobs:
         return {
             "status": "error",
@@ -182,6 +211,12 @@ def recommend_jobs_from_db(user_skills: List[str], preferred_locations: List[str
     scored_jobs = []
 
     for job in jobs:
+        # Defensive language filter (belt-and-suspenders on top of the SQL filter):
+        # skip jobs whose language does not match preferred language.
+        job_language = (job.language or "").strip().lower()
+        if preferred_language and job_language != preferred_language:
+            continue
+
         # Normalize job skills
         job_skills_set = set(skill.lower().strip() for skill in job.skills if skill.strip())
 
@@ -257,14 +292,15 @@ def health_check():
 @app.post("/recommend/jobs")
 def recommend_jobs(payload: RecommendationRequest):
     """
-    Recommend jobs based on candidate skills and preferred locations.
+Recommend jobs based on candidate skills and preferred locations.
     Queries the company_jobs table from PostgreSQL and scores jobs by
     skill overlap (Jaccard similarity + keyword matching).
     """
     try:
         result = recommend_jobs_from_db(
             user_skills=payload.user_skills,
-            preferred_locations=payload.preferred_locations or []
+            preferred_locations=payload.preferred_locations or [],
+            preferred_language=payload.preferred_language or ""
         )
         return result
     except Exception as e:

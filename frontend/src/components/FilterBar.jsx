@@ -144,7 +144,7 @@ const FilterBar = ({ filters, onFilterChange, filterOptions }) => {
         </div>
       )}
 
-      {filterOptions.jobTypes && (
+{filterOptions.jobTypes && (
         <div className="filter-group">
           <label>Job Type</label>
           <select 
@@ -159,7 +159,27 @@ const FilterBar = ({ filters, onFilterChange, filterOptions }) => {
         </div>
       )}
 
-      <button 
+      {filterOptions.languages && (
+        <div className="filter-group">
+          <label>Language</label>
+          <select 
+            value={filters.language || ''} 
+            onChange={(e) => handleChange('language', e.target.value)}
+          >
+            <option value="">All Languages</option>
+            {filterOptions.languages.map(lang => (
+              <option 
+                key={typeof lang === 'string' ? lang : lang.code} 
+                value={typeof lang === 'string' ? lang : lang.code}
+              >
+                {typeof lang === 'string' ? lang : lang.label}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+
+      <button
         className="clear-filters"
         onClick={() => onFilterChange({})}
       >

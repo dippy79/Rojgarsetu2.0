@@ -25,6 +25,7 @@ func (h *CourseHandler) GetCourses(c *gin.Context) {
 		Provider: c.Query("provider"),
 		Mode:     c.Query("mode"),
 		Level:    c.Query("level"),
+		Language: c.Query("language"),
 	}
 
 	courses, total, err := h.service.GetCourses(filter, page, limit)

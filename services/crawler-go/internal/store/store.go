@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/lib/pq"
+	"github.com/rojgarsetu/crawler/internal/lang"
 	"github.com/rojgarsetu/crawler/internal/parser"
 	"github.com/rojgarsetu/crawler/internal/sources"
 )
@@ -131,12 +132,14 @@ func (s *PostgresStore) SaveGovJob(job *sources.GovJobSource) error {
 	lastDate := parseDateToTime(job.LastDate)
 	examDate := parseDateToTime(job.ExamDate)
 
+	language := lang.Detect(job.Title, job.Eligibility, job.Department)
+
 	query := `
 	INSERT INTO jobs_government
 	(title, department, location, apply_url, last_date, source, eligibility,
-	 vacancy_count, salary, exam_date, notification_pdf_url, is_active)
+	 vacancy_count, salary, exam_date, notification_pdf_url, language, is_active)
 	VALUES
-	($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,true)
+	($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,true)
 	ON CONFLICT (source, apply_url)
 	DO UPDATE SET
 	    title = EXCLUDED.title,
@@ -147,6 +150,7 @@ func (s *PostgresStore) SaveGovJob(job *sources.GovJobSource) error {
 	    salary = EXCLUDED.salary,
 	    exam_date = EXCLUDED.exam_date,
 	    notification_pdf_url = EXCLUDED.notification_pdf_url,
+	    language = EXCLUDED.language,
 	    is_active = true,
 	    updated_at = CURRENT_TIMESTAMP
 	`
@@ -163,6 +167,7 @@ func (s *PostgresStore) SaveGovJob(job *sources.GovJobSource) error {
 		job.Salary,
 		examDate,
 		job.NotificationURL,
+		language,
 	)
 	if err != nil {
 		return fmt.Errorf("failed to save gov job '%s': %w", job.Title, err)
@@ -182,12 +187,14 @@ func (s *PostgresStore) SavePrivJob(job *sources.PrivJobSource) error {
 		postedAt = *job.PostedAt
 	}
 
+	language := lang.Detect(job.Title, job.Description, job.Company, job.Location)
+
 	query := `
 	INSERT INTO jobs_private
 	(company, title, location, url, salary, experience, job_type, skills,
-	 description, source, posted_at, is_active)
+	 description, source, posted_at, language, is_active)
 	VALUES
-	($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,true)
+	($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,true)
 	ON CONFLICT (source, url)
 	DO UPDATE SET
 	    company = EXCLUDED.company,
@@ -199,6 +206,7 @@ func (s *PostgresStore) SavePrivJob(job *sources.PrivJobSource) error {
 	    skills = EXCLUDED.skills,
 	    description = EXCLUDED.description,
 	    posted_at = EXCLUDED.posted_at,
+	    language = EXCLUDED.language,
 	    is_active = true,
 	    updated_at = CURRENT_TIMESTAMP
 	`
@@ -215,6 +223,7 @@ func (s *PostgresStore) SavePrivJob(job *sources.PrivJobSource) error {
 		job.Description,
 		job.Source,
 		postedAt,
+		language,
 	)
 	if err != nil {
 		return fmt.Errorf("failed to save priv job '%s': %w", job.Title, err)
@@ -246,13 +255,15 @@ func (s *PostgresStore) SaveCourse(course *sources.CourseSource) error {
 		skills = []string{}
 	}
 
+	language := lang.Detect(course.Title, course.Description, course.Provider)
+
 	query := `
 	INSERT INTO courses
 	(provider, title, url, duration, mode, level, skills, description,
 	 thumbnail_url, price, is_free, source, start_date, end_date,
-	 enrollment_count, rating, is_active)
+	 enrollment_count, rating, language, is_active)
 	VALUES
-	($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,true)
+	($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,true)
 	ON CONFLICT (source, url)
 	DO UPDATE SET
 	    provider = EXCLUDED.provider,
@@ -269,6 +280,7 @@ func (s *PostgresStore) SaveCourse(course *sources.CourseSource) error {
 	    end_date = EXCLUDED.end_date,
 	    enrollment_count = EXCLUDED.enrollment_count,
 	    rating = EXCLUDED.rating,
+	    language = EXCLUDED.language,
 	    is_active = true,
 	    updated_at = CURRENT_TIMESTAMP
 	`
@@ -290,6 +302,7 @@ func (s *PostgresStore) SaveCourse(course *sources.CourseSource) error {
 		endDate,
 		course.EnrollmentCount,
 		rating,
+		language,
 	)
 	if err != nil {
 		return fmt.Errorf("failed to save course '%s': %w", course.Title, err)
@@ -309,12 +322,14 @@ func (s *PostgresStore) SaveVideo(video *sources.YouTubeVideoSource) error {
 		publishedAt = *video.PublishedAt
 	}
 
+	language := lang.Detect(video.Title, video.Description, video.Channel)
+
 	query := `
 	INSERT INTO youtube_videos
 	(channel, channel_id, title, url, thumbnail, description, video_id,
-	 published_at, duration, view_count, like_count, category, is_active)
+	 published_at, duration, view_count, like_count, category, language, is_active)
 	VALUES
-	($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,true)
+	($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,true)
 	ON CONFLICT (video_id)
 	DO UPDATE SET
 	    channel = EXCLUDED.channel,
@@ -328,6 +343,7 @@ func (s *PostgresStore) SaveVideo(video *sources.YouTubeVideoSource) error {
 	    view_count = EXCLUDED.view_count,
 	    like_count = EXCLUDED.like_count,
 	    category = EXCLUDED.category,
+	    language = EXCLUDED.language,
 	    is_active = true,
 	    updated_at = CURRENT_TIMESTAMP
 	`
@@ -345,6 +361,7 @@ func (s *PostgresStore) SaveVideo(video *sources.YouTubeVideoSource) error {
 		video.ViewCount,
 		video.LikeCount,
 		video.Category,
+		language,
 	)
 	if err != nil {
 		return fmt.Errorf("failed to save video '%s': %w", video.Title, err)

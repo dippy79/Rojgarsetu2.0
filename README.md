@@ -7,6 +7,16 @@
 [![Docker](https://img.shields.io/badge/Docker-Compose-blue.svg)](https://docker.com)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Railway](https://img.shields.io/badge/Railway-Deploy-brightgreen.svg)](https://railway.app)
+[![Release](https://img.shields.io/badge/Release-v0.2.1alpha-orange.svg)](https://github.com/dippy79/Rojgarsetu2.0)
+
+## 📦 Version v0.2.1alpha — Changelog
+### Language Filter + Search Fix
+- **Search handler fix**: `/api/v1/search` now respects `language` from request body (query-string no longer overwrites it) — returns correct results per language instead of everything.
+- **AI recommendations**: `preferred_language` filter hardened in recommender with SQL pushdown + defensive checks.
+- **New DB migrations**: `000013_add_language_columns` (adds `language` columns to gov/private jobs, courses, videos) and `000014_backfill_language`.
+- **Frontend**: new language `FilterBar` component wired into Gov Jobs, Private Jobs, Courses, and Videos pages.
+- **Crawler**: store + scheduler improvements.
+- **Verified live**: `language:"en"` → 206 results, `language:"hi"` → 0 (previously both returned 206).
 
 **Production-Ready Job Portal for India** — Backend API, Flutter Mobile App, Docker Deploy, VPS/Cloud Ready.
 

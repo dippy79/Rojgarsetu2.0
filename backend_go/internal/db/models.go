@@ -100,6 +100,7 @@ type Course struct {
 	EndDate         sql.NullTime   `json:"end_date"`
 	EnrollmentCount sql.NullInt32  `json:"enrollment_count"`
 	Rating          sql.NullString `json:"rating"`
+	Language        sql.NullString `json:"language"`
 	IsActive        sql.NullBool   `json:"is_active"`
 	CreatedAt       sql.NullTime   `json:"created_at"`
 	UpdatedAt       sql.NullTime   `json:"updated_at"`
@@ -131,6 +132,7 @@ type JobsGovernment struct {
 	Salary             sql.NullString `json:"salary"`
 	ExamDate           sql.NullTime   `json:"exam_date"`
 	NotificationPdfUrl sql.NullString `json:"notification_pdf_url"`
+	Language           sql.NullString `json:"language"`
 	IsActive           sql.NullBool   `json:"is_active"`
 	CreatedAt          sql.NullTime   `json:"created_at"`
 	UpdatedAt          sql.NullTime   `json:"updated_at"`
@@ -149,6 +151,7 @@ type JobsPrivate struct {
 	Description sql.NullString `json:"description"`
 	Source      string         `json:"source"`
 	PostedAt    sql.NullTime   `json:"posted_at"`
+	Language    sql.NullString `json:"language"`
 	IsActive    sql.NullBool   `json:"is_active"`
 	CreatedAt   sql.NullTime   `json:"created_at"`
 	UpdatedAt   sql.NullTime   `json:"updated_at"`
@@ -193,6 +196,7 @@ type YoutubeVideo struct {
 	ViewCount   sql.NullInt64  `json:"view_count"`
 	LikeCount   sql.NullInt64  `json:"like_count"`
 	Category    sql.NullString `json:"category"`
+	Language    sql.NullString `json:"language"`
 	IsActive    sql.NullBool   `json:"is_active"`
 	CreatedAt   sql.NullTime   `json:"created_at"`
 	UpdatedAt   sql.NullTime   `json:"updated_at"`

@@ -13,10 +13,11 @@ const CoursesPage = () => {
   const [pagination, setPagination] = useState({ page: 1, limit: 20, total: 0, totalPages: 0 });
   const [searchParams, setSearchParams] = useSearchParams();
 
-  const page = parseInt(searchParams.get('page')) || 1;
+const page = parseInt(searchParams.get('page')) || 1;
   const provider = searchParams.get('provider') || '';
   const mode = searchParams.get('mode') || '';
   const level = searchParams.get('level') || '';
+  const language = searchParams.get('language') || '';
 
 const fetchCourses = useCallback(async () => {
     try {
@@ -28,6 +29,7 @@ const fetchCourses = useCallback(async () => {
       if (provider) params.append('provider', provider);
       if (mode) params.append('mode', mode);
       if (level) params.append('level', level);
+      if (language) params.append('language', language);
 
       const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/v1/courses?${params}`);
       const data = await response.json();
@@ -43,7 +45,7 @@ const fetchCourses = useCallback(async () => {
     } finally {
       setLoading(false);
     }
-  }, [page, provider, mode, level]);
+  }, [page, provider, mode, level, language]);
 
   useEffect(() => {
     fetchCourses();
@@ -54,6 +56,7 @@ const fetchCourses = useCallback(async () => {
     if (filters.provider) params.append('provider', filters.provider);
     if (filters.mode) params.append('mode', filters.mode);
     if (filters.level) params.append('level', filters.level);
+    if (filters.language) params.append('language', filters.language);
     params.append('page', '1');
     setSearchParams(params);
   };
@@ -71,13 +74,25 @@ const fetchCourses = useCallback(async () => {
         <p>Upskill with free and paid courses from top providers</p>
       </div>
 
-      <FilterBar
-        filters={{ provider, mode, level }}
+<FilterBar
+        filters={{ provider, mode, level, language }}
         onFilterChange={handleFilterChange}
         filterOptions={{
           providers: ['NPTEL', 'SWAYAM', 'NSDC', 'Coursera', 'Udemy', 'edX'],
           modes: ['online', 'offline', 'hybrid'],
-          levels: ['beginner', 'intermediate', 'advanced']
+          levels: ['beginner', 'intermediate', 'advanced'],
+          languages: [
+            { code: 'en', label: 'English' },
+            { code: 'hi', label: 'Hindi' },
+            { code: 'ta', label: 'Tamil' },
+            { code: 'te', label: 'Telugu' },
+            { code: 'bn', label: 'Bengali' },
+            { code: 'mr', label: 'Marathi' },
+            { code: 'gu', label: 'Gujarati' },
+            { code: 'kn', label: 'Kannada' },
+            { code: 'ml', label: 'Malayalam' },
+            { code: 'pa', label: 'Punjabi' }
+          ]
         }}
       />
 

@@ -26,6 +26,7 @@ func (h *PrivJobHandler) GetPrivJobs(c *gin.Context) {
 		Location: c.Query("location"),
 		Source:   c.Query("source"),
 		JobType:  c.Query("job_type"),
+		Language: c.Query("language"),
 	}
 
 	jobs, total, err := h.service.GetPrivJobs(filter, page, limit)

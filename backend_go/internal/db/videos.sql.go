@@ -15,7 +15,7 @@ import (
 const getVideoByID = `-- name: GetVideoByID :one
 SELECT id, channel, channel_id, title, url, thumbnail, 
        description, video_id, published_at, duration, 
-       view_count, like_count, category, created_at
+       view_count, like_count, category, language, created_at
 FROM youtube_videos 
 WHERE id = $1 AND is_active = true
 `
@@ -34,6 +34,7 @@ type GetVideoByIDRow struct {
 	ViewCount   sql.NullInt64  `json:"view_count"`
 	LikeCount   sql.NullInt64  `json:"like_count"`
 	Category    sql.NullString `json:"category"`
+	Language    sql.NullString `json:"language"`
 	CreatedAt   sql.NullTime   `json:"created_at"`
 }
 
@@ -54,6 +55,7 @@ func (q *Queries) GetVideoByID(ctx context.Context, id uuid.UUID) (GetVideoByIDR
 		&i.ViewCount,
 		&i.LikeCount,
 		&i.Category,
+		&i.Language,
 		&i.CreatedAt,
 	)
 	return i, err
@@ -62,18 +64,20 @@ func (q *Queries) GetVideoByID(ctx context.Context, id uuid.UUID) (GetVideoByIDR
 const getVideos = `-- name: GetVideos :many
 SELECT id, channel, channel_id, title, url, thumbnail, 
        description, video_id, published_at, duration, 
-       view_count, like_count, category, created_at
+       view_count, like_count, category, language, created_at
 FROM youtube_videos 
 WHERE is_active = true
   AND ($1::text = '' OR channel ILIKE '%' || $1 || '%')
   AND ($2::text = '' OR category = $2)
+  AND ($3::text = '' OR language = $3)
 ORDER BY published_at DESC 
-LIMIT $3 OFFSET $4
+LIMIT $4 OFFSET $5
 `
 
 type GetVideosParams struct {
 	Column1 string `json:"column_1"`
 	Column2 string `json:"column_2"`
+	Column3 string `json:"column_3"`
 	Limit   int32  `json:"limit"`
 	Offset  int32  `json:"offset"`
 }
@@ -92,6 +96,7 @@ type GetVideosRow struct {
 	ViewCount   sql.NullInt64  `json:"view_count"`
 	LikeCount   sql.NullInt64  `json:"like_count"`
 	Category    sql.NullString `json:"category"`
+	Language    sql.NullString `json:"language"`
 	CreatedAt   sql.NullTime   `json:"created_at"`
 }
 
@@ -99,6 +104,7 @@ func (q *Queries) GetVideos(ctx context.Context, arg GetVideosParams) ([]GetVide
 	rows, err := q.db.QueryContext(ctx, getVideos,
 		arg.Column1,
 		arg.Column2,
+		arg.Column3,
 		arg.Limit,
 		arg.Offset,
 	)
@@ -123,6 +129,7 @@ func (q *Queries) GetVideos(ctx context.Context, arg GetVideosParams) ([]GetVide
 			&i.ViewCount,
 			&i.LikeCount,
 			&i.Category,
+			&i.Language,
 			&i.CreatedAt,
 		); err != nil {
 			return nil, err
@@ -142,15 +149,17 @@ const getVideosCount = `-- name: GetVideosCount :one
 SELECT COUNT(*) FROM youtube_videos WHERE is_active = true
   AND ($1::text = '' OR channel ILIKE '%' || $1 || '%')
   AND ($2::text = '' OR category = $2)
+  AND ($3::text = '' OR language = $3)
 `
 
 type GetVideosCountParams struct {
 	Column1 string `json:"column_1"`
 	Column2 string `json:"column_2"`
+	Column3 string `json:"column_3"`
 }
 
 func (q *Queries) GetVideosCount(ctx context.Context, arg GetVideosCountParams) (int64, error) {
-	row := q.db.QueryRowContext(ctx, getVideosCount, arg.Column1, arg.Column2)
+	row := q.db.QueryRowContext(ctx, getVideosCount, arg.Column1, arg.Column2, arg.Column3)
 	var count int64
 	err := row.Scan(&count)
 	return count, err

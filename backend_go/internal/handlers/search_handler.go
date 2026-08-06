@@ -33,6 +33,12 @@ func (h *SearchHandler) Search(c *gin.Context) {
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
 	req.Page = page
 	req.Limit = limit
+	// Respect the JSON body value first; fall back to query string only if the
+	// body did not provide one. (Previously this unconditionally overwrote the
+	// body's language with the query string, silently disabling the filter.)
+	if req.Language == "" {
+		req.Language = c.Query("language")
+	}
 
 	if req.Query == "" {
 		c.JSON(http.StatusBadRequest, db.ErrorResponse(400, "Search query is required"))
@@ -59,9 +65,10 @@ func (h *SearchHandler) SearchGET(c *gin.Context) {
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
 
 	req := services.SearchRequest{
-		Query: query,
-		Page:  page,
-		Limit: limit,
+		Query:    query,
+		Page:     page,
+		Limit:    limit,
+		Language: c.Query("language"),
 	}
 
 	if req.Query == "" {

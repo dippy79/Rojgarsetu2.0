@@ -13,9 +13,10 @@ const VideosPage = () => {
   const [pagination, setPagination] = useState({ page: 1, limit: 20, total: 0, totalPages: 0 });
   const [searchParams, setSearchParams] = useSearchParams();
 
-  const page = parseInt(searchParams.get('page')) || 1;
+const page = parseInt(searchParams.get('page')) || 1;
   const channel = searchParams.get('channel') || '';
   const category = searchParams.get('category') || '';
+  const language = searchParams.get('language') || '';
 
   const fetchVideos = useCallback(async () => {
     try {
@@ -26,6 +27,7 @@ const VideosPage = () => {
       });
       if (channel) params.append('channel', channel);
       if (category) params.append('category', category);
+      if (language) params.append('language', language);
 
       const response = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/v1/videos?${params}`);
       const data = await response.json();
@@ -41,7 +43,7 @@ const VideosPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [page, channel, category]);
+  }, [page, channel, category, language]);
 
   useEffect(() => {
     fetchVideos();
@@ -51,6 +53,7 @@ const VideosPage = () => {
     const params = new URLSearchParams();
     if (filters.channel) params.append('channel', filters.channel);
     if (filters.category) params.append('category', filters.category);
+    if (filters.language) params.append('language', filters.language);
     params.append('page', '1');
     setSearchParams(params);
   };
@@ -68,12 +71,24 @@ const VideosPage = () => {
         <p>Watch educational and job-related videos from official channels</p>
       </div>
 
-      <FilterBar
-        filters={{ channel, category }}
+<FilterBar
+        filters={{ channel, category, language }}
         onFilterChange={handleFilterChange}
         filterOptions={{
           channels: ['Naukri', 'LinkedIn', 'Study IQ', 'Unacademy', "Byju's", 'Skill India'],
-          categories: ['Jobs', 'Government', 'Education', 'Skills', 'UPSC', 'SSC', 'Railways']
+          categories: ['Jobs', 'Government', 'Education', 'Skills', 'UPSC', 'SSC', 'Railways'],
+          languages: [
+            { code: 'en', label: 'English' },
+            { code: 'hi', label: 'Hindi' },
+            { code: 'ta', label: 'Tamil' },
+            { code: 'te', label: 'Telugu' },
+            { code: 'bn', label: 'Bengali' },
+            { code: 'mr', label: 'Marathi' },
+            { code: 'gu', label: 'Gujarati' },
+            { code: 'kn', label: 'Kannada' },
+            { code: 'ml', label: 'Malayalam' },
+            { code: 'pa', label: 'Punjabi' }
+          ]
         }}
       />
 

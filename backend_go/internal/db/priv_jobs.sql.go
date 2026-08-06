@@ -15,7 +15,7 @@ import (
 
 const getPrivJobByID = `-- name: GetPrivJobByID :one
 SELECT id, company, title, location, url, salary, experience, 
-       job_type, skills, description, source, posted_at, created_at
+       job_type, skills, description, source, posted_at, language, created_at
 FROM jobs_private 
 WHERE id = $1 AND is_active = true
 `
@@ -33,6 +33,7 @@ type GetPrivJobByIDRow struct {
 	Description sql.NullString `json:"description"`
 	Source      string         `json:"source"`
 	PostedAt    sql.NullTime   `json:"posted_at"`
+	Language    sql.NullString `json:"language"`
 	CreatedAt   sql.NullTime   `json:"created_at"`
 }
 
@@ -52,6 +53,7 @@ func (q *Queries) GetPrivJobByID(ctx context.Context, id uuid.UUID) (GetPrivJobB
 		&i.Description,
 		&i.Source,
 		&i.PostedAt,
+		&i.Language,
 		&i.CreatedAt,
 	)
 	return i, err
@@ -59,15 +61,16 @@ func (q *Queries) GetPrivJobByID(ctx context.Context, id uuid.UUID) (GetPrivJobB
 
 const getPrivJobs = `-- name: GetPrivJobs :many
 SELECT id, company, title, location, url, salary, experience, 
-       job_type, skills, description, source, posted_at, created_at
+       job_type, skills, description, source, posted_at, language, created_at
 FROM jobs_private 
 WHERE is_active = true
   AND ($1::text = '' OR company ILIKE '%' || $1 || '%')
   AND ($2::text = '' OR location ILIKE '%' || $2 || '%')
   AND ($3::text = '' OR source = $3)
   AND ($4::text = '' OR job_type = $4)
+  AND ($5::text = '' OR language = $5)
 ORDER BY created_at DESC 
-LIMIT $5 OFFSET $6
+LIMIT $6 OFFSET $7
 `
 
 type GetPrivJobsParams struct {
@@ -75,6 +78,7 @@ type GetPrivJobsParams struct {
 	Column2 string `json:"column_2"`
 	Column3 string `json:"column_3"`
 	Column4 string `json:"column_4"`
+	Column5 string `json:"column_5"`
 	Limit   int32  `json:"limit"`
 	Offset  int32  `json:"offset"`
 }
@@ -92,6 +96,7 @@ type GetPrivJobsRow struct {
 	Description sql.NullString `json:"description"`
 	Source      string         `json:"source"`
 	PostedAt    sql.NullTime   `json:"posted_at"`
+	Language    sql.NullString `json:"language"`
 	CreatedAt   sql.NullTime   `json:"created_at"`
 }
 
@@ -101,6 +106,7 @@ func (q *Queries) GetPrivJobs(ctx context.Context, arg GetPrivJobsParams) ([]Get
 		arg.Column2,
 		arg.Column3,
 		arg.Column4,
+		arg.Column5,
 		arg.Limit,
 		arg.Offset,
 	)
@@ -124,6 +130,7 @@ func (q *Queries) GetPrivJobs(ctx context.Context, arg GetPrivJobsParams) ([]Get
 			&i.Description,
 			&i.Source,
 			&i.PostedAt,
+			&i.Language,
 			&i.CreatedAt,
 		); err != nil {
 			return nil, err
@@ -145,6 +152,7 @@ SELECT COUNT(*) FROM jobs_private WHERE is_active = true
   AND ($2::text = '' OR location ILIKE '%' || $2 || '%')
   AND ($3::text = '' OR source = $3)
   AND ($4::text = '' OR job_type = $4)
+  AND ($5::text = '' OR language = $5)
 `
 
 type GetPrivJobsCountParams struct {
@@ -152,6 +160,7 @@ type GetPrivJobsCountParams struct {
 	Column2 string `json:"column_2"`
 	Column3 string `json:"column_3"`
 	Column4 string `json:"column_4"`
+	Column5 string `json:"column_5"`
 }
 
 func (q *Queries) GetPrivJobsCount(ctx context.Context, arg GetPrivJobsCountParams) (int64, error) {
@@ -160,6 +169,7 @@ func (q *Queries) GetPrivJobsCount(ctx context.Context, arg GetPrivJobsCountPara
 		arg.Column2,
 		arg.Column3,
 		arg.Column4,
+		arg.Column5,
 	)
 	var count int64
 	err := row.Scan(&count)

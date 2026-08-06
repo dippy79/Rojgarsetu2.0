@@ -14,7 +14,7 @@ import (
 
 const getGovJobByID = `-- name: GetGovJobByID :one
 SELECT id, title, department, location, apply_url, last_date, 
-       source, eligibility, vacancy_count, salary, exam_date, created_at
+       source, eligibility, vacancy_count, salary, exam_date, language, created_at
 FROM jobs_government 
 WHERE id = $1 AND is_active = true
 `
@@ -31,6 +31,7 @@ type GetGovJobByIDRow struct {
 	VacancyCount sql.NullInt32  `json:"vacancy_count"`
 	Salary       sql.NullString `json:"salary"`
 	ExamDate     sql.NullTime   `json:"exam_date"`
+	Language     sql.NullString `json:"language"`
 	CreatedAt    sql.NullTime   `json:"created_at"`
 }
 
@@ -49,6 +50,7 @@ func (q *Queries) GetGovJobByID(ctx context.Context, id uuid.UUID) (GetGovJobByI
 		&i.VacancyCount,
 		&i.Salary,
 		&i.ExamDate,
+		&i.Language,
 		&i.CreatedAt,
 	)
 	return i, err
@@ -56,20 +58,22 @@ func (q *Queries) GetGovJobByID(ctx context.Context, id uuid.UUID) (GetGovJobByI
 
 const getGovJobs = `-- name: GetGovJobs :many
 SELECT id, title, department, location, apply_url, last_date, 
-       source, eligibility, vacancy_count, salary, exam_date, created_at
+       source, eligibility, vacancy_count, salary, exam_date, language, created_at
 FROM jobs_government 
 WHERE is_active = true
   AND ($1::text = '' OR department ILIKE '%' || $1 || '%')
   AND ($2::text = '' OR location ILIKE '%' || $2 || '%')
   AND ($3::text = '' OR source = $3)
+  AND ($4::text = '' OR language = $4)
 ORDER BY created_at DESC 
-LIMIT $4 OFFSET $5
+LIMIT $5 OFFSET $6
 `
 
 type GetGovJobsParams struct {
 	Column1 string `json:"column_1"`
 	Column2 string `json:"column_2"`
 	Column3 string `json:"column_3"`
+	Column4 string `json:"column_4"`
 	Limit   int32  `json:"limit"`
 	Offset  int32  `json:"offset"`
 }
@@ -86,6 +90,7 @@ type GetGovJobsRow struct {
 	VacancyCount sql.NullInt32  `json:"vacancy_count"`
 	Salary       sql.NullString `json:"salary"`
 	ExamDate     sql.NullTime   `json:"exam_date"`
+	Language     sql.NullString `json:"language"`
 	CreatedAt    sql.NullTime   `json:"created_at"`
 }
 
@@ -94,6 +99,7 @@ func (q *Queries) GetGovJobs(ctx context.Context, arg GetGovJobsParams) ([]GetGo
 		arg.Column1,
 		arg.Column2,
 		arg.Column3,
+		arg.Column4,
 		arg.Limit,
 		arg.Offset,
 	)
@@ -116,6 +122,7 @@ func (q *Queries) GetGovJobs(ctx context.Context, arg GetGovJobsParams) ([]GetGo
 			&i.VacancyCount,
 			&i.Salary,
 			&i.ExamDate,
+			&i.Language,
 			&i.CreatedAt,
 		); err != nil {
 			return nil, err
@@ -136,16 +143,23 @@ SELECT COUNT(*) FROM jobs_government WHERE is_active = true
   AND ($1::text = '' OR department ILIKE '%' || $1 || '%')
   AND ($2::text = '' OR location ILIKE '%' || $2 || '%')
   AND ($3::text = '' OR source = $3)
+  AND ($4::text = '' OR language = $4)
 `
 
 type GetGovJobsCountParams struct {
 	Column1 string `json:"column_1"`
 	Column2 string `json:"column_2"`
 	Column3 string `json:"column_3"`
+	Column4 string `json:"column_4"`
 }
 
 func (q *Queries) GetGovJobsCount(ctx context.Context, arg GetGovJobsCountParams) (int64, error) {
-	row := q.db.QueryRowContext(ctx, getGovJobsCount, arg.Column1, arg.Column2, arg.Column3)
+	row := q.db.QueryRowContext(ctx, getGovJobsCount,
+		arg.Column1,
+		arg.Column2,
+		arg.Column3,
+		arg.Column4,
+	)
 	var count int64
 	err := row.Scan(&count)
 	return count, err

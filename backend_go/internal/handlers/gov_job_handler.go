@@ -25,6 +25,7 @@ func (h *GovJobHandler) GetGovJobs(c *gin.Context) {
 		Department: c.Query("department"),
 		Location:   c.Query("location"),
 		Source:     c.Query("source"),
+		Language:   c.Query("language"),
 	}
 
 	jobs, total, err := h.service.GetGovJobs(filter, page, limit)

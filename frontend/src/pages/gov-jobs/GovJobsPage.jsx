@@ -22,11 +22,12 @@ const GovJobsPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
 
   // Extract filter parameters safely from URL
-  const search = searchParams.get('search') || '';
+const search = searchParams.get('search') || '';
   const department = searchParams.get('department') || '';
   const location = searchParams.get('location') || '';
   const source = searchParams.get('source') || '';
   const category = searchParams.get('category') || '';
+  const language = searchParams.get('language') || '';
   const page = parseInt(searchParams.get('page'), 10) || 1;
 
   // Fetch jobs with AbortController for clean lifecycle & race-condition prevention
@@ -40,11 +41,12 @@ const GovJobsPage = () => {
         limit: '20',
       });
 
-      if (search) params.append('search', search);
+if (search) params.append('search', search);
       if (department) params.append('department', department);
       if (location) params.append('location', location);
       if (source) params.append('source', source);
       if (category) params.append('category', category);
+      if (language) params.append('language', language);
 
       // Environment variable fallback for Docker / Gateway
       const baseUrl = process.env.REACT_APP_BACKEND_URL || '';
@@ -81,7 +83,7 @@ const GovJobsPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [page, search, department, location, source, category]);
+}, [page, search, department, location, source, category, language]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -93,11 +95,12 @@ const GovJobsPage = () => {
   const handleFilterChange = (filters) => {
     const params = new URLSearchParams();
 
-    if (filters.search) params.append('search', filters.search);
+if (filters.search) params.append('search', filters.search);
     if (filters.department) params.append('department', filters.department);
     if (filters.location) params.append('location', filters.location);
     if (filters.source) params.append('source', filters.source);
     if (filters.category) params.append('category', filters.category);
+    if (filters.language) params.append('language', filters.language);
 
     params.append('page', '1'); // Reset to page 1 on filter update
     setSearchParams(params);
@@ -114,7 +117,7 @@ const GovJobsPage = () => {
     setSearchParams({});
   };
 
-  const activeFilterCount = [search, department, location, source, category].filter(Boolean).length;
+const activeFilterCount = [search, department, location, source, category, language].filter(Boolean).length;
 
   return (
     <div className="gov-jobs-page">
@@ -130,14 +133,26 @@ const GovJobsPage = () => {
         )}
       </div>
 
-      <FilterBar
-        filters={{ search, department, location, source, category }}
+<FilterBar
+        filters={{ search, department, location, source, category, language }}
         onFilterChange={handleFilterChange}
         filterOptions={{
           departments: ['UPSC', 'SSC', 'Railway', 'State PSC', 'Banking', 'Teaching', 'Defense', 'Medical'],
           locations: ['All India', 'Delhi', 'Mumbai', 'Bangalore', 'Chennai', 'Kolkata', 'Hyderabad', 'Pune', 'Uttar Pradesh', 'Bihar'],
           sources: ['ncs', 'ssc', 'upsc', 'rrb', 'employment_news'],
-          categories: ['10th/12th Pass', 'Graduate', 'Post Graduate', 'Diploma', 'Engineering']
+          categories: ['10th/12th Pass', 'Graduate', 'Post Graduate', 'Diploma', 'Engineering'],
+          languages: [
+            { code: 'en', label: 'English' },
+            { code: 'hi', label: 'Hindi' },
+            { code: 'ta', label: 'Tamil' },
+            { code: 'te', label: 'Telugu' },
+            { code: 'bn', label: 'Bengali' },
+            { code: 'mr', label: 'Marathi' },
+            { code: 'gu', label: 'Gujarati' },
+            { code: 'kn', label: 'Kannada' },
+            { code: 'ml', label: 'Malayalam' },
+            { code: 'pa', label: 'Punjabi' }
+          ]
         }}
       />
 
