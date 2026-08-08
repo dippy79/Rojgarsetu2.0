@@ -25,8 +25,9 @@ func (h *VideoHandler) GetVideos(c *gin.Context) {
 		Channel:  c.Query("channel"),
 		Category: c.Query("category"),
 	}
+	exclude := c.Query("exclude")
 
-	videos, total, err := h.service.GetVideos(filter, page, limit)
+	videos, total, err := h.service.GetVideos(filter, exclude, page, limit)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, db.ErrorResponse(500, "Failed to fetch videos"))
 		return
@@ -40,6 +41,24 @@ func (h *VideoHandler) GetVideos(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, db.SuccessResponse(respVideos, &pagination))
+}
+
+func (h *VideoHandler) GetVideoChannels(c *gin.Context) {
+	channels, err := h.service.GetVideoChannels()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, db.ErrorResponse(500, "Failed to fetch video channels"))
+		return
+	}
+	c.JSON(http.StatusOK, db.SuccessResponse(channels, nil))
+}
+
+func (h *VideoHandler) GetVideoCategories(c *gin.Context) {
+	categories, err := h.service.GetVideoCategories()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, db.ErrorResponse(500, "Failed to fetch video categories"))
+		return
+	}
+	c.JSON(http.StatusOK, db.SuccessResponse(categories, nil))
 }
 
 func (h *VideoHandler) GetVideoByID(c *gin.Context) {

@@ -195,8 +195,126 @@ func (p *PostgresDB) GetCourseByID(id string) (*GetCourseByIDRow, error) {
 
 // ── Videos ───────────────────────────────────────────────────────────────────
 
-func (p *PostgresDB) GetVideos(f VideoFilter, page, limit int) ([]GetVideosRow, int, error) {
+type VideoChannel struct {
+	Channel string `json:"channel"`
+	Count   int    `json:"count"`
+}
+
+type VideoCategory struct {
+	Category string `json:"category"`
+	Count    int    `json:"count"`
+}
+
+func (p *PostgresDB) GetVideoChannels() ([]VideoChannel, error) {
+	rows, err := p.DB.QueryContext(context.Background(), `
+		SELECT channel, COUNT(*)
+		FROM youtube_videos
+		WHERE is_active = true
+		GROUP BY channel
+		ORDER BY COUNT(*) DESC, channel ASC
+	`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	channels := make([]VideoChannel, 0)
+	for rows.Next() {
+		var ch VideoChannel
+		if err := rows.Scan(&ch.Channel, &ch.Count); err != nil {
+			return nil, err
+		}
+		channels = append(channels, ch)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return channels, nil
+}
+
+func (p *PostgresDB) GetVideoCategories() ([]VideoCategory, error) {
+	rows, err := p.DB.QueryContext(context.Background(), `
+		SELECT category, COUNT(*)
+		FROM youtube_videos
+		WHERE is_active = true AND category IS NOT NULL AND category <> ''
+		GROUP BY category
+		ORDER BY COUNT(*) DESC, category ASC
+	`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	categories := make([]VideoCategory, 0)
+	for rows.Next() {
+		var cat VideoCategory
+		if err := rows.Scan(&cat.Category, &cat.Count); err != nil {
+			return nil, err
+		}
+		categories = append(categories, cat)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return categories, nil
+}
+
+// GetVideos returns a page of videos. When exclude is non-empty, videos whose
+// category equals exclude are omitted from BOTH the result set and the total
+// count, so pagination reflects the post-exclusion total (e.g. Tech tab
+// excluding "Government").
+func (p *PostgresDB) GetVideos(f VideoFilter, exclude string, page, limit int) ([]GetVideosRow, int, error) {
 	_, limit, offset := clampPagination(page, limit)
+
+	// With an exclusion, compute the total over the post-exclusion set.
+	if exclude != "" {
+		var total int64
+		err := p.DB.QueryRowContext(context.Background(), `
+			SELECT COUNT(*) FROM youtube_videos
+			WHERE is_active = true
+			  AND ($1::text = '' OR channel ILIKE '%' || $1 || '%')
+			  AND ($2::text = '' OR category = $2)
+			  AND ($3::text = '' OR category <> $3)
+		`, f.Channel, f.Category, exclude).Scan(&total)
+		if err != nil {
+			return nil, 0, err
+		}
+
+		rows, err := p.DB.QueryContext(context.Background(), `
+			SELECT id, channel, channel_id, title, url, thumbnail,
+			       description, video_id, published_at, duration,
+			       view_count, like_count, category, created_at
+			FROM youtube_videos
+			WHERE is_active = true
+			  AND ($1::text = '' OR channel ILIKE '%' || $1 || '%')
+			  AND ($2::text = '' OR category = $2)
+			  AND ($3::text = '' OR category <> $3)
+			ORDER BY published_at DESC
+			LIMIT $4 OFFSET $5
+		`, f.Channel, f.Category, exclude, limit, offset)
+		if err != nil {
+			return nil, 0, err
+		}
+		defer rows.Close()
+
+		items := make([]GetVideosRow, 0, limit)
+		for rows.Next() {
+			var i GetVideosRow
+			if err := rows.Scan(
+				&i.ID, &i.Channel, &i.ChannelID, &i.Title, &i.Url, &i.Thumbnail,
+				&i.Description, &i.VideoID, &i.PublishedAt, &i.Duration,
+				&i.ViewCount, &i.LikeCount, &i.Category, &i.CreatedAt,
+			); err != nil {
+				return nil, 0, err
+			}
+			items = append(items, i)
+		}
+		if err := rows.Err(); err != nil {
+			return nil, 0, err
+		}
+
+		return items, int(total), nil
+	}
 
 	total, err := p.Queries.GetVideosCount(context.Background(), GetVideosCountParams{
 		Column1: f.Channel,

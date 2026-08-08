@@ -29,7 +29,7 @@ const GovJobsPage = () => {
   const source = searchParams.get('source') || '';
   const category = searchParams.get('category') || '';
   const region = searchParams.get('region') || '';
-  const language = searchParams.get('language') || '';n
+  const language = searchParams.get('language') || '';
   const page = parseInt(searchParams.get('page'), 10) || 1;
 
   // Fetch jobs with AbortController for clean lifecycle & race-condition prevention

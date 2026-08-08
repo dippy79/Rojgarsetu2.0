@@ -1,4 +1,8 @@
-// Videos Page — Tech/Career Prep default view, Government/News in separate tab (Phase 2 fix)
+// Videos Page — Tech/Career Prep default view, Government/News in separate tab.
+// Channels/categories are now loaded from dedicated backend endpoints
+// (/api/v1/videos/channels, /api/v1/videos/categories) instead of hardcoded
+// lists, and the Tech tab applies server-side exclusion (?exclude=Government)
+// so both the grid and pagination totals are correct.
 import React, { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import VideoCard from '../../components/VideoCard';
@@ -13,24 +17,16 @@ export const VIDEO_TABS = {
   NEWS: 'news',
 };
 
-// Channels/categories flagged as Government / News content (excluded from the
-// default Tech view).
-// TODO: Move this explicit filter to the Backend API (a `?category=Tech` filter
-//       and/or a `?exclude=Government` query parameter) so it scales cleanly.
-const GOV_CHANNELS = ['PIB India', 'DD News', 'DD India', 'PIB'];
+// Category excluded from the default Tech view (matches the backend's
+// ?exclude=Government handling).
 const GOV_CATEGORY = 'Government';
-
-const isGovVideo = (video) => {
-  const cat = (video.category || '').toLowerCase();
-  const channel = (video.channel || '');
-  if (cat === GOV_CATEGORY.toLowerCase()) return true;
-  return GOV_CHANNELS.some((g) => channel.toLowerCase().includes(g.toLowerCase()));
-};
 
 const VideosPage = () => {
   const [videos, setVideos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [allChannels, setAllChannels] = useState([]);
+  const [allCategories, setAllCategories] = useState([]);
   const [pagination, setPagination] = useState({ page: 1, limit: 20, total: 0, totalPages: 0 });
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -40,6 +36,30 @@ const VideosPage = () => {
   // Active tab from URL (defaults to TECH so gov/news are hidden by default).
   const activeTab = searchParams.get('tab') === VIDEO_TABS.NEWS ? VIDEO_TABS.NEWS : VIDEO_TABS.TECH;
 
+  // Load distinct channels + categories for the filter dropdowns.
+  const fetchFilterOptions = useCallback(async () => {
+    try {
+      const [chResp, catResp] = await Promise.all([
+        fetch(apiUrl('/api/v1/videos/channels')),
+        fetch(apiUrl('/api/v1/videos/categories')),
+      ]);
+      const chData = await chResp.json();
+      const catData = await catResp.json();
+      if (chData.status === 'success' && Array.isArray(chData.data)) {
+        setAllChannels(chData.data.map((c) => c.channel).filter(Boolean));
+      }
+      if (catData.status === 'success' && Array.isArray(catData.data)) {
+        setAllCategories(catData.data.map((c) => c.category).filter(Boolean));
+      }
+    } catch (err) {
+      console.warn('Failed to load video filter options', err);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchFilterOptions();
+  }, [fetchFilterOptions]);
+
   const fetchVideos = useCallback(async () => {
     try {
       setLoading(true);
@@ -48,23 +68,16 @@ const VideosPage = () => {
         limit: '20',
       });
       if (channel) params.append('channel', channel);
-      // When on the Tech tab, only request non-Government categories from the API
-      // (the robust filter is still applied client-side below as a safeguard).
-      const effectiveCategory =
-        activeTab === VIDEO_TABS.TECH && category.toLowerCase() === GOV_CATEGORY.toLowerCase()
-          ? ''
-          : category;
-      if (effectiveCategory) params.append('category', effectiveCategory);
+      if (category) params.append('category', category);
+      // Tech tab: exclude Government content server-side so the video list AND
+      // the pagination total both reflect the post-exclusion set.
+      if (activeTab === VIDEO_TABS.TECH) params.append('exclude', GOV_CATEGORY);
 
       const response = await fetch(`${apiUrl('/api/v1/videos')}?${params}`);
       const data = await response.json();
 
       if (data.status === 'success') {
-        const raw = data.data || [];
-        // Phase 2 fix: segment the feed. Tech tab excludes Government/news videos.
-        const filtered =
-          activeTab === VIDEO_TABS.TECH ? raw.filter((v) => !isGovVideo(v)) : raw;
-        setVideos(filtered);
+        setVideos(data.data || []);
         setPagination(data.pagination);
       } else {
         setError(data.error?.message || 'Failed to fetch videos');
@@ -135,10 +148,8 @@ const VideosPage = () => {
         filters={{ channel, category }}
         onFilterChange={handleFilterChange}
         filterOptions={{
-          categories: activeTab === VIDEO_TABS.TECH
-            ? ['Jobs', 'Education', 'Skills', 'Tech', 'Interviews']
-            : ['Government', 'News', 'Jobs'],
-          channels: []
+          categories: allCategories,
+          channels: allChannels
         }}
       />
 

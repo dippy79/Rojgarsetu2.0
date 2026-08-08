@@ -257,6 +257,8 @@ func run(cfg *config.Config) error {
 					api.GET("/courses/providers", courseHandler.GetCourseProviders)
 					api.GET("/courses/:id", courseHandler.GetCourseByID)
 					api.GET("/videos", videoHandler.GetVideos)
+					api.GET("/videos/channels", videoHandler.GetVideoChannels)
+					api.GET("/videos/categories", videoHandler.GetVideoCategories)
 					api.GET("/videos/:id", videoHandler.GetVideoByID)
 					api.POST("/search", searchHandler.Search)
 					api.GET("/search", searchHandler.SearchGET)

@@ -38,8 +38,8 @@ func (s *ContentService) GetCourseByID(ctx context.Context, id string) (*db.GetC
 	return s.db.GetCourseByID(id)
 }
 
-func (s *ContentService) GetVideos(ctx context.Context, f db.VideoFilter, page, limit int) ([]db.GetVideosRow, int, error) {
-	return s.db.GetVideos(f, page, limit)
+func (s *ContentService) GetVideos(ctx context.Context, f db.VideoFilter, exclude string, page, limit int) ([]db.GetVideosRow, int, error) {
+	return s.db.GetVideos(f, exclude, page, limit)
 }
 
 func (s *ContentService) GetVideoByID(ctx context.Context, id string) (*db.GetVideoByIDRow, error) {
