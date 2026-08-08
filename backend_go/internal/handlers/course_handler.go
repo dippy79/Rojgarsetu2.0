@@ -43,6 +43,16 @@ func (h *CourseHandler) GetCourses(c *gin.Context) {
 	c.JSON(http.StatusOK, db.SuccessResponse(respCourses, &pagination))
 }
 
+func (h *CourseHandler) GetCourseProviders(c *gin.Context) {
+	providers, err := h.service.GetCourseProviders()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, db.ErrorResponse(500, "Failed to fetch course providers"))
+		return
+	}
+
+	c.JSON(http.StatusOK, db.SuccessResponse(providers, nil))
+}
+
 func (h *CourseHandler) GetCourseByID(c *gin.Context) {
 	id := c.Param("id")
 

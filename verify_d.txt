@@ -1,0 +1,40 @@
+===GEEKS=== 
+ Volume in drive F has no label.
+ Volume Serial Number is FC1E-995F
+
+ Directory of f:\Rojgarsetu2.0\rojgarsetu2\services\crawler-go\internal\sources
+
+04-08-2026  15:41             7,247 geeksforgeeks.go
+               1 File(s)          7,247 bytes
+               0 Dir(s)  269,965,496,320 bytes free
+===YOUTUBE=== 
+ Volume in drive F has no label.
+ Volume Serial Number is FC1E-995F
+
+ Directory of f:\Rojgarsetu2.0\rojgarsetu2\services\crawler-go\internal\sources
+
+07-08-2026  17:04             7,889 youtube.go
+               1 File(s)          7,889 bytes
+               0 Dir(s)  269,965,496,320 bytes free
+===GOVCHAN=== 
+17:// YouTubeSource scrapes videos from YouTube official channels
+25:// OfficialChannel contains official YouTube channel information
+32:// OfficialChannels contains list of official channels
+64:// Fetch retrieves videos from YouTube official channels.
+96:	for _, channel := range OfficialChannels {
+97:		if !isValidYouTubeChannelID(channel.ChannelID) {
+98:			log.Warn().Str("channel", channel.Name).Str("channelID", channel.ChannelID).
+99:				Msg("Skipping channel with invalid/placeholder channel ID (not a real 24-char UC... ID)")
+103:		url := fmt.Sprintf("%s/search?key=%s&channelId=%s&part=snippet,id&order=date&maxResults=20&type=video",
+104:			s.apiBaseURL, s.apiKey, channel.ChannelID)
+115:			log.Warn().Err(err).Str("channel", channel.Name).Msg("YouTube API request error")
+123:			// Log the real error body (e.g. quotaExceeded, invalid key, channel not found)
+129:			log.Warn().Int("status", resp.StatusCode).Str("channel", channel.Name).
+135:			log.Warn().Err(readErr).Str("channel", channel.Name).Msg("Failed to read YouTube API body")
+147:					ChannelTitle string `json:"channelTitle"`
+148:					ChannelID    string `json:"channelId"`
+166:			log.Warn().Err(err).Str("channel", channel.Name).Msg("Failed to parse YouTube API response")
+184:				Category:    channel.Category,
+194:		log.Info().Int("videos", len(ytData.Items)).Str("channel", channel.Name).Msg("YouTube API fetch successful")
+200:// isValidYouTubeChannelID reports whether a channel ID looks like a real
+201:// YouTube channel ID. Real channel IDs are exactly 24 characters and start

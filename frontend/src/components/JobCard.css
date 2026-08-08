@@ -1,26 +1,28 @@
 .job-card {
-  background: #fff;
-  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.85);
+  border-radius: 16px;
   padding: 1.25rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
   border-left: 4px solid transparent;
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.4);
 }
 
 .job-card.gov-job {
-  border-left-color: #1a237e;
+  border-left-color: #0d47a1;
 }
 
 .job-card.priv-job {
-  border-left-color: #00897b;
+  border-left-color: #00695c;
 }
 
 .job-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
 }
 
 .job-header {
@@ -33,15 +35,15 @@
 .job-title {
   font-size: 1.1rem;
   font-weight: 600;
-  color: #1a237e;
+  color: #0d47a1;
   line-height: 1.4;
 }
 
 .job-source {
-  background: #e8eaf6;
-  color: #283593;
+  background: rgba(13, 71, 161, 0.1);
+  color: #0d47a1;
   padding: 0.25rem 0.6rem;
-  border-radius: 4px;
+  border-radius: 6px;
   font-size: 0.75rem;
   font-weight: 600;
   text-transform: uppercase;
@@ -53,16 +55,16 @@
   flex-wrap: wrap;
   gap: 0.5rem;
   font-size: 0.9rem;
-  color: #555;
+  color: #333;
 }
 
 .job-details p {
   display: flex;
   align-items: center;
   gap: 0.3rem;
-  background: #f5f7fa;
+  background: rgba(0, 0, 0, 0.04);
   padding: 0.3rem 0.6rem;
-  border-radius: 4px;
+  border-radius: 6px;
 }
 
 .job-actions {
@@ -71,10 +73,10 @@
 
 .apply-btn {
   display: inline-block;
-  background: linear-gradient(135deg, #1a237e, #283593);
+  background: linear-gradient(135deg, #0d47a1, #00897b);
   color: #fff;
   padding: 0.5rem 1.5rem;
-  border-radius: 6px;
+  border-radius: 8px;
   font-size: 0.9rem;
   font-weight: 600;
   transition: opacity 0.2s;
@@ -86,9 +88,8 @@
 }
 
 .job-footer {
-  border-top: 1px solid #eee;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
   padding-top: 0.5rem;
   font-size: 0.8rem;
-  color: #888;
+  color: #666;
 }
-

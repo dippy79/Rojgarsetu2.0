@@ -13,7 +13,20 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
-    <title>RojgarSetu 2.0</title>
+<title>RojgarSetu 2.0</title>
+    <script>
+      // Runtime API base override.
+      // docker-compose sets REACT_APP_BACKEND_URL at RUNTIME, but Create-React-App
+      // only inlines REACT_APP_* at BUILD time. To allow run-time override without
+      // a rebuild, ops can inject a meta tag (e.g. via nginx sub_filter):
+      //   <meta name="api-base-url" content="http://localhost:8083">
+      // The apiConfig module reads window.__ROJGAR_API__ at runtime.
+      window.__ROJGAR_API__ = (function () {
+        var m = document.querySelector('meta[name="api-base-url"]');
+        if (m && m.content) return m.content;
+        return null;
+      })();
+    </script>
   </head>
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>

@@ -177,6 +177,34 @@ func run(cfg *config.Config) error {
 	router.GET("/health", healthHandler)
 	router.HEAD("/health", healthHandler)
 
+	api := router.Group("/api/v1")
+	api.GET("/forms", func(c *gin.Context) {
+		forms := []gin.H{
+			{
+				"id":         "stub-1",
+				"title":      "SSC CGL 2025 Online Application",
+				"department": "Staff Selection Commission",
+				"last_date":  time.Now().Add(48 * time.Hour).Format(time.RFC3339),
+				"apply_url":  "https://ssc.gov.in",
+			},
+			{
+				"id":         "stub-2",
+				"title":      "RRB NTPC 2025 Application Form",
+				"department": "Railway Recruitment Board",
+				"last_date":  time.Now().Add(6 * 24 * time.Hour).Format(time.RFC3339),
+				"apply_url":  "https://rrbcdg.gov.in",
+			},
+			{
+				"id":         "stub-3",
+				"title":      "UPSC Civil Services Prelims 2025",
+				"department": "Union Public Service Commission",
+				"last_date":  time.Now().Add(10 * 24 * time.Hour).Format(time.RFC3339),
+				"apply_url":  "https://upsc.gov.in",
+			},
+		}
+		c.JSON(http.StatusOK, gin.H{"data": forms, "count": len(forms), "source": "stub"})
+	})
+
 	// Attempt database connection in background, then register DB routes
 	go func() {
 		maxRetries := 30
@@ -226,6 +254,7 @@ func run(cfg *config.Config) error {
 					api.GET("/private-jobs", privJobHandler.GetPrivJobs)
 					api.GET("/private-jobs/:id", privJobHandler.GetPrivJobByID)
 					api.GET("/courses", courseHandler.GetCourses)
+					api.GET("/courses/providers", courseHandler.GetCourseProviders)
 					api.GET("/courses/:id", courseHandler.GetCourseByID)
 					api.GET("/videos", videoHandler.GetVideos)
 					api.GET("/videos/:id", videoHandler.GetVideoByID)

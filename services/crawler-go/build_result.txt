@@ -1,0 +1,6 @@
+# github.com/rojgarsetu/crawler/internal/scheduler
+internal\scheduler\run.go:132:27: cannot use &items[i] (value of type *sources.GovJobSource) as *shared.GovJobSource value in argument to st.SaveGovJob
+internal\scheduler\run.go:152:28: cannot use &items[i] (value of type *sources.PrivJobSource) as *shared.PrivJobSource value in argument to st.SavePrivJob
+internal\scheduler\run.go:176:28: cannot use priv (variable of type *sources.PrivJobSource) as *shared.PrivJobSource value in argument to st.SavePrivJob
+internal\scheduler\run.go:225:27: cannot use &items[i] (value of type *sources.CourseSource) as *shared.CourseSource value in argument to st.SaveCourse
+internal\scheduler\run.go:245:26: cannot use &items[i] (value of type *sources.YouTubeVideoSource) as *shared.YouTubeVideoSource value in argument to st.SaveVideo

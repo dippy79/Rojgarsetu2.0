@@ -1,0 +1,223 @@
+===FUNC_DECLS=== 
+services\crawler-go\internal\sources\base.go:39:// BaseSource common functionality for all sources
+services\crawler-go\internal\sources\base.go:52:func NewUserAgentRotator() *UserAgentRotator {
+services\crawler-go\internal\sources\base.go:69:func (r *UserAgentRotator) Next() string {
+services\crawler-go\internal\sources\base.go:85:func NewDomainLimiter() *DomainLimiter {
+services\crawler-go\internal\sources\base.go:93:func (dl *DomainLimiter) Allow(domain string) bool {
+services\crawler-go\internal\sources\base.go:96:		defer func() { <-dl.sem }()
+services\crawler-go\internal\sources\base.go:118:func (dl *DomainLimiter) applyBackoff(domain string) {
+services\crawler-go\internal\sources\base.go:135:func (b *BaseSource) CheckRobotsTxt(ctx context.Context, path string) bool {
+services\crawler-go\internal\sources\base.go:158:func (b *BaseSource) DoRequest(ctx context.Context, req *http.Request, domain string, dl *DomainLimiter) (*http.Response, error) {
+services\crawler-go\internal\sources\base.go:183:// ---- free-function API (kept for ncs.go / ssc.go compatibility) ----
+services\crawler-go\internal\sources\base.go:186:func SetUserAgentAndCheck(req *http.Request, baseURL string) {
+services\crawler-go\internal\sources\base.go:191:// CheckRobotsTxt (free function) respects robots.txt for a given base URL + path.
+services\crawler-go\internal\sources\base.go:192:func CheckRobotsTxt(baseURL, path string) bool {
+services\crawler-go\internal\sources\base.go:220:func CheckStatusAndPause(resp *http.Response, domain string) error {
+services\crawler-go\internal\sources\base.go:236:func SanitizeString(input string, maxLen int) string {
+services\crawler-go\internal\sources\company_pages.go:49:func NewCompanyPagesSource() *CompanyPagesSource {
+services\crawler-go\internal\sources\company_pages.go:59:func (s *CompanyPagesSource) Fetch(ctx context.Context) ([]PrivJobSource, error) {
+services\crawler-go\internal\sources\company_pages.go:78:func (s *CompanyPagesSource) fetchFromCompany(ctx context.Context, company CompanyInfo) ([]PrivJobSource, error) {
+services\crawler-go\internal\sources\company_pages.go:107:func (s *CompanyPagesSource) parseHTMLJobs(html, companyName, baseURL string) []PrivJobSource {
+services\crawler-go\internal\sources\company_pages.go:201:func (s *CompanyPagesSource) parseJSONLDJobs(html, companyName, baseURL string) []PrivJobSource {
+services\crawler-go\internal\sources\company_pages.go:243:func (j *jsonLDJob) isJobPosting() bool {
+services\crawler-go\internal\sources\company_pages.go:247:func (s *CompanyPagesSource) jsonLDToPrivJob(j jsonLDJob, companyName, baseURL string) *PrivJobSource {
+services\crawler-go\internal\sources\company_pages.go:301:func (s *CompanyPagesSource) Name() string {
+services\crawler-go\internal\sources\company_pages_test.go:11:func TestParseHTMLJobs_JSONLDFallback(t *testing.T) {
+services\crawler-go\internal\sources\company_pages_test.go:45:func TestParseHTMLJobs_NoJSONLD_ExistingCompanies(t *testing.T) {
+services\crawler-go\internal\sources\coursera.go:24:func NewCourseraSource() *CourseraSource {
+services\crawler-go\internal\sources\coursera.go:35:func (s *CourseraSource) Fetch(ctx context.Context) ([]CourseSource, error) {
+services\crawler-go\internal\sources\coursera.go:84:func (s *CourseraSource) fetchFromAPI(ctx context.Context) ([]CourseSource, error) {
+services\crawler-go\internal\sources\coursera.go:164:func parseCourseraStartDate(raw json.RawMessage) *string {
+services\crawler-go\internal\sources\coursera.go:199:func (s *CourseraSource) fetchFromWebsite(ctx context.Context) ([]CourseSource, error) {
+services\crawler-go\internal\sources\coursera.go:240:func (s *CourseraSource) parseHTMLCourses(html string) []CourseSource {
+services\crawler-go\internal\sources\coursera.go:284:func (s *CourseraSource) Name() string {
+services\crawler-go\internal\sources\employment_news.go:23:func NewEmploymentNewsSource() *EmploymentNewsSource {
+services\crawler-go\internal\sources\employment_news.go:34:func (s *EmploymentNewsSource) Fetch(ctx context.Context) ([]GovJobSource, error) {
+services\crawler-go\internal\sources\employment_news.go:51:func (s *EmploymentNewsSource) fetchFromRSS(ctx context.Context) ([]GovJobSource, error) {
+services\crawler-go\internal\sources\employment_news.go:110:func (s *EmploymentNewsSource) fetchFromWebsite(ctx context.Context) ([]GovJobSource, error) {
+services\crawler-go\internal\sources\employment_news.go:151:func (s *EmploymentNewsSource) parseHTMLJobs(html string) []GovJobSource {
+services\crawler-go\internal\sources\employment_news.go:185:func (s *EmploymentNewsSource) Name() string {
+services\crawler-go\internal\sources\employment_news.go:190:func isEmploymentNewsRelevant(title string) bool {
+services\crawler-go\internal\sources\geeksforgeeks.go:34:func NewGeeksforGeeksSource() *GeeksforGeeksSource {
+services\crawler-go\internal\sources\geeksforgeeks.go:44:func (s *GeeksforGeeksSource) Fetch(ctx context.Context) ([]CourseSource, error) {
+services\crawler-go\internal\sources\geeksforgeeks.go:104:func (s *GeeksforGeeksSource) parseCourses(html string) []CourseSource {
+services\crawler-go\internal\sources\geeksforgeeks.go:135:func (c gfGCourse) isCourse() bool {
+services\crawler-go\internal\sources\geeksforgeeks.go:140:func (s *GeeksforGeeksSource) parseJSONLDCourses(html string) []CourseSource {
+services\crawler-go\internal\sources\geeksforgeeks.go:182:func (s *GeeksforGeeksSource) jsonLDToCourse(c gfGCourse) *CourseSource {
+services\crawler-go\internal\sources\geeksforgeeks.go:211:func (s *GeeksforGeeksSource) parseHTMLCourses(html string) []CourseSource {
+services\crawler-go\internal\sources\geeksforgeeks.go:266:func isGfGNonCourseText(s string) bool {
+services\crawler-go\internal\sources\geeksforgeeks.go:284:func (s *GeeksforGeeksSource) Name() string {
+services\crawler-go\internal\sources\google_jobs.go:21:func NewGoogleJobsSource() *GoogleJobsSource {
+services\crawler-go\internal\sources\google_jobs.go:31:func (s *GoogleJobsSource) Fetch(ctx context.Context) ([]PrivJobSource, error) {
+services\crawler-go\internal\sources\google_jobs.go:49:func (s *GoogleJobsSource) fetchFromGoogleCareers(ctx context.Context) ([]PrivJobSource, error) {
+services\crawler-go\internal\sources\google_jobs.go:90:func (s *GoogleJobsSource) parseJSONLD(html, company string) []PrivJobSource {
+services\crawler-go\internal\sources\google_jobs.go:148:func (s *GoogleJobsSource) parseHTMLJobs(html string) []PrivJobSource {
+services\crawler-go\internal\sources\google_jobs.go:184:func (s *GoogleJobsSource) Name() string {
+services\crawler-go\internal\sources\greenhouse.go:56:func NewGreenhouseSource() *GreenhouseSource {
+services\crawler-go\internal\sources\greenhouse.go:70:func (s *GreenhouseSource) Fetch(ctx context.Context) ([]PrivJobSource, error) {
+services\crawler-go\internal\sources\greenhouse.go:87:func (s *GreenhouseSource) fetchOrg(ctx context.Context, org greenhouseOrg) ([]PrivJobSource, error) {
+services\crawler-go\internal\sources\greenhouse.go:129:func (s *GreenhouseSource) jobToPriv(j *greenhouseJob, company string) PrivJobSource {
+services\crawler-go\internal\sources\greenhouse.go:151:func (s *GreenhouseSource) Name() string {
+services\crawler-go\internal\sources\indeed.go:22:func NewIndeedSource() *IndeedSource {
+services\crawler-go\internal\sources\indeed.go:33:func (s *IndeedSource) Fetch(ctx context.Context) ([]PrivJobSource, error) {
+services\crawler-go\internal\sources\indeed.go:54:func (s *IndeedSource) fetchFromRSS(ctx context.Context) ([]PrivJobSource, error) {
+services\crawler-go\internal\sources\indeed.go:108:func (s *IndeedSource) fetchFromWebsite(ctx context.Context) ([]PrivJobSource, error) {
+services\crawler-go\internal\sources\indeed.go:150:func (s *IndeedSource) parseHTMLJobs(html string) []PrivJobSource {
+services\crawler-go\internal\sources\indeed.go:180:func (s *IndeedSource) Name() string {
+services\crawler-go\internal\sources\lever.go:52:func NewLeverSource() *LeverSource {
+services\crawler-go\internal\sources\lever.go:65:func (s *LeverSource) Fetch(ctx context.Context) ([]PrivJobSource, error) {
+services\crawler-go\internal\sources\lever.go:82:func (s *LeverSource) fetchOrg(ctx context.Context, org leverOrg) ([]PrivJobSource, error) {
+services\crawler-go\internal\sources\lever.go:124:func (s *LeverSource) postingToPriv(p *leverPosting, company string) PrivJobSource {
+services\crawler-go\internal\sources\lever.go:145:func (s *LeverSource) Name() string {
+services\crawler-go\internal\sources\linkedin.go:21:func NewLinkedInSource() *LinkedInSource {
+services\crawler-go\internal\sources\linkedin.go:32:func (s *LinkedInSource) Fetch(ctx context.Context) ([]PrivJobSource, error) {
+services\crawler-go\internal\sources\linkedin.go:53:func (s *LinkedInSource) fetchFromRSS(ctx context.Context) ([]PrivJobSource, error) {
+services\crawler-go\internal\sources\linkedin.go:108:func (s *LinkedInSource) fetchFromAlternative(ctx context.Context) ([]PrivJobSource, error) {
+services\crawler-go\internal\sources\linkedin.go:116:func (s *LinkedInSource) Name() string {
+services\crawler-go\internal\sources\naukri.go:24:func NewNaukriSource(browserPool *browser.Pool, proxy *proxy.Rotator) *NaukriSource {
+services\crawler-go\internal\sources\naukri.go:33:func (s *NaukriSource) Fetch(ctx context.Context) ([]JobSource, error) {
+services\crawler-go\internal\sources\naukri.go:45:	err := s.browserPool.Run(ctx, func(ctx context.Context) error {
+services\crawler-go\internal\sources\naukri.go:119:			doc.Find(selector).Each(func(i int, sel *goquery.Selection) {
+services\crawler-go\internal\sources\naukri.go:168:						sel.Find(skillSel).Each(func(_ int, tag *goquery.Selection) {
+services\crawler-go\internal\sources\naukri.go:233:func (s *NaukriSource) FetchDetails(ctx context.Context) (*JobSource, error) {
+services\crawler-go\internal\sources\naukri.go:239:func (s *NaukriSource) Crawl(ctx context.Context) error {
+services\crawler-go\internal\sources\naukri.go:244:	return s.browserPool.Run(ctx, func(ctx context.Context) error {
+services\crawler-go\internal\sources\naukri.go:265:		doc.Find(".jobTuple").Each(func(i int, sel *goquery.Selection) {
+services\crawler-go\internal\sources\ncs.go:36:func NewNCSSource() *NCSSource {
+services\crawler-go\internal\sources\ncs.go:47:func (s *NCSSource) Fetch(ctx context.Context) ([]GovJobSource, error) {
+services\crawler-go\internal\sources\ncs.go:65:func (s *NCSSource) fetchFromRSS(ctx context.Context) ([]GovJobSource, error) {
+services\crawler-go\internal\sources\ncs.go:135:func (s *NCSSource) fetchFromAlternative(ctx context.Context) ([]GovJobSource, error) {
+services\crawler-go\internal\sources\ncs.go:188:func (s *NCSSource) Name() string {
+services\crawler-go\internal\sources\nptel.go:23:func NewNPTELSource() *NPTELSource {
+services\crawler-go\internal\sources\nptel.go:38:func (s *NPTELSource) Fetch(ctx context.Context) ([]CourseSource, error) {
+services\crawler-go\internal\sources\nptel.go:56:func (s *NPTELSource) fetchFromWebsite(ctx context.Context) ([]CourseSource, error) {
+services\crawler-go\internal\sources\nptel.go:110:func (s *NPTELSource) parseJSONLDCourses(html string) []CourseSource {
+services\crawler-go\internal\sources\nptel.go:155:func (s *NPTELSource) parseHTMLCourses(html string) []CourseSource {
+services\crawler-go\internal\sources\nptel.go:215:func isNonCourseText(s string) bool {
+services\crawler-go\internal\sources\nptel.go:235:func (s *NPTELSource) Name() string {
+services\crawler-go\internal\sources\nsdc.go:21:func NewNSDCSource() *NSDCSource {
+services\crawler-go\internal\sources\nsdc.go:31:func (s *NSDCSource) Fetch(ctx context.Context) ([]CourseSource, error) {
+services\crawler-go\internal\sources\nsdc.go:48:func (s *NSDCSource) fetchFromWebsite(ctx context.Context) ([]CourseSource, error) {
+services\crawler-go\internal\sources\nsdc.go:90:func (s *NSDCSource) parseHTMLCourses(html, baseURL string) []CourseSource {
+services\crawler-go\internal\sources\nsdc.go:133:func (s *NSDCSource) Name() string {
+services\crawler-go\internal\sources\rrb.go:23:func NewRRBSource() *RRBSource {
+services\crawler-go\internal\sources\rrb.go:52:func (s *RRBSource) Fetch(ctx context.Context) ([]GovJobSource, error) {
+services\crawler-go\internal\sources\rrb.go:75:func (s *RRBSource) fetchFromRRB(ctx context.Context, name, baseURL string) ([]GovJobSource, error) {
+services\crawler-go\internal\sources\rrb.go:118:func (s *RRBSource) parseHTMLJobs(html, baseURL, rrbName string) []GovJobSource {
+services\crawler-go\internal\sources\rrb.go:154:func (s *RRBSource) Name() string {
+services\crawler-go\internal\sources\rrb.go:159:func isRRBRelevant(title string) bool {
+services\crawler-go\internal\sources\rrb.go:180:func extractVacancyCount(text string) *int {
+services\crawler-go\internal\sources\source.go:32:// BaseSource provides common functionality
+services\crawler-go\internal\sources\source.go:34:func (b *BaseSource) Name() string {
+services\crawler-go\internal\sources\ssc.go:23:func NewSSCSource() *SSCSource {
+services\crawler-go\internal\sources\ssc.go:37:func (s *SSCSource) Fetch(ctx context.Context) ([]GovJobSource, error) {
+services\crawler-go\internal\sources\ssc.go:59:func (s *SSCSource) fetchFromRSS(ctx context.Context) ([]GovJobSource, error) {
+services\crawler-go\internal\sources\ssc.go:132:func (s *SSCSource) fetchFromWebsite(ctx context.Context) ([]GovJobSource, error) {
+services\crawler-go\internal\sources\ssc.go:181:func (s *SSCSource) parseHTMLJobs(html, baseURL string) []GovJobSource {
+services\crawler-go\internal\sources\ssc.go:217:func (s *SSCSource) Name() string {
+services\crawler-go\internal\sources\ssc.go:222:func isRelevantNotice(title string) bool {
+services\crawler-go\internal\sources\swayam.go:22:func NewSWAYAMSource() *SWAYAMSource {
+services\crawler-go\internal\sources\swayam.go:45:func (s *SWAYAMSource) Fetch(ctx context.Context) ([]CourseSource, error) {
+services\crawler-go\internal\sources\swayam.go:66:func (s *SWAYAMSource) fetchHomeForData(ctx context.Context) (bool, error) {
+services\crawler-go\internal\sources\swayam.go:103:func (s *SWAYAMSource) Name() string {
+services\crawler-go\internal\sources\types.go:121:func parseRSSXML(xmlContent string) (*RSSDocument, error) {
+services\crawler-go\internal\sources\types.go:131:func cleanString(s string) string {
+services\crawler-go\internal\sources\types.go:138:func extractURL(link string) string {
+services\crawler-go\internal\sources\types.go:147:func extractField(text, fieldName string) string {
+services\crawler-go\internal\sources\types.go:163:func parseDateString(dateStr string) *string {
+services\crawler-go\internal\sources\types.go:191:func isValidJob(job *GovJobSource) bool {
+services\crawler-go\internal\sources\types.go:212:func isValidPrivJob(job *PrivJobSource) bool {
+services\crawler-go\internal\sources\types.go:229:func isValidCourse(course *CourseSource) bool {
+services\crawler-go\internal\sources\types.go:246:func isValidVideo(video *YouTubeVideoSource) bool {
+services\crawler-go\internal\sources\types.go:263:func extractMatches(text, pattern string) [][]string {
+services\crawler-go\internal\sources\types.go:269:func extractYouTubeVideoID(url string) string {
+services\crawler-go\internal\sources\types.go:285:func parseYouTubeDuration(duration string) string {
+services\crawler-go\internal\sources\types.go:311:func parseViewCount(countStr string) *int64 {
+services\crawler-go\internal\sources\types.go:322:func normalizeJobType(jobType string) string {
+services\crawler-go\internal\sources\types.go:350:func normalizeCourseMode(mode string) string {
+services\crawler-go\internal\sources\types.go:367:func normalizeCourseLevel(level string) string {
+services\crawler-go\internal\sources\udemy.go:21:func NewUdemySource() *UdemySource {
+services\crawler-go\internal\sources\udemy.go:31:func (s *UdemySource) Fetch(ctx context.Context) ([]CourseSource, error) {
+services\crawler-go\internal\sources\udemy.go:48:func (s *UdemySource) fetchFromWebsite(ctx context.Context) ([]CourseSource, error) {
+services\crawler-go\internal\sources\udemy.go:90:func (s *UdemySource) parseHTMLCourses(html string) []CourseSource {
+services\crawler-go\internal\sources\udemy.go:132:func (s *UdemySource) Name() string {
+services\crawler-go\internal\sources\upsc.go:23:func NewUPSCSource() *UPSCSource {
+services\crawler-go\internal\sources\upsc.go:34:func (s *UPSCSource) Fetch(ctx context.Context) ([]GovJobSource, error) {
+services\crawler-go\internal\sources\upsc.go:56:func (s *UPSCSource) fetchFromRSS(ctx context.Context) ([]GovJobSource, error) {
+services\crawler-go\internal\sources\upsc.go:115:func (s *UPSCSource) fetchFromWebsite(ctx context.Context) ([]GovJobSource, error) {
+services\crawler-go\internal\sources\upsc.go:156:func (s *UPSCSource) parseHTMLJobs(html, baseURL string) []GovJobSource {
+services\crawler-go\internal\sources\upsc.go:190:func (s *UPSCSource) Name() string {
+services\crawler-go\internal\sources\upsc.go:195:func isUPSCRelevant(title string) bool {
+services\crawler-go\internal\sources\youtube.go:52:func NewYouTubeSource() *YouTubeSource {
+services\crawler-go\internal\sources\youtube.go:72:func (s *YouTubeSource) Fetch(ctx context.Context) ([]YouTubeVideoSource, error) {
+services\crawler-go\internal\sources\youtube.go:93:func (s *YouTubeSource) fetchFromAPI(ctx context.Context) ([]YouTubeVideoSource, error) {
+services\crawler-go\internal\sources\youtube.go:204:func isValidYouTubeChannelID(id string) bool {
+services\crawler-go\internal\sources\youtube.go:210:func (s *YouTubeSource) Name() string {
+services\crawler-go\internal\sources\youtube.go:215:func (s *YouTubeSource) GetAPILimit() string {
+services\crawler-go\internal\sources\youtube.go:223:func parseCount(countStr string) int64 {
+===TYPES=== 
+services\crawler-go\internal\sources\base.go:40:type BaseSource struct {
+services\crawler-go\internal\sources\base.go:46:type UserAgentRotator struct {
+services\crawler-go\internal\sources\base.go:78:type DomainLimiter struct {
+services\crawler-go\internal\sources\company_pages.go:17:type CompanyPagesSource struct {
+services\crawler-go\internal\sources\company_pages.go:23:type CompanyInfo struct {
+services\crawler-go\internal\sources\company_pages.go:160:	// try parsing structured data embedded in <script type="application/ld+json">.
+services\crawler-go\internal\sources\company_pages.go:169:type jsonLDJob struct {
+services\crawler-go\internal\sources\company_pages.go:171:	Type           string `json:"@type"`
+services\crawler-go\internal\sources\company_pages.go:181:		Type    string `json:"@type"`
+services\crawler-go\internal\sources\company_pages.go:204:	// Match each <script type="application/ld+json">...</script> block.
+services\crawler-go\internal\sources\company_pages.go:205:	ldRe := regexp.MustCompile(`(?s)<script[^>]*type=["']application/ld\+json["'][^>]*>(.*?)</script>`)
+services\crawler-go\internal\sources\company_pages_test.go:15:<script type="application/ld+json">
+services\crawler-go\internal\sources\company_pages_test.go:16:[{"@context":"https://schema.org","@type":"JobPosting","title":"Software Engineer","description":"<p>Build stuff</p>","datePosted":"2024-01-02T00:00:00Z","hiringOrganization":{"name":"Acme Corp"},"jobLocation":{"@type":"Place","address":{"addressLocality":"Bangalore","addressRegion":"KA","addressCountry":"IN"}},"baseSalary":{"currency":"INR","value":{"minValue":1000000,"maxValue":2000000}}}]
+services\crawler-go\internal\sources\coursera.go:17:type CourseraSource struct {
+services\crawler-go\internal\sources\coursera.go:244:	pattern := `<script[^>]*type="application/ld\+json"[^>]*>([^<]+)</script>`
+services\crawler-go\internal\sources\employment_news.go:16:type EmploymentNewsSource struct {
+services\crawler-go\internal\sources\geeksforgeeks.go:24://     <script type="application/ld+json"> blocks.
+services\crawler-go\internal\sources\geeksforgeeks.go:28:type GeeksforGeeksSource struct {
+services\crawler-go\internal\sources\geeksforgeeks.go:49:		"https://www.geeksforgeeks.org/courses?type=Online",
+services\crawler-go\internal\sources\geeksforgeeks.go:121:type gfGCourse struct {
+services\crawler-go\internal\sources\geeksforgeeks.go:122:	Type        string `json:"@type"`
+services\crawler-go\internal\sources\geeksforgeeks.go:143:	pattern := `<script[^>]*type="application/ld\+json"[^>]*>(.*?)</script>`
+services\crawler-go\internal\sources\google_jobs.go:15:type GoogleJobsSource struct {
+services\crawler-go\internal\sources\google_jobs.go:94:	pattern := `<script[^>]*type="application/ld\+json"[^>]*>([^<]+)</script>`
+services\crawler-go\internal\sources\greenhouse.go:24:type GreenhouseSource struct {
+services\crawler-go\internal\sources\greenhouse.go:31:type greenhouseOrg struct {
+services\crawler-go\internal\sources\greenhouse.go:37:type greenhouseResponse struct {
+services\crawler-go\internal\sources\greenhouse.go:42:type greenhouseJob struct {
+services\crawler-go\internal\sources\indeed.go:15:type IndeedSource struct {
+services\crawler-go\internal\sources\lever.go:24:type LeverSource struct {
+services\crawler-go\internal\sources\lever.go:31:type leverOrg struct {
+services\crawler-go\internal\sources\lever.go:37:type leverPosting struct {
+services\crawler-go\internal\sources\linkedin.go:14:type LinkedInSource struct {
+services\crawler-go\internal\sources\naukri.go:17:type NaukriSource struct {
+services\crawler-go\internal\sources\ncs.go:16:type NCSJob struct {
+services\crawler-go\internal\sources\ncs.go:29:type NCSSource struct {
+services\crawler-go\internal\sources\nptel.go:16:type NPTELSource struct {
+services\crawler-go\internal\sources\nptel.go:113:	pattern := `<script[^>]*type="application/ld\+json"[^>]*>([^<]+)</script>`
+services\crawler-go\internal\sources\nsdc.go:15:type NSDCSource struct {
+services\crawler-go\internal\sources\rrb.go:17:type RRBSource struct {
+services\crawler-go\internal\sources\source.go:9:type JobSource struct {
+services\crawler-go\internal\sources\source.go:26:type Source interface {
+services\crawler-go\internal\sources\ssc.go:16:type SSCSource struct {
+services\crawler-go\internal\sources\swayam.go:15:type SWAYAMSource struct {
+services\crawler-go\internal\sources\swayam.go:89:	if len(extractMatches(html, `<script[^>]*type="application/ld\+json"[^>]*>`)) > 0 {
+services\crawler-go\internal\sources\types.go:17:type GovJobSource struct {
+services\crawler-go\internal\sources\types.go:33:type PrivJobSource struct {
+services\crawler-go\internal\sources\types.go:41:	JobType     string     `json:"job_type"`
+services\crawler-go\internal\sources\types.go:49:type CourseSource struct {
+services\crawler-go\internal\sources\types.go:70:type YouTubeVideoSource struct {
+services\crawler-go\internal\sources\types.go:92:type RSSDocument struct {
+services\crawler-go\internal\sources\types.go:98:type RSSChannel struct {
+services\crawler-go\internal\sources\types.go:106:type RSSItem struct {
+services\crawler-go\internal\sources\types.go:321:// normalizeJobType normalizes job type string
+services\crawler-go\internal\sources\types.go:325:	typeMappings := map[string]string{
+services\crawler-go\internal\sources\types.go:340:	for k, v := range typeMappings {
+services\crawler-go\internal\sources\types.go:388:type GovJobFetcher interface {
+services\crawler-go\internal\sources\types.go:394:type PrivJobFetcher interface {
+services\crawler-go\internal\sources\types.go:400:type CourseFetcher interface {
+services\crawler-go\internal\sources\types.go:406:type VideoFetcher interface {
+services\crawler-go\internal\sources\udemy.go:15:type UdemySource struct {
+services\crawler-go\internal\sources\upsc.go:16:type UPSCSource struct {
+services\crawler-go\internal\sources\youtube.go:18:type YouTubeSource struct {
+services\crawler-go\internal\sources\youtube.go:26:type OfficialChannel struct {
+services\crawler-go\internal\sources\youtube.go:103:		url := fmt.Sprintf("%s/search?key=%s&channelId=%s&part=snippet,id&order=date&maxResults=20&type=video",

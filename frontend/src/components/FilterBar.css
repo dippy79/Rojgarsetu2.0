@@ -1,8 +1,10 @@
 .filter-bar {
-  background: #fff;
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(16px);
   padding: 1rem 1.5rem;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
   display: flex;
   flex-wrap: wrap;
   align-items: flex-end;
@@ -20,32 +22,33 @@
 .filter-group label {
   font-size: 0.8rem;
   font-weight: 600;
-  color: #555;
+  color: #444;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
 .filter-group select {
-  padding: 0.5rem 0.75rem;
-  border: 1px solid #ddd;
-  border-radius: 6px;
+  padding: 0.55rem 0.75rem;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 8px;
   font-size: 0.9rem;
-  background: #fafafa;
+  background: rgba(255, 255, 255, 0.8);
   color: #333;
-  transition: border-color 0.2s;
+  transition: all 0.2s;
 }
 
 .filter-group select:focus {
   border-color: #1a237e;
   background: #fff;
+  box-shadow: 0 0 0 3px rgba(26, 35, 126, 0.15);
 }
 
 .clear-filters {
   background: transparent;
   color: #e53935;
   border: 1px solid #e53935;
-  padding: 0.5rem 1rem;
-  border-radius: 6px;
+  padding: 0.55rem 1rem;
+  border-radius: 8px;
   font-size: 0.85rem;
   font-weight: 500;
   transition: all 0.2s;
@@ -66,4 +69,3 @@
     min-width: 100%;
   }
 }
-

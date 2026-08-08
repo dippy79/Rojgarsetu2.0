@@ -1,22 +1,50 @@
+/* Government Jobs Page — Energetic Blue/Teal gradient theme */
 .gov-jobs-page {
   max-width: 1200px;
   margin: 0 auto;
   padding: 2rem;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #eef6ff 0%, #e0f7f5 100%);
 }
 
 .page-header {
   margin-bottom: 1.5rem;
+  padding: 1.5rem 2rem;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #0d47a1 0%, #1565c0 50%, #00897b 100%);
+  box-shadow: 0 10px 30px rgba(13, 71, 161, 0.25);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .page-header h1 {
   font-size: 1.8rem;
-  color: #1a237e;
+  color: #fff;
   margin-bottom: 0.25rem;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
 .page-header p {
-  color: #666;
+  color: rgba(255, 255, 255, 0.9);
   font-size: 1rem;
+}
+
+.stats-badge {
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: #fff;
+  padding: 0.5rem 1rem;
+  border-radius: 999px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  backdrop-filter: blur(8px);
+  white-space: nowrap;
+}
+
+.stats-badge span {
+  font-size: 1.2rem;
+  font-weight: 700;
 }
 
 .jobs-grid {
@@ -28,17 +56,19 @@
 .loading {
   text-align: center;
   padding: 3rem;
-  color: #666;
+  color: #0d47a1;
   font-size: 1.1rem;
 }
 
 .error {
   text-align: center;
   padding: 2rem;
-  color: #e53935;
-  background: #ffebee;
-  border-radius: 8px;
+  color: #c62828;
+  background: rgba(255, 235, 238, 0.8);
+  border-radius: 12px;
   font-size: 1rem;
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(198, 40, 40, 0.3);
 }
 
 .no-results {
@@ -46,6 +76,37 @@
   padding: 3rem;
   color: #888;
   font-size: 1.1rem;
+}
+
+.active-filters-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(13, 71, 161, 0.15);
+  padding: 0.6rem 1rem;
+  border-radius: 10px;
+  margin-bottom: 1rem;
+  font-size: 0.85rem;
+  color: #0d47a1;
+  backdrop-filter: blur(8px);
+}
+
+.reset-filter-btn {
+  background: transparent;
+  color: #0d47a1;
+  border: 1px solid #0d47a1;
+  padding: 0.35rem 0.9rem;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.reset-filter-btn:hover {
+  background: #0d47a1;
+  color: #fff;
 }
 
 @media (max-width: 768px) {
@@ -60,5 +121,10 @@
   .page-header h1 {
     font-size: 1.4rem;
   }
-}
 
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+}

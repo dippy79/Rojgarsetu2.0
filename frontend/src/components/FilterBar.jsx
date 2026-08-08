@@ -159,6 +159,36 @@ const FilterBar = ({ filters, onFilterChange, filterOptions }) => {
         </div>
       )}
 
+      {filterOptions.regions && (
+        <div className="filter-group">
+          <label>Region</label>
+          <select 
+            value={filters.region || ''} 
+            onChange={(e) => handleChange('region', e.target.value)}
+          >
+            <option value="">All Regions</option>
+            {filterOptions.regions.map(region => (
+              <option key={region} value={region}>{region}</option>
+            ))}
+          </select>
+        </div>
+      )}
+
+      {filterOptions.languages && (
+        <div className="filter-group">
+          <label>Language</label>
+          <select 
+            value={filters.language || ''} 
+            onChange={(e) => handleChange('language', e.target.value)}
+          >
+            <option value="">All Languages</option>
+            {filterOptions.languages.map(language => (
+              <option key={language} value={language}>{language}</option>
+            ))}
+          </select>
+        </div>
+      )}
+
       <button 
         className="clear-filters"
         onClick={() => onFilterChange({})}

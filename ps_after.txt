@@ -1,0 +1,7 @@
+rojgar-ai-engine Up 20 seconds (healthy)
+rojgar-api-gateway Up 3 hours (healthy)
+rojgar-auth-service Up 3 hours (healthy)
+rojgar-backend Up 20 seconds (healthy)
+rojgar-crawler Up About an hour (healthy)
+rojgar-postgres Up 3 hours (healthy)
+rojgar-redis Up 3 hours (healthy)

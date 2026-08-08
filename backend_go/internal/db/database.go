@@ -148,6 +148,39 @@ func (p *PostgresDB) GetCourses(f CourseFilter, page, limit int) ([]GetCoursesRo
 	return rows, int(total), nil
 }
 
+type CourseProvider struct {
+	Provider string `json:"provider"`
+	Count    int    `json:"count"`
+}
+
+func (p *PostgresDB) GetCourseProviders() ([]CourseProvider, error) {
+	rows, err := p.DB.QueryContext(context.Background(), `
+		SELECT provider, COUNT(*)
+		FROM courses
+		WHERE is_active = true
+		GROUP BY provider
+		ORDER BY COUNT(*) DESC, provider ASC
+	`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	providers := make([]CourseProvider, 0)
+	for rows.Next() {
+		var provider CourseProvider
+		if err := rows.Scan(&provider.Provider, &provider.Count); err != nil {
+			return nil, err
+		}
+		providers = append(providers, provider)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return providers, nil
+}
+
 func (p *PostgresDB) GetCourseByID(id string) (*GetCourseByIDRow, error) {
 	uid, err := uuid.Parse(id)
 	if err != nil {

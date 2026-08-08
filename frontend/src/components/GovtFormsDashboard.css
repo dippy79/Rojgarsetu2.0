@@ -1,0 +1,106 @@
+/* GovtFormsDashboard — light theme with urgency badges */
+.forms-dashboard {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+  background: #fafafa;
+}
+
+.forms-dashboard .page-header h1 {
+  margin: 0 0 0.4rem;
+  color: #0f172a;
+}
+.forms-dashboard .page-header p {
+  margin: 0 0 1.5rem;
+  color: #475569;
+}
+
+.forms-mock-banner {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(10px);
+  border: 1px solid #f59e0b;
+  color: #92400e;
+  padding: 0.6rem 1rem;
+  border-radius: 10px;
+  margin-bottom: 1.25rem;
+  font-size: 0.9rem;
+}
+
+.forms-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.form-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.05);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.form-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+}
+
+/* Priority coloring (light, vibrant accents) */
+.form-card.priority-1 { border-left: 6px solid #e11d48; }
+.form-card.priority-2 { border-left: 6px solid #f97316; }
+.form-card.priority-3 { border-left: 6px solid #16a34a; }
+
+.form-card-body { flex: 1; }
+.form-title { margin: 0 0 0.25rem; font-size: 1.05rem; color: #0f172a; }
+.form-department { margin: 0 0 0.5rem; font-size: 0.85rem; color: #64748b; }
+
+.badge {
+  display: inline-block;
+  padding: 0.25rem 0.7rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+.badge-p1 { background: #ffe4e6; color: #be123c; }
+.badge-p2 { background: #ffedd5; color: #c2410c; }
+.badge-p3 { background: #dcfce7; color: #15803d; }
+
+/* Blinking "Ending Soon" indicator */
+.badge-p1 { animation: blink-p1 1.2s ease-in-out infinite; }
+@keyframes blink-p1 {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.45; }
+}
+
+.form-card-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.4rem;
+}
+.form-date { font-size: 0.85rem; color: #334155; font-weight: 600; }
+.form-apply {
+  background: linear-gradient(135deg, #16a34a, #22c55e);
+  color: #fff;
+  padding: 0.4rem 1rem;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  text-decoration: none;
+}
+.form-apply.disabled {
+  background: #e2e8f0;
+  color: #64748b;
+}
+
+.loading, .no-results { color: #475569; padding: 2rem; text-align: center; }
+
+@media (max-width: 640px) {
+  .form-card { flex-direction: column; align-items: flex-start; }
+  .form-card-meta { align-items: flex-start; }
+}

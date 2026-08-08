@@ -1,19 +1,22 @@
 :root {
-  /* Color Palette - Futuristic European Light */
-  --color-bg-primary: #F8F9FA;
+  /* Color Palette - Light theme with emerald / orange / pink accents */
+  --color-bg-primary: #FBFBFB;
   --color-bg-secondary: #FFFFFF;
+  --color-bg-surface: rgba(255, 255, 255, 0.72);
   --color-text-primary: #0F172A;
   --color-text-secondary: #475569;
-  --color-text-tertiary: #94A3B8;
-  --color-accent-primary: #4F46E5;
-  --color-accent-secondary: #059669;
-  --color-accent-tertiary: #D97706;
-  --color-accent-quaternary: #2563EB;
-  --color-border: #E2E8F0;
+  --color-text-tertiary: #64748B;
+  --color-accent-primary: #10B981;
+  --color-accent-secondary: #F97316;
+  --color-accent-tertiary: #EC4899;
+  --color-accent-quaternary: #8B5CF6;
+  --color-border: rgba(148, 163, 184, 0.18);
   --color-success: #10B981;
-  --color-warning: #F59E0B;
+  --color-warning: #FB923C;
   --color-error: #EF4444;
   --color-info: #3B82F6;
+  --color-glass: rgba(255, 255, 255, 0.7);
+  --color-glass-border: rgba(148, 163, 184, 0.18);
 
   /* Shadows */
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.02);
@@ -59,7 +62,7 @@ body {
   font-weight: 400;
   line-height: 1.6;
   color: var(--color-text-primary);
-  background-color: var(--color-bg-primary);
+  background: linear-gradient(135deg, #eef2ff 0%, #fdf2f8 50%, #eef6ff 100%);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -110,6 +113,6 @@ p {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  background-color: var(--color-bg-primary);
+  background: linear-gradient(135deg, #eef2ff 0%, #fdf2f8 50%, #eef6ff 100%);
 }
 

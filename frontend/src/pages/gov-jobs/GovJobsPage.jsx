@@ -6,6 +6,7 @@ import { useSearchParams } from 'react-router-dom';
 import JobCard from '../../components/JobCard';
 import FilterBar from '../../components/FilterBar';
 import Pagination from '../../components/Pagination';
+import { apiUrl } from '../../apiConfig';
 import './GovJobs.css';
 
 const GovJobsPage = () => {
@@ -27,6 +28,8 @@ const GovJobsPage = () => {
   const location = searchParams.get('location') || '';
   const source = searchParams.get('source') || '';
   const category = searchParams.get('category') || '';
+  const region = searchParams.get('region') || '';
+  const language = searchParams.get('language') || '';n
   const page = parseInt(searchParams.get('page'), 10) || 1;
 
   // Fetch jobs with AbortController for clean lifecycle & race-condition prevention
@@ -40,15 +43,15 @@ const GovJobsPage = () => {
         limit: '20',
       });
 
-      if (search) params.append('search', search);
+if (search) params.append('search', search);
       if (department) params.append('department', department);
       if (location) params.append('location', location);
       if (source) params.append('source', source);
       if (category) params.append('category', category);
+      if (region) params.append('region', region);
+      if (language) params.append('language', language);
 
-      // Environment variable fallback for Docker / Gateway
-      const baseUrl = process.env.REACT_APP_BACKEND_URL || '';
-      const endpoint = `${baseUrl}/api/v1/gov-jobs?${params.toString()}`;
+      const endpoint = `${apiUrl('/api/v1/gov-jobs')}?${params.toString()}`;
 
       const response = await fetch(endpoint, { signal });
 
@@ -81,7 +84,7 @@ const GovJobsPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [page, search, department, location, source, category]);
+}, [page, search, department, location, source, category, region, language]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -97,7 +100,9 @@ const GovJobsPage = () => {
     if (filters.department) params.append('department', filters.department);
     if (filters.location) params.append('location', filters.location);
     if (filters.source) params.append('source', filters.source);
-    if (filters.category) params.append('category', filters.category);
+if (filters.category) params.append('category', filters.category);
+    if (filters.region) params.append('region', filters.region);
+    if (filters.language) params.append('language', filters.language);
 
     params.append('page', '1'); // Reset to page 1 on filter update
     setSearchParams(params);
@@ -114,7 +119,7 @@ const GovJobsPage = () => {
     setSearchParams({});
   };
 
-  const activeFilterCount = [search, department, location, source, category].filter(Boolean).length;
+const activeFilterCount = [search, department, location, source, category, region, language].filter(Boolean).length;
 
   return (
     <div className="gov-jobs-page">
@@ -130,14 +135,16 @@ const GovJobsPage = () => {
         )}
       </div>
 
-      <FilterBar
-        filters={{ search, department, location, source, category }}
+<FilterBar
+        filters={{ search, department, location, source, category, region, language }}
         onFilterChange={handleFilterChange}
         filterOptions={{
           departments: ['UPSC', 'SSC', 'Railway', 'State PSC', 'Banking', 'Teaching', 'Defense', 'Medical'],
           locations: ['All India', 'Delhi', 'Mumbai', 'Bangalore', 'Chennai', 'Kolkata', 'Hyderabad', 'Pune', 'Uttar Pradesh', 'Bihar'],
           sources: ['ncs', 'ssc', 'upsc', 'rrb', 'employment_news'],
-          categories: ['10th/12th Pass', 'Graduate', 'Post Graduate', 'Diploma', 'Engineering']
+          categories: ['10th/12th Pass', 'Graduate', 'Post Graduate', 'Diploma', 'Engineering'],
+          regions: ['India', 'Overseas', 'Global Remote'],
+          languages: ['English', 'Hindi']
         }}
       />
 

@@ -1,0 +1,41 @@
+\echo === COLUMNS CHECK ===
+=== COLUMNS CHECK ===
+SELECT table_name, column_name
+FROM information_schema.columns
+WHERE table_schema='public'
+  AND column_name='language'
+ORDER BY table_name;
+   table_name    | column_name 
+-----------------+-------------
+ company_jobs    | language
+ courses         | language
+ jobs_government | language
+ jobs_private    | language
+ youtube_videos  | language
+(5 rows)
+
+\echo === LANGUAGE DISTRIBUTION ===
+=== LANGUAGE DISTRIBUTION ===
+SELECT 'jobs_government' AS tbl, language, COUNT(*) 
+FROM jobs_government GROUP BY language
+UNION ALL
+SELECT 'jobs_private', language, COUNT(*) 
+FROM jobs_private GROUP BY language
+UNION ALL
+SELECT 'company_jobs', language, COUNT(*) 
+FROM company_jobs GROUP BY language
+UNION ALL
+SELECT 'courses', language, COUNT(*) 
+FROM courses GROUP BY language
+UNION ALL
+SELECT 'youtube_videos', language, COUNT(*) 
+FROM youtube_videos GROUP BY language
+ORDER BY tbl, language;
+       tbl       | language | count 
+-----------------+----------+-------
+ courses         | en       |    65
+ courses         | ur       |     2
+ jobs_government | en       |     6
+ jobs_private    | en       |   817
+(4 rows)
+

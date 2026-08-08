@@ -1,21 +1,29 @@
+/* Private Jobs Page — Energetic Blue/Teal gradient theme */
 .private-jobs-page {
   max-width: 1200px;
   margin: 0 auto;
   padding: 2rem;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #e0f7f5 0%, #eef6ff 100%);
 }
 
 .page-header {
   margin-bottom: 1.5rem;
+  padding: 1.5rem 2rem;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #00695c 0%, #00897b 50%, #1565c0 100%);
+  box-shadow: 0 10px 30px rgba(0, 105, 92, 0.25);
 }
 
 .page-header h1 {
   font-size: 1.8rem;
-  color: #00897b;
+  color: #fff;
   margin-bottom: 0.25rem;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
 .page-header p {
-  color: #666;
+  color: rgba(255, 255, 255, 0.9);
   font-size: 1rem;
 }
 
@@ -28,17 +36,19 @@
 .loading {
   text-align: center;
   padding: 3rem;
-  color: #666;
+  color: #00695c;
   font-size: 1.1rem;
 }
 
 .error {
   text-align: center;
   padding: 2rem;
-  color: #e53935;
-  background: #ffebee;
-  border-radius: 8px;
+  color: #c62828;
+  background: rgba(255, 235, 238, 0.8);
+  border-radius: 12px;
   font-size: 1rem;
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(198, 40, 40, 0.3);
 }
 
 .no-results {
@@ -61,4 +71,3 @@
     font-size: 1.4rem;
   }
 }
-

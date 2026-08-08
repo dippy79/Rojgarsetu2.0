@@ -1,20 +1,22 @@
 .course-card {
-  background: #fff;
-  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.85);
+  border-radius: 16px;
   overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 4px 16px rgba(106, 27, 154, 0.08);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(106, 27, 154, 0.1);
 }
 
 .course-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(106, 27, 154, 0.15);
 }
 
 .course-thumbnail {
   position: relative;
   height: 160px;
-  background: #e8eaf6;
+  background: linear-gradient(135deg, #e8b4f8, #f3e5f5);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -35,12 +37,13 @@
   position: absolute;
   top: 0.5rem;
   right: 0.5rem;
-  background: #43a047;
+  background: linear-gradient(135deg, #43a047, #66bb6a);
   color: #fff;
   padding: 0.25rem 0.6rem;
-  border-radius: 4px;
+  border-radius: 6px;
   font-size: 0.75rem;
   font-weight: 700;
+  box-shadow: 0 2px 8px rgba(67, 160, 71, 0.3);
 }
 
 .course-content {
@@ -53,13 +56,14 @@
 .course-title {
   font-size: 1rem;
   font-weight: 600;
-  color: #1a237e;
+  color: #4a148c;
   line-height: 1.4;
 }
 
 .course-provider {
   font-size: 0.9rem;
-  color: #666;
+  color: #7b1fa2;
+  font-weight: 500;
 }
 
 .course-meta {
@@ -69,15 +73,16 @@
 }
 
 .meta-item {
-  background: #f5f7fa;
+  background: rgba(106, 27, 154, 0.08);
   padding: 0.2rem 0.5rem;
-  border-radius: 4px;
+  border-radius: 6px;
   font-size: 0.8rem;
-  color: #555;
+  color: #6a1b9a;
+  font-weight: 500;
 }
 
 .course-rating {
-  color: #f57c00;
+  color: #e65100;
   font-weight: 600;
   font-size: 0.9rem;
 }
@@ -88,10 +93,10 @@
 
 .view-btn {
   display: inline-block;
-  background: linear-gradient(135deg, #1a237e, #283593);
+  background: linear-gradient(135deg, #6a1b9a, #d84315);
   color: #fff;
   padding: 0.5rem 1.25rem;
-  border-radius: 6px;
+  border-radius: 8px;
   font-size: 0.85rem;
   font-weight: 600;
   text-align: center;
@@ -101,4 +106,3 @@
 .view-btn:hover {
   opacity: 0.9;
 }
-

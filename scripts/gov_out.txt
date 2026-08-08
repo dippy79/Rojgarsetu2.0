@@ -1,0 +1,34 @@
+{
+  "name": "PIB India",
+  "handle": "@pibindia",
+  "ids": [
+    "UCGn6a5SI8SNlj7WylmPD6GQ"
+  ],
+  "rss_status": 200,
+  "rss_entries": 15
+}
+{
+  "name": "DD News",
+  "handle": "@ddnews",
+  "ids": [
+    "UCKwucPzHZ7zCUIf7If-Wo1g"
+  ],
+  "rss_status": 200,
+  "rss_entries": 15
+}
+{
+  "name": "MyGov India",
+  "handle": "@MyGovIndia",
+  "ids": [
+    "UCTJpJk8bqQQEqeX58z8eimA"
+  ],
+  "rss_status": 200,
+  "rss_entries": 15
+}
+Traceback (most recent call last):
+  File "F:\Rojgarsetu2.0\rojgarsetu2\scripts\check_gov_youtube_channels.py", line 74, in <module>
+    main()
+  File "F:\Rojgarsetu2.0\rojgarsetu2\scripts\check_gov_youtube_channels.py", line 57, in main
+    if ids and ids[0].startswith("UC"):
+               ^^^^^^^^^^^^^^^^^
+AttributeError: 'tuple' object has no attribute 'startswith'

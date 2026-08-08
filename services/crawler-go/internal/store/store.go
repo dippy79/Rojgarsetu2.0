@@ -11,7 +11,7 @@ import (
 
 	"github.com/lib/pq"
 	"github.com/rojgarsetu/crawler/internal/parser"
-	"github.com/rojgarsetu/crawler/internal/sources"
+	"github.com/rojgarsetu/crawler/internal/shared"
 )
 
 type PostgresStore struct {
@@ -123,20 +123,21 @@ func (s *PostgresStore) SaveJob(job *parser.Job) error {
 
 // SaveGovJob upserts a government job into jobs_government.
 // Idempotent on (source, apply_url).
-func (s *PostgresStore) SaveGovJob(job *sources.GovJobSource) error {
+func (s *PostgresStore) SaveGovJob(job *shared.GovJobSource) error {
 	if job == nil {
 		return fmt.Errorf("job is nil")
 	}
 
 	lastDate := parseDateToTime(job.LastDate)
 	examDate := parseDateToTime(job.ExamDate)
+	region := deriveJobRegion(job.Title, job.Location)
 
 	query := `
 	INSERT INTO jobs_government
 	(title, department, location, apply_url, last_date, source, eligibility,
-	 vacancy_count, salary, exam_date, notification_pdf_url, is_active)
+	 vacancy_count, salary, exam_date, notification_pdf_url, job_region, is_active)
 	VALUES
-	($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,true)
+	($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,true)
 	ON CONFLICT (source, apply_url)
 	DO UPDATE SET
 	    title = EXCLUDED.title,
@@ -147,6 +148,7 @@ func (s *PostgresStore) SaveGovJob(job *sources.GovJobSource) error {
 	    salary = EXCLUDED.salary,
 	    exam_date = EXCLUDED.exam_date,
 	    notification_pdf_url = EXCLUDED.notification_pdf_url,
+	    job_region = EXCLUDED.job_region,
 	    is_active = true,
 	    updated_at = CURRENT_TIMESTAMP
 	`
@@ -163,6 +165,7 @@ func (s *PostgresStore) SaveGovJob(job *sources.GovJobSource) error {
 		job.Salary,
 		examDate,
 		job.NotificationURL,
+		region,
 	)
 	if err != nil {
 		return fmt.Errorf("failed to save gov job '%s': %w", job.Title, err)
@@ -172,7 +175,7 @@ func (s *PostgresStore) SaveGovJob(job *sources.GovJobSource) error {
 
 // SavePrivJob upserts a private job into jobs_private.
 // Idempotent on (source, url).
-func (s *PostgresStore) SavePrivJob(job *sources.PrivJobSource) error {
+func (s *PostgresStore) SavePrivJob(job *shared.PrivJobSource) error {
 	if job == nil {
 		return fmt.Errorf("job is nil")
 	}
@@ -181,13 +184,14 @@ func (s *PostgresStore) SavePrivJob(job *sources.PrivJobSource) error {
 	if job.PostedAt != nil {
 		postedAt = *job.PostedAt
 	}
+	region := deriveJobRegion(job.Title, job.Location)
 
 	query := `
 	INSERT INTO jobs_private
 	(company, title, location, url, salary, experience, job_type, skills,
-	 description, source, posted_at, is_active)
+	 description, source, posted_at, job_region, is_active)
 	VALUES
-	($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,true)
+	($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,true)
 	ON CONFLICT (source, url)
 	DO UPDATE SET
 	    company = EXCLUDED.company,
@@ -199,6 +203,7 @@ func (s *PostgresStore) SavePrivJob(job *sources.PrivJobSource) error {
 	    skills = EXCLUDED.skills,
 	    description = EXCLUDED.description,
 	    posted_at = EXCLUDED.posted_at,
+	    job_region = EXCLUDED.job_region,
 	    is_active = true,
 	    updated_at = CURRENT_TIMESTAMP
 	`
@@ -215,6 +220,7 @@ func (s *PostgresStore) SavePrivJob(job *sources.PrivJobSource) error {
 		job.Description,
 		job.Source,
 		postedAt,
+		region,
 	)
 	if err != nil {
 		return fmt.Errorf("failed to save priv job '%s': %w", job.Title, err)
@@ -224,7 +230,7 @@ func (s *PostgresStore) SavePrivJob(job *sources.PrivJobSource) error {
 
 // SaveCourse upserts a course into courses.
 // Idempotent on (source, url).
-func (s *PostgresStore) SaveCourse(course *sources.CourseSource) error {
+func (s *PostgresStore) SaveCourse(course *shared.CourseSource) error {
 	if course == nil {
 		return fmt.Errorf("course is nil")
 	}
@@ -299,7 +305,7 @@ func (s *PostgresStore) SaveCourse(course *sources.CourseSource) error {
 
 // SaveVideo upserts a YouTube video into youtube_videos.
 // Idempotent on video_id.
-func (s *PostgresStore) SaveVideo(video *sources.YouTubeVideoSource) error {
+func (s *PostgresStore) SaveVideo(video *shared.YouTubeVideoSource) error {
 	if video == nil {
 		return fmt.Errorf("video is nil")
 	}
@@ -350,6 +356,49 @@ func (s *PostgresStore) SaveVideo(video *sources.YouTubeVideoSource) error {
 		return fmt.Errorf("failed to save video '%s': %w", video.Title, err)
 	}
 	return nil
+}
+
+// deriveJobRegion classifies a job into a geographic region based on its
+// title and location. Returns one of:
+//
+//	india          - domestic Indian job (default)
+//	overseas       - job is physically located outside India
+//	global_remote  - remote-first role open to candidates anywhere
+//
+// The classification is conservative: we only label a job "overseas"/"global_remote"
+// when there is strong evidence in the location/title text; otherwise we default
+// to "india" (govt jobs are overwhelmingly domestic).
+func deriveJobRegion(title, location string) string {
+	// Remote keywords anywhere in title/location strongly indicate a remote role.
+	remoteKeywords := []string{
+		"remote", "work from home", "wfh", "work-from-home", "telecommute",
+		"virtual", "anywhere", "distributed",
+	}
+	text := strings.ToLower(title + " " + location)
+	for _, kw := range remoteKeywords {
+		if strings.Contains(text, kw) {
+			return "global_remote"
+		}
+	}
+
+	// Overseas location keywords indicate a physical job outside India.
+	overseasKeywords := []string{
+		"us", "usa", "united states", "canada", "uk", "united kingdom",
+		"london", "europe", "germany", "france", "australia", "singapore",
+		"dubai", "uae", "qatar", "saudi", "kuwait", "oman", "bahrain",
+		"hong kong", "japan", "u.s.", "new york", "san francisco",
+		"silicon valley", "remote - worldwide", "abroad", "overseas",
+	}
+
+	loc := strings.ToLower(location)
+	for _, kw := range overseasKeywords {
+		if strings.Contains(loc, kw) {
+			return "overseas"
+		}
+	}
+
+	// Default: India.
+	return "india"
 }
 
 // parseDateToTime converts a scraped date *string into a *time.Time.

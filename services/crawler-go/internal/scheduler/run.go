@@ -7,9 +7,13 @@ import (
 	"time"
 
 	"github.com/rojgarsetu/crawler/internal/browser"
+	"github.com/rojgarsetu/crawler/internal/courses"
+	"github.com/rojgarsetu/crawler/internal/jobs/gov"
+	"github.com/rojgarsetu/crawler/internal/jobs/priv"
 	"github.com/rojgarsetu/crawler/internal/proxy"
-	"github.com/rojgarsetu/crawler/internal/sources"
+	"github.com/rojgarsetu/crawler/internal/shared"
 	"github.com/rojgarsetu/crawler/internal/store"
+	"github.com/rojgarsetu/crawler/internal/videos"
 )
 
 // RunSummary captures the aggregate result of a crawl run.
@@ -33,6 +37,14 @@ type SourceResult struct {
 // RunAll instantiates every source, calls Fetch with a per-source timeout,
 // routes each result type to the correct store save function, and returns a
 // summary. It continues to the next source if one fails.
+//
+// Wires exactly 21 active sources (matches the container baseline):
+//   - Gov (5): upsc, rrb, ssc, ncs, employment_news
+//   - Priv (6): indeed, linkedin, google_jobs, company_pages, greenhouse, lever
+//   - Legacy (1): naukri  (converted to PrivJobSource)
+//   - Course (8): nptel, swayam, nsdc, coursera, udemy, geeksforgeeks,
+//     tutorialspoint, w3schools
+//   - Video (1): youtube  (native XML RSS)
 func RunAll(
 	ctx context.Context,
 	st *store.PostgresStore,
@@ -43,12 +55,12 @@ func RunAll(
 	summary := RunSummary{}
 
 	// ---- GovJobFetcher sources (→ jobs_government) ----
-	govSources := []sources.GovJobFetcher{
-		sources.NewUPSCSource(),
-		sources.NewRRBSource(),
-		sources.NewSSCSource(),
-		sources.NewNCSSource(),
-		sources.NewEmploymentNewsSource(),
+	govSources := []shared.GovJobFetcher{
+		gov.NewUPSCSource(),
+		gov.NewRRBSource(),
+		gov.NewSSCSource(),
+		gov.NewNCSSource(),
+		gov.NewEmploymentNewsSource(),
 	}
 	for _, s := range govSources {
 		summary.SourcesRun++
@@ -57,13 +69,13 @@ func RunAll(
 	}
 
 	// ---- PrivJobFetcher sources (→ jobs_private) ----
-	privSources := []sources.PrivJobFetcher{
-		sources.NewIndeedSource(),
-		sources.NewLinkedInSource(),
-		sources.NewGoogleJobsSource(),
-		sources.NewCompanyPagesSource(),
-		sources.NewGreenhouseSource(),
-		sources.NewLeverSource(),
+	privSources := []shared.PrivJobFetcher{
+		priv.NewIndeedSource(),
+		priv.NewLinkedInSource(),
+		priv.NewGoogleJobsSource(),
+		priv.NewCompanyPagesSource(),
+		priv.NewGreenhouseSource(),
+		priv.NewLeverSource(),
 	}
 	for _, s := range privSources {
 		summary.SourcesRun++
@@ -77,13 +89,15 @@ func RunAll(
 		runNaukri(ctx, st, browserPool, proxyRotator))
 
 	// ---- CourseFetcher sources (→ courses) ----
-	courseSources := []sources.CourseFetcher{
-		sources.NewNPTELSource(),
-		sources.NewSWAYAMSource(),
-		sources.NewNSDCSource(),
-		sources.NewCourseraSource(),
-		sources.NewUdemySource(),
-		sources.NewGeeksforGeeksSource(),
+	courseSources := []shared.CourseFetcher{
+		courses.NewNPTELSource(),
+		courses.NewSWAYAMSource(),
+		courses.NewNSDCSource(),
+		courses.NewCourseraSource(),
+		courses.NewUdemySource(),
+		courses.NewGeeksforGeeksSource(),
+		courses.NewTutorialsPointSource(),
+		courses.NewW3SchoolsSource(),
 	}
 	for _, s := range courseSources {
 		summary.SourcesRun++
@@ -92,8 +106,8 @@ func RunAll(
 	}
 
 	// ---- VideoFetcher sources (→ youtube_videos) ----
-	videoSources := []sources.VideoFetcher{
-		sources.NewYouTubeSource(),
+	videoSources := []shared.VideoFetcher{
+		videos.NewYouTubeSource(),
 	}
 	for _, s := range videoSources {
 		summary.SourcesRun++
@@ -116,7 +130,7 @@ func RunAll(
 
 // ── per-type runners ──────────────────────────────────────────────────────────
 
-func runGovSource(ctx context.Context, st *store.PostgresStore, s sources.GovJobFetcher) SourceResult {
+func runGovSource(ctx context.Context, st *store.PostgresStore, s shared.GovJobFetcher) SourceResult {
 	timeout := 3 * time.Minute
 	fetchCtx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
@@ -136,7 +150,7 @@ func runGovSource(ctx context.Context, st *store.PostgresStore, s sources.GovJob
 	return SourceResult{Name: s.Name(), Fetched: len(items), Saved: saved}
 }
 
-func runPrivSource(ctx context.Context, st *store.PostgresStore, s sources.PrivJobFetcher) SourceResult {
+func runPrivSource(ctx context.Context, st *store.PostgresStore, s shared.PrivJobFetcher) SourceResult {
 	timeout := 3 * time.Minute
 	fetchCtx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
@@ -162,7 +176,7 @@ func runNaukri(ctx context.Context, st *store.PostgresStore, pool *browser.Pool,
 	fetchCtx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	ns := sources.NewNaukriSource(pool, rot)
+	ns := priv.NewNaukriSource(pool, rot)
 	items, err := ns.Fetch(fetchCtx)
 	if err != nil {
 		return SourceResult{Name: name, Error: fmt.Sprintf("fetch: %v", err)}
@@ -181,11 +195,11 @@ func runNaukri(ctx context.Context, st *store.PostgresStore, pool *browser.Pool,
 }
 
 // jobSourceToPriv converts the legacy JobSource (used by Naukri) to PrivJobSource.
-func jobSourceToPriv(j *sources.JobSource) *sources.PrivJobSource {
+func jobSourceToPriv(j *shared.JobSource) *shared.PrivJobSource {
 	if j == nil {
 		return nil
 	}
-	p := &sources.PrivJobSource{
+	p := &shared.PrivJobSource{
 		Source:      j.Source,
 		Company:     j.Company,
 		Title:       j.Title,
@@ -209,7 +223,7 @@ func jobSourceToPriv(j *sources.JobSource) *sources.PrivJobSource {
 	return p
 }
 
-func runCourseSource(ctx context.Context, st *store.PostgresStore, s sources.CourseFetcher) SourceResult {
+func runCourseSource(ctx context.Context, st *store.PostgresStore, s shared.CourseFetcher) SourceResult {
 	timeout := 3 * time.Minute
 	fetchCtx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
@@ -229,7 +243,7 @@ func runCourseSource(ctx context.Context, st *store.PostgresStore, s sources.Cou
 	return SourceResult{Name: s.Name(), Fetched: len(items), Saved: saved}
 }
 
-func runVideoSource(ctx context.Context, st *store.PostgresStore, s sources.VideoFetcher) SourceResult {
+func runVideoSource(ctx context.Context, st *store.PostgresStore, s shared.VideoFetcher) SourceResult {
 	timeout := 3 * time.Minute
 	fetchCtx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()

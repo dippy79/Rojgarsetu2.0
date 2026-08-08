@@ -1,0 +1,5 @@
+priv_en=817
+priv_hi=0
+priv_all=817
+search_en=206
+search_hi=0

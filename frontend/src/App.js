@@ -5,6 +5,7 @@ import GovJobsPage from './pages/gov-jobs/GovJobsPage';
 import PrivateJobsPage from './pages/private-jobs/PrivateJobsPage';
 import CoursesPage from './pages/courses/CoursesPage';
 import VideosPage from './pages/videos/VideosPage';
+import GovtFormsDashboard from './components/GovtFormsDashboard';
 import './index.css';
 
 const HomePage = () => (
@@ -73,7 +74,8 @@ function App() {
             <Route path="/gov-jobs" element={<GovJobsPage />} />
             <Route path="/private-jobs" element={<PrivateJobsPage />} />
             <Route path="/courses" element={<CoursesPage />} />
-            <Route path="/videos" element={<VideosPage />} />
+<Route path="/videos" element={<VideosPage />} />
+            <Route path="/govt-forms" element={<GovtFormsDashboard />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </main>

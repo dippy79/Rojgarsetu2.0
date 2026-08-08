@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/rojgarsetu/crawler/internal/sources"
+	"github.com/rojgarsetu/crawler/internal/shared"
 )
 
 // Max field lengths for sanitized text
@@ -35,19 +35,19 @@ type Job struct {
 }
 
 // ParseJob converts JobSource to Job, sanitizing all text fields
-func ParseJob(source *sources.JobSource) *Job {
+func ParseJob(source *shared.JobSource) *Job {
 	if source == nil {
 		return nil
 	}
 
 	job := &Job{
 		Source:         strings.TrimSpace(source.Source),
-		Title:          sources.SanitizeString(source.Title, maxTitleLen),
-		Company:        sources.SanitizeString(source.Company, maxCompanyLen),
-		Location:       sources.SanitizeString(source.Location, maxLocationLen),
+		Title:          shared.SanitizeString(source.Title, maxTitleLen),
+		Company:        shared.SanitizeString(source.Company, maxCompanyLen),
+		Location:       shared.SanitizeString(source.Location, maxLocationLen),
 		JobType:        normalizeJobType(source.JobType),
-		Eligibility:    sources.SanitizeString(source.Eligibility, maxEligibilityLen),
-		Description:    sources.SanitizeString(source.Description, maxDescriptionLen),
+		Eligibility:    shared.SanitizeString(source.Eligibility, maxEligibilityLen),
+		Description:    shared.SanitizeString(source.Description, maxDescriptionLen),
 		ApplicationURL: strings.TrimSpace(source.ApplicationURL),
 		PostedAt:       time.Now(),
 	}

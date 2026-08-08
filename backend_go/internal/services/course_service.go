@@ -16,6 +16,10 @@ func (s *CourseService) GetCourses(filter db.CourseFilter, page, limit int) ([]d
 	return s.db.GetCourses(filter, page, limit)
 }
 
+func (s *CourseService) GetCourseProviders() ([]db.CourseProvider, error) {
+	return s.db.GetCourseProviders()
+}
+
 func (s *CourseService) GetCourseByID(id string) (*db.GetCourseByIDRow, error) {
 	return s.db.GetCourseByID(id)
 }
