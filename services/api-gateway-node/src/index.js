@@ -5,6 +5,31 @@ require('dotenv').config();
 const app = express();
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+const cors = require('cors');
+app.use(cors({
+  origin: function(origin, callback) {
+    const allowed = [
+      'http://localhost:3000',
+      'http://localhost:3001',
+      'http://localhost:3002',
+      'http://localhost:80',
+      'http://localhost',
+      'http://127.0.0.1:3000',
+      'http://127.0.0.1:3001',
+      'http://127.0.0.1:3002'
+    ];
+    if (!origin || allowed.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+}));
+
 const PORT = process.env.PORT || 8000;
 
 // Dynamic target URLs from env with local fallbacks
@@ -81,7 +106,10 @@ app.use('/auth', createProxyMiddleware({ target: AUTH_TARGET, pathRewrite: { '^/
 app.use('/ai', createProxyMiddleware({ target: AI_TARGET, pathRewrite: { '^/ai': '' }, ...proxyOptions }));
 
 app.use((_req, res) => res.status(404).json({ error: 'Route not found' }));
-app.use((err, _req, res, _next) => { console.error('[API Gateway] Unhandled error:', err); if (!res.headersSent) res.status(500).json({ error: 'Internal server error' }); });
+app.use((err, _req, res, _next) => { 
+  console.error('[API Gateway] Unhandled error:', err); 
+  if (!res.headersSent) res.status(500).json({ error: 'Internal server error' }); 
+});
 
 const server = app.listen(PORT, '::', () => {
   console.log(`[API Gateway] Running on http://[::]:${PORT}`);
@@ -90,7 +118,12 @@ const server = app.listen(PORT, '::', () => {
   console.log(`[API Gateway] AI engine proxy→ ${AI_TARGET}`);
 });
 
-const shutdown = (signal) => { console.log(`[API Gateway] Received ${signal}. Shutting down...`); server.close(() => process.exit(0)); setTimeout(() => process.exit(1), 10000).unref(); };
+const shutdown = (signal) => { 
+  console.log(`[API Gateway] Received ${signal}. Shutting down...`); 
+  server.close(() => process.exit(0)); 
+  setTimeout(() => process.exit(1), 10000).unref(); 
+};
 process.on('SIGTERM', () => shutdown('SIGTERM'));
 process.on('SIGINT', () => shutdown('SIGINT'));
+
 module.exports = app;
