@@ -43,7 +43,7 @@ const GovJobsPage = () => {
         limit: '20',
       });
 
-if (search) params.append('search', search);
+      if (search) params.append('search', search);
       if (department) params.append('department', department);
       if (location) params.append('location', location);
       if (source) params.append('source', source);
@@ -51,7 +51,7 @@ if (search) params.append('search', search);
       if (region) params.append('region', region);
       if (language) params.append('language', language);
 
-      const endpoint = `${apiUrl('/api/v1/gov-jobs')}?${params.toString()}`;
+      const endpoint = `http://localhost:3001/api/v1/gov-jobs?${params.toString()}`;
 
       const response = await fetch(endpoint, { signal });
 
@@ -62,17 +62,18 @@ if (search) params.append('search', search);
       const data = await response.json();
 
       if (data.status === 'success' || data.success) {
-        const fetchedJobs = data.data || data.jobs || [];
+        const fetchedJobs = (data.data || []).map(job => ({
+          ...job,
+          last_date: job.last_date ?? 'Not specified',
+          department: job.department || 'Central Government',
+        }));
         setJobs(fetchedJobs);
 
         setPagination({
           page: data.pagination?.page || page,
           limit: data.pagination?.limit || 20,
           total: data.pagination?.total || fetchedJobs.length,
-          totalPages:
-            data.pagination?.totalPages ||
-            Math.ceil((data.pagination?.total || fetchedJobs.length) / 20) ||
-            1,
+          totalPages: data.pagination?.total_pages || 1,
         });
       } else {
         setError(data.error?.message || data.message || 'Failed to fetch government jobs');
@@ -84,7 +85,7 @@ if (search) params.append('search', search);
     } finally {
       setLoading(false);
     }
-}, [page, search, department, location, source, category, region, language]);
+  }, [page, search, department, location, source, category, region, language]);
 
   useEffect(() => {
     const controller = new AbortController();
