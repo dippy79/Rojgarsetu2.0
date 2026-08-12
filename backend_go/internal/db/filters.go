@@ -32,3 +32,19 @@ type VideoFilter struct {
 	Channel  string
 	Category string
 }
+
+// JobTradeFilter — fields map to GetJobTradesParams Column1/Column2
+type JobTradeFilter struct {
+	CategoryID  string
+	DemandLevel string
+}
+
+// UserEnrollmentFilter — fields map to GetUserEnrollmentsParams Column1/Column2
+type UserEnrollmentFilter struct {
+	Status string
+}
+
+// NotificationLogFilter — fields map to GetUserNotificationLogsParams Column1/Column2
+type NotificationLogFilter struct {
+	NotificationType string
+}

@@ -80,6 +80,10 @@ type CompanyJob struct {
 	ExpiresAt         sql.NullTime   `json:"expires_at"`
 	CreatedAt         sql.NullTime   `json:"created_at"`
 	UpdatedAt         sql.NullTime   `json:"updated_at"`
+	// --- Migration 17 ke Naye Fields ---
+	CurrencyCode     sql.NullString `json:"currency_code"`
+	WorkLocationType sql.NullString `json:"work_location_type"`
+	VisaSponsorship  sql.NullBool   `json:"visa_sponsorship"`
 }
 
 type Course struct {
@@ -196,4 +200,34 @@ type YoutubeVideo struct {
 	IsActive    sql.NullBool   `json:"is_active"`
 	CreatedAt   sql.NullTime   `json:"created_at"`
 	UpdatedAt   sql.NullTime   `json:"updated_at"`
+}
+
+// CompanyReview represents user feedback for companies (Migration 16)
+type CompanyReview struct {
+	ID          string    `json:"id" db:"id"`
+	CompanyID   string    `json:"company_id" db:"company_id" binding:"required"`
+	CandidateID string    `json:"candidate_id" db:"candidate_id" binding:"required"`
+	Rating      int       `json:"rating" db:"rating" binding:"required,min=1,max=5"`
+	ReviewText  string    `json:"review_text" db:"review_text"`
+	CreatedAt   time.Time `json:"created_at" db:"created_at"`
+}
+
+// JobReport represents flagged job postings (Migration 16)
+type JobReport struct {
+	ID         string    `json:"id" db:"id"`
+	JobID      string    `json:"job_id" db:"job_id" binding:"required"`
+	ReporterID string    `json:"reporter_id" db:"reporter_id" binding:"required"`
+	Reason     string    `json:"reason" db:"reason" binding:"required"`
+	Status     string    `json:"status" db:"status"`
+	CreatedAt  time.Time `json:"created_at" db:"created_at"`
+}
+
+// CandidateInternalRating represents recruiter internal notes (Migration 16)
+type CandidateInternalRating struct {
+	ID          string    `json:"id" db:"id"`
+	CandidateID string    `json:"candidate_id" db:"candidate_id" binding:"required"`
+	CompanyID   string    `json:"company_id" db:"company_id" binding:"required"`
+	Rating      int       `json:"rating" db:"rating" binding:"required,min=1,max=5"`
+	Notes       string    `json:"notes" db:"notes"`
+	CreatedAt   time.Time `json:"created_at" db:"created_at"`
 }

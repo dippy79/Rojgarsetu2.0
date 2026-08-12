@@ -239,12 +239,16 @@ func run(cfg *config.Config) error {
 				videoService := services.NewVideoService(database)
 				searchService := services.NewSearchService(database)
 
+				// Initialize new feature repo and handlers
+				featureRepo := db.NewFeatureRepository(sdb)
+
 				// Initialize handlers
 				govJobHandler := handlers.NewGovJobHandler(govJobService)
 				privJobHandler := handlers.NewPrivJobHandler(privJobService)
 				courseHandler := handlers.NewCourseHandler(courseService)
 				videoHandler := handlers.NewVideoHandler(videoService)
 				searchHandler := handlers.NewSearchHandler(searchService)
+				featureHandler := handlers.NewFeatureHandler(featureRepo)
 
 				// Register DB-dependent routes
 				api := router.Group("/api/v1")
@@ -262,6 +266,11 @@ func run(cfg *config.Config) error {
 					api.GET("/videos/:id", videoHandler.GetVideoByID)
 					api.POST("/search", searchHandler.Search)
 					api.GET("/search", searchHandler.SearchGET)
+
+					// New Feature Endpoints
+					api.POST("/company/reviews", featureHandler.CreateReviewHandler)
+					api.POST("/jobs/report", featureHandler.ReportJobHandler)
+					api.POST("/candidate/ratings", featureHandler.InternalRatingHandler)
 				}
 				logger.Info().Msg("API routes registered")
 				return

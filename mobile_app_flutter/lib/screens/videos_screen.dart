@@ -18,7 +18,7 @@ class VideosScreen extends StatefulWidget {
 class _VideosScreenState extends State<VideosScreen> {
   final RefreshController _refreshController = RefreshController(initialRefresh: false);
   String _filterChannel = '';
-  String _filterCategory = '';
+  final String _filterCategory = '';
 
   @override
   void initState() {

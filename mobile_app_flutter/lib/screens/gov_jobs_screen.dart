@@ -18,7 +18,7 @@ class _GovJobsScreenState extends State<GovJobsScreen> {
   final RefreshController _refreshController =
       RefreshController(initialRefresh: false);
   String _filterDepartment = '';
-  String _filterLocation = '';
+  final String _filterLocation = '';
 
   @override
   void initState() {

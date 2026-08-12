@@ -6,6 +6,7 @@ package db
 
 import (
 	"database/sql"
+	"encoding/json"
 	"time"
 
 	"github.com/google/uuid"
@@ -118,6 +119,35 @@ type JobApplication struct {
 	UpdatedAt   sql.NullTime    `json:"updated_at"`
 }
 
+type JobCategory struct {
+	ID           uuid.UUID      `json:"id"`
+	Name         string         `json:"name"`
+	Slug         string         `json:"slug"`
+	Description  sql.NullString `json:"description"`
+	Icon         sql.NullString `json:"icon"`
+	Color        sql.NullString `json:"color"`
+	DisplayOrder int32          `json:"display_order"`
+	IsActive     bool           `json:"is_active"`
+	CreatedAt    time.Time      `json:"created_at"`
+	UpdatedAt    time.Time      `json:"updated_at"`
+}
+
+type JobTrade struct {
+	ID               uuid.UUID      `json:"id"`
+	CategoryID       uuid.UUID      `json:"category_id"`
+	Name             string         `json:"name"`
+	Slug             string         `json:"slug"`
+	Description      sql.NullString `json:"description"`
+	QualificationReq sql.NullString `json:"qualification_req"`
+	MinSalary        sql.NullInt32  `json:"min_salary"`
+	MaxSalary        sql.NullInt32  `json:"max_salary"`
+	DemandLevel      string         `json:"demand_level"`
+	Icon             sql.NullString `json:"icon"`
+	IsActive         bool           `json:"is_active"`
+	CreatedAt        time.Time      `json:"created_at"`
+	UpdatedAt        time.Time      `json:"updated_at"`
+}
+
 type JobsGovernment struct {
 	ID                 uuid.UUID      `json:"id"`
 	Title              string         `json:"title"`
@@ -177,6 +207,35 @@ type User struct {
 	LastLogin    sql.NullTime   `json:"last_login"`
 	CreatedAt    sql.NullTime   `json:"created_at"`
 	UpdatedAt    sql.NullTime   `json:"updated_at"`
+}
+
+type UserEnrollment struct {
+	ID          uuid.UUID       `json:"id"`
+	UserID      uuid.UUID       `json:"user_id"`
+	TradeID     uuid.UUID       `json:"trade_id"`
+	Status      string          `json:"status"`
+	EnrolledAt  time.Time       `json:"enrolled_at"`
+	ExpiresAt   time.Time       `json:"expires_at"`
+	CompletedAt sql.NullTime    `json:"completed_at"`
+	ProgressPct int32           `json:"progress_pct"`
+	Metadata    json.RawMessage `json:"metadata"`
+	CreatedAt   time.Time       `json:"created_at"`
+	UpdatedAt   time.Time       `json:"updated_at"`
+}
+
+type UserNotificationLog struct {
+	ID               uuid.UUID       `json:"id"`
+	UserID           uuid.UUID       `json:"user_id"`
+	EnrollmentID     uuid.NullUUID   `json:"enrollment_id"`
+	NotificationType string          `json:"notification_type"`
+	Channel          string          `json:"channel"`
+	Title            string          `json:"title"`
+	Message          string          `json:"message"`
+	Payload          json.RawMessage `json:"payload"`
+	SentAt           time.Time       `json:"sent_at"`
+	ReadAt           sql.NullTime    `json:"read_at"`
+	ClickedAt        sql.NullTime    `json:"clicked_at"`
+	CreatedAt        time.Time       `json:"created_at"`
 }
 
 type YoutubeVideo struct {

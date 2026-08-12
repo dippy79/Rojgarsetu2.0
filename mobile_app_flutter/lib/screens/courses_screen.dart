@@ -14,8 +14,8 @@ class CoursesScreen extends StatefulWidget {
 class _CoursesScreenState extends State<CoursesScreen> {
   final RefreshController _refreshController = RefreshController(initialRefresh: false);
   String _filterProvider = '';
-  String _filterMode = '';
-  String _filterLevel = '';
+  final String _filterMode = '';
+  final String _filterLevel = '';
 
   @override
   void initState() {

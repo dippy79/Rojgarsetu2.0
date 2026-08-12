@@ -186,6 +186,70 @@ CREATE TABLE youtube_videos (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- job_categories table
+CREATE TABLE job_categories (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    name TEXT NOT NULL UNIQUE,
+    slug TEXT NOT NULL UNIQUE,
+    description TEXT,
+    icon TEXT,
+    color TEXT,
+    display_order INT4 NOT NULL DEFAULT 0,
+    is_active BOOLEAN NOT NULL DEFAULT true,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- job_trades table
+CREATE TABLE job_trades (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    category_id UUID NOT NULL REFERENCES job_categories(id) ON DELETE CASCADE,
+    name TEXT NOT NULL,
+    slug TEXT NOT NULL,
+    description TEXT,
+    qualification_req TEXT,
+    min_salary INT4,
+    max_salary INT4,
+    demand_level TEXT NOT NULL DEFAULT 'NORMAL' CHECK (demand_level IN ('CRITICAL', 'HIGH', 'MEDIUM', 'NORMAL')),
+    icon TEXT,
+    is_active BOOLEAN NOT NULL DEFAULT true,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE(category_id, slug)
+);
+
+-- user_enrollments table
+CREATE TABLE user_enrollments (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    trade_id UUID NOT NULL REFERENCES job_trades(id) ON DELETE CASCADE,
+    status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'completed', 'expired', 'cancelled')),
+    enrolled_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    expires_at TIMESTAMPTZ NOT NULL,
+    completed_at TIMESTAMPTZ,
+    progress_pct INT4 NOT NULL DEFAULT 0 CHECK (progress_pct >= 0 AND progress_pct <= 100),
+    metadata JSONB NOT NULL DEFAULT '{}',
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE(user_id, trade_id, status)
+);
+
+-- user_notification_logs table
+CREATE TABLE user_notification_logs (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    enrollment_id UUID REFERENCES user_enrollments(id) ON DELETE SET NULL,
+    notification_type TEXT NOT NULL CHECK (notification_type IN ('expiry_warning', 'expiry_final', 'enrollment_reminder', 'course_update')),
+    channel TEXT NOT NULL DEFAULT 'in_app' CHECK (channel IN ('in_app', 'email', 'push', 'sms')),
+    title TEXT NOT NULL,
+    message TEXT NOT NULL,
+    payload JSONB NOT NULL DEFAULT '{}',
+    sent_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    read_at TIMESTAMPTZ,
+    clicked_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 -- refresh_tokens table
 CREATE TABLE refresh_tokens (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),

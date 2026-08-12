@@ -17,7 +17,7 @@ class JobCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final salaryText = job.salaryMin != null && job.salaryMax != null
-        ? '\₹${job.salaryMin!}/- - \₹${job.salaryMax}/-'
+        ? '₹${job.salaryMin!}/- - ₹${job.salaryMax}/-'
         : 'Salary not disclosed';
 
     return Card(

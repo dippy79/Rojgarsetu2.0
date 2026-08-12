@@ -18,7 +18,7 @@ class JobsListScreen extends StatefulWidget {
 
 class _JobsListScreenState extends State<JobsListScreen> {
   final RefreshController _refreshController = RefreshController(initialRefresh: false);
-  String _filterLocation = '';
+  final String _filterLocation = '';
   String _filterJobType = '';
 
   void _onRefresh() => context.read<JobsBloc>().add(FetchJobs(page: 1, limit: 10));

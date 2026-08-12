@@ -17,7 +17,7 @@ class MyApplicationsScreen extends StatefulWidget {
 
 class _MyApplicationsScreenState extends State<MyApplicationsScreen> {
   final RefreshController _refreshController = RefreshController(initialRefresh: false);
-  List<Application> _applications = [];
+  final List<Application> _applications = [];
   bool _isLoading = true;
   String? _error;
   int _page = 1;
