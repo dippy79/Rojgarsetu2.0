@@ -1,181 +1,77 @@
-// Videos Page — Tech/Career Prep default view, Government/News in separate tab.
-// Channels/categories are now loaded from dedicated backend endpoints
-// (/api/v1/videos/channels, /api/v1/videos/categories) instead of hardcoded
-// lists, and the Tech tab applies server-side exclusion (?exclude=Government)
-// so both the grid and pagination totals are correct.
-import React, { useState, useEffect, useCallback } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import VideoCard from '../../components/VideoCard';
-import FilterBar from '../../components/FilterBar';
-import Pagination from '../../components/Pagination';
-import { apiUrl } from '../../apiConfig';
-import './Videos.css';
+import React from 'react';
+import { Link } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 
-// Tabs controlling the video feed segmentation.
-export const VIDEO_TABS = {
-  TECH: 'tech',
-  NEWS: 'news',
-};
-
-// Category excluded from the default Tech view (matches the backend's
-// ?exclude=Government handling).
-const GOV_CATEGORY = 'Government';
+const SampleVideos = [
+  { id: 1, title: 'How to Crack Technical Interviews in 2026', host: 'Industry Expert Series', views: '14.2k views', duration: '45 mins' },
+  { id: 2, title: 'UPSC Preparation Strategy & Booklist', host: 'IAS Mentorship Channel', views: '28.9k views', duration: '60 mins' },
+  { id: 3, title: 'System Design Interview Essentials', host: 'Architecture Monthly', views: '19.5k views', duration: '50 mins' },
+  { id: 4, title: 'Aptitude & Reasoning Shortcut Tricks', host: 'Govt Prep Hub', views: '32.1k views', duration: '40 mins' },
+  { id: 5, title: 'Resume Building & LinkedIn Optimization', host: 'Career Guidance Lab', views: '22.8k views', duration: '30 mins' },
+  { id: 6, title: 'Cybersecurity OSINT Live Demonstration', host: 'Ethical Hacking Workshop', views: '11.4k views', duration: '75 mins' },
+];
 
 const VideosPage = () => {
-  const [videos, setVideos] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [allChannels, setAllChannels] = useState([]);
-  const [allCategories, setAllCategories] = useState([]);
-  const [pagination, setPagination] = useState({ page: 1, limit: 20, total: 0, totalPages: 0 });
-  const [searchParams, setSearchParams] = useSearchParams();
-
-  const page = parseInt(searchParams.get('page')) || 1;
-  const channel = searchParams.get('channel') || '';
-  const category = searchParams.get('category') || '';
-  // Active tab from URL (defaults to TECH so gov/news are hidden by default).
-  const activeTab = searchParams.get('tab') === VIDEO_TABS.NEWS ? VIDEO_TABS.NEWS : VIDEO_TABS.TECH;
-
-  // Load distinct channels + categories for the filter dropdowns.
-  const fetchFilterOptions = useCallback(async () => {
-    try {
-      const [chResp, catResp] = await Promise.all([
-        fetch(apiUrl('/api/v1/videos/channels')),
-        fetch(apiUrl('/api/v1/videos/categories')),
-      ]);
-      const chData = await chResp.json();
-      const catData = await catResp.json();
-      if (chData.status === 'success' && Array.isArray(chData.data)) {
-        setAllChannels(chData.data.map((c) => c.channel).filter(Boolean));
-      }
-      if (catData.status === 'success' && Array.isArray(catData.data)) {
-        setAllCategories(catData.data.map((c) => c.category).filter(Boolean));
-      }
-    } catch (err) {
-      console.warn('Failed to load video filter options', err);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchFilterOptions();
-  }, [fetchFilterOptions]);
-
-  const fetchVideos = useCallback(async () => {
-    try {
-      setLoading(true);
-      const params = new URLSearchParams({
-        page: page.toString(),
-        limit: '20',
-      });
-      if (channel) params.append('channel', channel);
-      if (category) params.append('category', category);
-      // Tech tab: exclude Government content server-side so the video list AND
-      // the pagination total both reflect the post-exclusion set.
-      if (activeTab === VIDEO_TABS.TECH) params.append('exclude', GOV_CATEGORY);
-
-      const response = await fetch(`${apiUrl('/api/v1/videos')}?${params}`);
-      const data = await response.json();
-
-      if (data.status === 'success') {
-        setVideos(data.data || []);
-        setPagination(data.pagination);
-      } else {
-        setError(data.error?.message || 'Failed to fetch videos');
-      }
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  }, [page, channel, category, activeTab]);
-
-  useEffect(() => {
-    fetchVideos();
-  }, [fetchVideos]);
-
-  const switchTab = (tab) => {
-    const params = new URLSearchParams(searchParams);
-    params.set('tab', tab);
-    params.set('page', '1');
-    setSearchParams(params);
-  };
-
-  const handleFilterChange = (filters) => {
-    const params = new URLSearchParams(searchParams);
-    if (filters.channel) params.set('channel', filters.channel);
-    else params.delete('channel');
-    if (filters.category) params.set('category', filters.category);
-    else params.delete('category');
-    params.set('tab', activeTab);
-    params.set('page', '1');
-    setSearchParams(params);
-  };
-
-  const handlePageChange = (newPage) => {
-    const params = new URLSearchParams(searchParams);
-    params.set('page', newPage.toString());
-    setSearchParams(params);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
+  const auth = useAuth();
+  const token = localStorage.getItem('token');
+  const isLoggedIn = Boolean(token || auth?.isAuthenticated || auth?.user);
+  const total = SampleVideos.length;
 
   return (
-    <div className="videos-page">
-      <div className="page-header">
-        <h1>Videos</h1>
-        <p>Career-prep and tech learning videos — plus official government &amp; news updates</p>
-      </div>
-
-      <div className="videos-tabs" role="tablist">
-        <button
-          role="tab"
-          aria-selected={activeTab === VIDEO_TABS.TECH}
-          className={`video-tab ${activeTab === VIDEO_TABS.TECH ? 'active' : ''}`}
-          onClick={() => switchTab(VIDEO_TABS.TECH)}
-        >
-          🎯 Tech &amp; Career Prep
-        </button>
-        <button
-          role="tab"
-          aria-selected={activeTab === VIDEO_TABS.NEWS}
-          className={`video-tab ${activeTab === VIDEO_TABS.NEWS ? 'active' : ''}`}
-          onClick={() => switchTab(VIDEO_TABS.NEWS)}
-        >
-          📰 Government &amp; News
-        </button>
-      </div>
-
-      <FilterBar
-        filters={{ channel, category }}
-        onFilterChange={handleFilterChange}
-        filterOptions={{
-          categories: allCategories,
-          channels: allChannels
-        }}
-      />
-
-      {loading ? (
-        <div className="loading">Loading videos...</div>
-      ) : error ? (
-        <div className="error">{error}</div>
-      ) : (
-        <>
-          <div className="videos-grid">
-            {(videos || []).map((video) => (
-              <VideoCard key={video.id} video={video} />
-            ))}
-          </div>
-
-          {videos.length === 0 && (
-            <div className="no-results">No videos found in this tab</div>
-          )}
-
-          <Pagination
-            currentPage={pagination.page}
-            totalPages={pagination.totalPages}
-            onPageChange={handlePageChange}
-          />
-        </>
+    <div className="min-h-screen bg-slate-50">
+      {!isLoggedIn && (
+        <div className="bg-slate-900 text-white text-center py-3 text-sm">
+          <span>Showing demo view — </span>
+          <Link to="/login" className="underline font-semibold">
+            Login to access all {total} videos →
+          </Link>
+        </div>
       )}
+
+      <div className="max-w-6xl mx-auto px-6 py-8">
+        <h1 className="text-3xl font-bold text-slate-900 mb-2">Career Prep Videos & Webinars</h1>
+        <p className="text-slate-600 mb-8 text-sm">
+          Watch interactive webinars, interview preparation guides, and exam strategies.
+        </p>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {SampleVideos.map((item, index) => {
+            const cardJSX = (
+              <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm flex flex-col justify-between h-full">
+                <div>
+                  <span className="text-[10px] uppercase font-bold tracking-wider text-red-600 bg-red-50 px-2 py-1 rounded">
+                    {item.host}
+                  </span>
+                  <h3 className="text-lg font-bold text-slate-800 mt-3">{item.title}</h3>
+                  <p className="text-xs text-slate-500 mt-1">📺 {item.views}</p>
+                </div>
+                <div className="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between">
+                  <span className="text-xs text-slate-400">Length: {item.duration}</span>
+                  <button className="px-3 py-1.5 text-xs font-semibold bg-slate-900 text-white rounded-lg">
+                    Watch Now
+                  </button>
+                </div>
+              </div>
+            );
+
+            if (!isLoggedIn && index >= 3) {
+              return (
+                <div key={item.id} className="relative">
+                  <div className="blur-sm pointer-events-none">{cardJSX}</div>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/60 backdrop-blur-sm rounded-2xl p-4 text-center z-10">
+                    <p className="text-slate-700 font-semibold text-sm mb-2">Login to see more jobs</p>
+                    <Link to="/login" className="bg-slate-900 text-white text-xs px-4 py-2 rounded-lg font-medium shadow-sm hover:bg-slate-800 transition-all">
+                      Login / Register
+                    </Link>
+                  </div>
+                </div>
+              );
+            }
+
+            return <div key={item.id}>{cardJSX}</div>;
+          })}
+        </div>
+      </div>
     </div>
   );
 };

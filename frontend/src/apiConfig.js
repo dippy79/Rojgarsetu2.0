@@ -13,7 +13,7 @@
 //   4. REACT_APP_API_URL       — alternate name
 //   5. window.location.origin  — default: same-origin (nginx proxy / dev same port)
 
-const DEFAULT_API_BASE_URL = '/api';
+export const DEFAULT_API_BASE_URL = '/api';
 
 const NORMALIZED_DEFAULTS = [
   'http://localhost:8083',

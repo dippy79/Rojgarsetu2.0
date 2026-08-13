@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Link, useLocation, Navigate } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import GovJobsPage from './pages/gov-jobs/GovJobsPage';
 import PrivateJobsPage from './pages/private-jobs/PrivateJobsPage';
@@ -7,7 +7,6 @@ import CoursesPage from './pages/courses/CoursesPage';
 import VideosPage from './pages/videos/VideosPage';
 import GovtFormsDashboard from './components/GovtFormsDashboard';
 import LoginPage from './pages/auth/LoginPage';
-import RegisterPage from './pages/auth/RegisterPage';
 import ProtectedRoute from './components/ProtectedRoute';
 import { AuthProvider } from './context/AuthContext';
 import './index.css';
@@ -85,57 +84,66 @@ const NotFound = () => (
   </div>
 );
 
+function AppContent() {
+  const location = useLocation();
+  const hideNavbar = ['/login'].includes(location.pathname);
+
+  return (
+    <div className="App">
+      {!hideNavbar && <Navbar />}
+      <main style={{ flex: 1 }}>
+        <Routes>
+          {/* Public Routes */}
+          <Route path="/" element={<HomePage />} />
+          <Route path="/gov-jobs" element={<GovJobsPage />} />
+          <Route path="/private-jobs" element={<PrivateJobsPage />} />
+          <Route path="/courses" element={<CoursesPage />} />
+          <Route path="/videos" element={<VideosPage />} />
+          <Route path="/govt-forms" element={<GovtFormsDashboard />} />
+
+          {/* Auth Routes */}
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<Navigate to="/login" replace />} />
+          <Route path="/unauthorized" element={<UnauthorizedPage />} />
+
+          {/* Protected Dashboards */}
+          <Route
+            path="/dashboard/candidate"
+            element={
+              <ProtectedRoute allowedRoles={['candidate']}>
+                <div className="p-8 text-2xl font-bold">Candidate Dashboard</div>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/company"
+            element={
+              <ProtectedRoute allowedRoles={['company']}>
+                <div className="p-8 text-2xl font-bold">Employer Dashboard</div>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/admin"
+            element={
+              <ProtectedRoute allowedRoles={['admin']}>
+                <div className="p-8 text-2xl font-bold">Admin Dashboard</div>
+              </ProtectedRoute>
+            }
+          />
+
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </main>
+    </div>
+  );
+}
+
 function App() {
   return (
     <AuthProvider>
       <Router>
-        <div className="App">
-          <Navbar />
-          <main style={{ flex: 1 }}>
-            <Routes>
-              {/* Existing Routes */}
-              <Route path="/" element={<HomePage />} />
-              <Route path="/gov-jobs" element={<GovJobsPage />} />
-              <Route path="/private-jobs" element={<PrivateJobsPage />} />
-              <Route path="/courses" element={<CoursesPage />} />
-              <Route path="/videos" element={<VideosPage />} />
-              <Route path="/govt-forms" element={<GovtFormsDashboard />} />
-
-              {/* Auth Routes */}
-              <Route path="/login" element={<LoginPage />} />
-              <Route path="/register" element={<RegisterPage />} />
-              <Route path="/unauthorized" element={<UnauthorizedPage />} />
-
-              {/* Protected Dashboards */}
-              <Route
-                path="/dashboard/candidate"
-                element={
-                  <ProtectedRoute allowedRoles={['candidate']}>
-                    <div className="p-8 text-2xl font-bold">Candidate Dashboard</div>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/dashboard/company"
-                element={
-                  <ProtectedRoute allowedRoles={['company']}>
-                    <div className="p-8 text-2xl font-bold">Employer Dashboard</div>
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/dashboard/admin"
-                element={
-                  <ProtectedRoute allowedRoles={['admin']}>
-                    <div className="p-8 text-2xl font-bold">Admin Dashboard</div>
-                  </ProtectedRoute>
-                }
-              />
-
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </main>
-        </div>
+        <AppContent />
       </Router>
     </AuthProvider>
   );

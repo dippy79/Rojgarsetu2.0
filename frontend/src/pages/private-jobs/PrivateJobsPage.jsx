@@ -1,122 +1,77 @@
-// Private Jobs Page
-import React, { useState, useEffect, useCallback } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import JobCard from '../../components/JobCard';
-import FilterBar from '../../components/FilterBar';
-import Pagination from '../../components/Pagination';
-import { apiUrl } from '../../apiConfig';
-import './PrivateJobs.css';
+import React from 'react';
+import { Link } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
+
+const SampleJobs = [
+  { id: 1, title: 'Senior Full Stack Developer', company: 'TechCorp Solutions', loc: 'Bengaluru / Remote', date: '2026-08-28' },
+  { id: 2, title: 'AI & Data Pipeline Engineer', company: 'DataScale Systems', loc: 'Hyderabad', date: '2026-09-05' },
+  { id: 3, title: 'Product UI/UX Designer', company: 'DesignCraft Studio', loc: 'Mumbai', date: '2026-08-31' },
+  { id: 4, title: 'Backend Node.js Architect', company: 'CloudScale Inc', loc: 'Gurugram', date: '2026-09-12' },
+  { id: 5, title: 'Cybersecurity Operations Lead', company: 'SecureNet India', loc: 'Pune', date: '2026-09-18' },
+  { id: 6, title: 'DevOps & SRE Specialist', company: 'InfraScale Global', loc: 'Remote', date: '2026-09-22' },
+];
 
 const PrivateJobsPage = () => {
-  const [jobs, setJobs] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [pagination, setPagination] = useState({ page: 1, limit: 20, total: 0, totalPages: 0 });
-  const [searchParams, setSearchParams] = useSearchParams();
-
-const page = parseInt(searchParams.get('page')) || 1;
-  const company = searchParams.get('company') || '';
-  const location = searchParams.get('location') || '';
-  const jobType = searchParams.get('job_type') || '';
-  const source = searchParams.get('source') || '';
-  const region = searchParams.get('region') || '';
-  const language = searchParams.get('language') || '';
-
-  const fetchJobs = useCallback(async () => {
-    try {
-      setLoading(true);
-      const params = new URLSearchParams({
-        page: page.toString(),
-        limit: '20',
-      });
-      if (company) params.append('company', company);
-      if (location) params.append('location', location);
-      if (jobType) params.append('job_type', jobType);
-      if (source) params.append('source', source);
-      if (region) params.append('region', region);
-      if (language) params.append('language', language);
-
-      const response = await fetch(`${apiUrl('/api/v1/private-jobs')}?${params}`);
-      const data = await response.json();
-
-      if (data.status === 'success') {
-        setJobs(data.data);
-        setPagination(data.pagination);
-      } else {
-        setError(data.error?.message || 'Failed to fetch jobs');
-      }
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  }, [page, company, location, jobType, source, region, language]);
-
-  useEffect(() => {
-    fetchJobs();
-  }, [fetchJobs]);
-
-const handleFilterChange = (filters) => {
-    const params = new URLSearchParams();
-    if (filters.company) params.append('company', filters.company);
-    if (filters.location) params.append('location', filters.location);
-    if (filters.jobType) params.append('job_type', filters.jobType);
-    if (filters.source) params.append('source', filters.source);
-    if (filters.region) params.append('region', filters.region);
-    if (filters.language) params.append('language', filters.language);
-    params.append('page', '1');
-    setSearchParams(params);
-  };
-
-  const handlePageChange = (newPage) => {
-    const params = new URLSearchParams(searchParams);
-    params.set('page', newPage.toString());
-    setSearchParams(params);
-  };
+  const auth = useAuth();
+  const token = localStorage.getItem('token');
+  const isLoggedIn = Boolean(token || auth?.isAuthenticated || auth?.user);
+  const total = SampleJobs.length;
 
   return (
-    <div className="private-jobs-page">
-      <div className="page-header">
-        <h1>Private Jobs</h1>
-        <p>Find the best private sector job opportunities</p>
-      </div>
-
-<FilterBar
-        filters={{ company, location, jobType, source, region, language }}
-        onFilterChange={handleFilterChange}
-        filterOptions={{
-          companies: ['TCS', 'Infosys', 'Wipro', 'Amazon', 'Google', 'Microsoft', 'Flipkart'],
-          locations: ['Delhi', 'Mumbai', 'Bangalore', 'Chennai', 'Kolkata', 'Hyderabad', 'Pune', 'Remote'],
-          jobTypes: ['full-time', 'part-time', 'contract', 'internship', 'remote'],
-          sources: ['linkedin', 'indeed', 'google_jobs', 'company_pages'],
-          regions: ['India', 'Overseas', 'Global Remote'],
-          languages: ['English', 'Hindi']
-        }}
-      />
-
-      {loading ? (
-        <div className="loading">Loading jobs...</div>
-      ) : error ? (
-        <div className="error">{error}</div>
-      ) : (
-        <>
-          <div className="jobs-grid">
-            {jobs.map((job) => (
-              <JobCard key={job.id} job={job} type="private" />
-            ))}
-          </div>
-
-          {jobs.length === 0 && (
-            <div className="no-results">No private jobs found</div>
-          )}
-
-          <Pagination
-            currentPage={pagination.page}
-            totalPages={pagination.totalPages}
-            onPageChange={handlePageChange}
-          />
-        </>
+    <div className="min-h-screen bg-slate-50">
+      {!isLoggedIn && (
+        <div className="bg-slate-900 text-white text-center py-3 text-sm">
+          <span>Showing demo view — </span>
+          <Link to="/login" className="underline font-semibold">
+            Login to access all {total} jobs →
+          </Link>
+        </div>
       )}
+
+      <div className="max-w-6xl mx-auto px-6 py-8">
+        <h1 className="text-3xl font-bold text-slate-900 mb-2">Private Sector Job Openings</h1>
+        <p className="text-slate-600 mb-8 text-sm">
+          Discover verified technology, design, product, and management roles across top companies.
+        </p>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {SampleJobs.map((item, index) => {
+            const cardJSX = (
+              <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm flex flex-col justify-between h-full">
+                <div>
+                  <span className="text-[10px] uppercase font-bold tracking-wider text-teal-600 bg-teal-50 px-2 py-1 rounded">
+                    {item.company}
+                  </span>
+                  <h3 className="text-lg font-bold text-slate-800 mt-3">{item.title}</h3>
+                  <p className="text-xs text-slate-500 mt-1">📍 {item.loc}</p>
+                </div>
+                <div className="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between">
+                  <span className="text-xs text-slate-400">Apply by {item.date}</span>
+                  <button className="px-3 py-1.5 text-xs font-semibold bg-slate-900 text-white rounded-lg">
+                    View Details
+                  </button>
+                </div>
+              </div>
+            );
+
+            if (!isLoggedIn && index >= 3) {
+              return (
+                <div key={item.id} className="relative">
+                  <div className="blur-sm pointer-events-none">{cardJSX}</div>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/60 backdrop-blur-sm rounded-2xl p-4 text-center z-10">
+                    <p className="text-slate-700 font-semibold text-sm mb-2">Login to see more jobs</p>
+                    <Link to="/login" className="bg-slate-900 text-white text-xs px-4 py-2 rounded-lg font-medium shadow-sm hover:bg-slate-800 transition-all">
+                      Login / Register
+                    </Link>
+                  </div>
+                </div>
+              );
+            }
+
+            return <div key={item.id}>{cardJSX}</div>;
+          })}
+        </div>
+      </div>
     </div>
   );
 };

@@ -1,150 +1,77 @@
-// Courses Page — Dynamic Providers (Phase 1 fix)
-import React, { useState, useEffect, useCallback } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import CourseCard from '../../components/CourseCard';
-import FilterBar from '../../components/FilterBar';
-import Pagination from '../../components/Pagination';
-import { apiUrl } from '../../apiConfig';
-import './Courses.css';
+import React from 'react';
+import { Link } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 
-// Known provider order for consistent, sequential display.
-const PROVIDER_ORDER = ['Coursera', 'TutorialsPoint', 'GeeksforGeeks', 'Udemy', 'W3Schools', 'NPTEL', 'SWAYAM', 'NSDC'];
+const SampleCourses = [
+  { id: 1, title: 'Full Stack Web Architecture with React & Node', provider: 'RojgarSetu Academy', level: 'Intermediate', duration: '8 Weeks' },
+  { id: 2, title: 'Cybersecurity & OSINT Masterclass', provider: 'Security Lab', level: 'Advanced', duration: '6 Weeks' },
+  { id: 3, title: 'Government Exam General Studies Prep', provider: 'EduPortal India', level: 'Beginner', duration: '12 Weeks' },
+  { id: 4, title: 'Mobile App Development with Flutter', provider: 'DevHub', level: 'Intermediate', duration: '10 Weeks' },
+  { id: 5, title: 'Data Science & Machine Learning Bootcamp', provider: 'AI Institute', level: 'Advanced', duration: '14 Weeks' },
+  { id: 6, title: 'Cloud Infrastructure & AWS Solutions', provider: 'Cloud Academy', level: 'Intermediate', duration: '8 Weeks' },
+];
 
 const CoursesPage = () => {
-  const [courses, setCourses] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [allProviders, setAllProviders] = useState([]);
-  const [pagination, setPagination] = useState({ page: 1, limit: 20, total: 0, totalPages: 0 });
-  const [searchParams, setSearchParams] = useSearchParams();
-
-  const page = parseInt(searchParams.get('page')) || 1;
-  const provider = searchParams.get('provider') || '';
-  const mode = searchParams.get('mode') || '';
-  const level = searchParams.get('level') || '';
-
-  const fetchCourses = useCallback(async () => {
-    try {
-      setLoading(true);
-      const params = new URLSearchParams({
-        page: page.toString(),
-        limit: '20',
-      });
-      if (provider) params.append('provider', provider);
-      if (mode) params.append('mode', mode);
-      if (level) params.append('level', level);
-
-      const response = await fetch(`${apiUrl('/api/v1/courses')}?${params}`);
-      const data = await response.json();
-
-      if (data.status === 'success') {
-        setCourses(data.data || []);
-        setPagination(data.pagination);
-      } else {
-        setError(data.error?.message || 'Failed to fetch courses');
-      }
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  }, [page, provider, mode, level]);
-
-  const fetchProviders = useCallback(async () => {
-    try {
-      const response = await fetch(apiUrl('/api/v1/courses/providers'));
-      const data = await response.json();
-      if (data.status === 'success' && Array.isArray(data.data)) {
-        const ordered = PROVIDER_ORDER.filter((p) => data.data.some((item) => item.provider === p));
-        const extras = data.data
-          .map((item) => item.provider)
-          .filter((providerName) => providerName && !ordered.includes(providerName));
-        setAllProviders([...ordered, ...extras]);
-      }
-    } catch (err) {
-      console.warn('Failed to load providers', err);
-    }
-  }, []);
-
-  useEffect(() => {
-    fetchProviders();
-  }, [fetchProviders]);
-
-  useEffect(() => {
-    fetchCourses();
-  }, [fetchCourses]);
-
-  const handleFilterChange = (filters) => {
-    const params = new URLSearchParams();
-    if (filters.provider) params.append('provider', filters.provider);
-    if (filters.mode) params.append('mode', filters.mode);
-    if (filters.level) params.append('level', filters.level);
-    params.append('page', '1');
-    setSearchParams(params);
-  };
-
-  const handlePageChange = (newPage) => {
-    const params = new URLSearchParams(searchParams);
-    params.set('page', newPage.toString());
-    setSearchParams(params);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
+  const auth = useAuth();
+  const token = localStorage.getItem('token');
+  const isLoggedIn = Boolean(token || auth?.isAuthenticated || auth?.user);
+  const total = SampleCourses.length;
 
   return (
-    <div className="courses-page">
-      <div className="page-header">
-        <h1>Courses</h1>
-        <p>Upskill with free and paid courses from top providers</p>
-      </div>
-
-      {!loading && allProviders.length > 0 && (
-        <div className="provider-strip" aria-label="Course providers">
-          <span className="provider-strip-label">Providers:</span>
-          {allProviders.map((p) => (
-            <button
-              key={p}
-              className={`provider-chip ${provider.toLowerCase() === p.toLowerCase() ? 'active' : ''}`}
-              onClick={() => handleFilterChange({ provider: provider.toLowerCase() === p.toLowerCase() ? '' : p, mode, level })}
-            >
-              {p}
-            </button>
-          ))}
+    <div className="min-h-screen bg-slate-50">
+      {!isLoggedIn && (
+        <div className="bg-slate-900 text-white text-center py-3 text-sm">
+          <span>Showing demo view — </span>
+          <Link to="/login" className="underline font-semibold">
+            Login to access all {total} courses →
+          </Link>
         </div>
       )}
 
-      <FilterBar
-        filters={{ provider, mode, level }}
-        onFilterChange={handleFilterChange}
-        filterOptions={{
-          providers: allProviders.length > 0 ? allProviders : PROVIDER_ORDER,
-          modes: ['online', 'offline', 'hybrid'],
-          levels: ['beginner', 'intermediate', 'advanced']
-        }}
-      />
+      <div className="max-w-6xl mx-auto px-6 py-8">
+        <h1 className="text-3xl font-bold text-slate-900 mb-2">Upskilling & Professional Courses</h1>
+        <p className="text-slate-600 mb-8 text-sm">
+          Master career-critical skills with certified learning pathways.
+        </p>
 
-      {loading ? (
-        <div className="loading">Loading courses...</div>
-      ) : error ? (
-        <div className="error">{error}</div>
-      ) : (
-        <>
-          <div className="courses-grid">
-            {(courses || []).map((course) => (
-              <CourseCard key={course.id} course={course} />
-            ))}
-          </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {SampleCourses.map((item, index) => {
+            const cardJSX = (
+              <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm flex flex-col justify-between h-full">
+                <div>
+                  <span className="text-[10px] uppercase font-bold tracking-wider text-purple-600 bg-purple-50 px-2 py-1 rounded">
+                    {item.provider}
+                  </span>
+                  <h3 className="text-lg font-bold text-slate-800 mt-3">{item.title}</h3>
+                  <p className="text-xs text-slate-500 mt-1">🎓 Level: {item.level}</p>
+                </div>
+                <div className="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between">
+                  <span className="text-xs text-slate-400">Duration: {item.duration}</span>
+                  <button className="px-3 py-1.5 text-xs font-semibold bg-slate-900 text-white rounded-lg">
+                    Enroll Now
+                  </button>
+                </div>
+              </div>
+            );
 
-          {courses.length === 0 && (
-            <div className="no-results">No courses found</div>
-          )}
+            if (!isLoggedIn && index >= 3) {
+              return (
+                <div key={item.id} className="relative">
+                  <div className="blur-sm pointer-events-none">{cardJSX}</div>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/60 backdrop-blur-sm rounded-2xl p-4 text-center z-10">
+                    <p className="text-slate-700 font-semibold text-sm mb-2">Login to see more jobs</p>
+                    <Link to="/login" className="bg-slate-900 text-white text-xs px-4 py-2 rounded-lg font-medium shadow-sm hover:bg-slate-800 transition-all">
+                      Login / Register
+                    </Link>
+                  </div>
+                </div>
+              );
+            }
 
-          <Pagination
-            currentPage={pagination.page}
-            totalPages={pagination.totalPages}
-            onPageChange={handlePageChange}
-          />
-        </>
-      )}
+            return <div key={item.id}>{cardJSX}</div>;
+          })}
+        </div>
+      </div>
     </div>
   );
 };

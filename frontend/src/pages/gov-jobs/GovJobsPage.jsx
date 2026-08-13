@@ -1,204 +1,77 @@
-// Government Jobs Page
-import React, { useState, useEffect, useCallback } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import React from 'react';
+import { Link } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 
-// Fixed 2-level relative paths to components
-import JobCard from '../../components/JobCard';
-import FilterBar from '../../components/FilterBar';
-import Pagination from '../../components/Pagination';
-import { apiUrl } from '../../apiConfig';
-import './GovJobs.css';
+const SampleJobs = [
+  { id: 1, title: 'SSC CGL Executive Officer 2026', dept: 'Staff Selection Commission', loc: 'New Delhi', date: '2026-08-30' },
+  { id: 2, title: 'UPSC Civil Services Examination', dept: 'Union Public Service Commission', loc: 'All India', date: '2026-09-15' },
+  { id: 3, title: 'RRB NTPC Senior Clerk', dept: 'Indian Railways', loc: 'Multiple Zones', date: '2026-08-25' },
+  { id: 4, title: 'IBPS PO Assistant Manager', dept: 'Institute of Banking Personnel', loc: 'Pan India', date: '2026-09-01' },
+  { id: 5, title: 'DRDO Senior Technical Assistant', dept: 'Defence Research Organisation', loc: 'Bengaluru', date: '2026-09-10' },
+  { id: 6, title: 'ISRO Scientist / Engineer', dept: 'Indian Space Research Org', loc: 'Sriharikota', date: '2026-09-20' },
+];
 
 const GovJobsPage = () => {
-  const [jobs, setJobs] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [pagination, setPagination] = useState({
-    page: 1,
-    limit: 20,
-    total: 0,
-    totalPages: 1,
-  });
-
-  const [searchParams, setSearchParams] = useSearchParams();
-
-  // Extract filter parameters safely from URL
-  const search = searchParams.get('search') || '';
-  const department = searchParams.get('department') || '';
-  const location = searchParams.get('location') || '';
-  const source = searchParams.get('source') || '';
-  const category = searchParams.get('category') || '';
-  const region = searchParams.get('region') || '';
-  const language = searchParams.get('language') || '';
-  const page = parseInt(searchParams.get('page'), 10) || 1;
-
-  // Fetch jobs with AbortController for clean lifecycle & race-condition prevention
-  const fetchJobs = useCallback(async (signal) => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      const params = new URLSearchParams({
-        page: page.toString(),
-        limit: '20',
-      });
-
-      if (search) params.append('search', search);
-      if (department) params.append('department', department);
-      if (location) params.append('location', location);
-      if (source) params.append('source', source);
-      if (category) params.append('category', category);
-      if (region) params.append('region', region);
-      if (language) params.append('language', language);
-
-      const endpoint = `http://localhost:3001/api/v1/gov-jobs?${params.toString()}`;
-
-      const response = await fetch(endpoint, { signal });
-
-      if (!response.ok) {
-        throw new Error(`Server responded with status ${response.status}`);
-      }
-
-      const data = await response.json();
-
-      if (data.status === 'success' || data.success) {
-        const fetchedJobs = (data.data || []).map(job => ({
-          ...job,
-          last_date: job.last_date ?? 'Not specified',
-          department: job.department || 'Central Government',
-        }));
-        setJobs(fetchedJobs);
-
-        setPagination({
-          page: data.pagination?.page || page,
-          limit: data.pagination?.limit || 20,
-          total: data.pagination?.total || fetchedJobs.length,
-          totalPages: data.pagination?.total_pages || 1,
-        });
-      } else {
-        setError(data.error?.message || data.message || 'Failed to fetch government jobs');
-      }
-    } catch (err) {
-      if (err.name !== 'AbortError') {
-        setError(err.message || 'Unable to load government jobs. Please check your backend connection.');
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, [page, search, department, location, source, category, region, language]);
-
-  useEffect(() => {
-    const controller = new AbortController();
-    fetchJobs(controller.signal);
-
-    return () => controller.abort();
-  }, [fetchJobs]);
-
-  const handleFilterChange = (filters) => {
-    const params = new URLSearchParams();
-
-    if (filters.search) params.append('search', filters.search);
-    if (filters.department) params.append('department', filters.department);
-    if (filters.location) params.append('location', filters.location);
-    if (filters.source) params.append('source', filters.source);
-if (filters.category) params.append('category', filters.category);
-    if (filters.region) params.append('region', filters.region);
-    if (filters.language) params.append('language', filters.language);
-
-    params.append('page', '1'); // Reset to page 1 on filter update
-    setSearchParams(params);
-  };
-
-  const handlePageChange = (newPage) => {
-    const params = new URLSearchParams(searchParams);
-    params.set('page', newPage.toString());
-    setSearchParams(params);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  const handleResetFilters = () => {
-    setSearchParams({});
-  };
-
-const activeFilterCount = [search, department, location, source, category, region, language].filter(Boolean).length;
+  const auth = useAuth();
+  const token = localStorage.getItem('token');
+  const isLoggedIn = Boolean(token || auth?.isAuthenticated || auth?.user);
+  const total = SampleJobs.length;
 
   return (
-    <div className="gov-jobs-page">
-      <div className="page-header">
-        <div className="header-title-section">
-          <h1>Government Jobs</h1>
-          <p>Verified notifications from UPSC, SSC, Railways, State PSCs & Central Agencies</p>
+    <div className="min-h-screen bg-slate-50">
+      {!isLoggedIn && (
+        <div className="bg-slate-900 text-white text-center py-3 text-sm">
+          <span>Showing demo view — </span>
+          <Link to="/login" className="underline font-semibold">
+            Login to access all {total} jobs →
+          </Link>
         </div>
-        {!loading && !error && (
-          <div className="stats-badge">
-            <span>{pagination.total}</span> Jobs Available
-          </div>
-        )}
+      )}
+
+      <div className="max-w-6xl mx-auto px-6 py-8">
+        <h1 className="text-3xl font-bold text-slate-900 mb-2">Government Jobs Portal</h1>
+        <p className="text-slate-600 mb-8 text-sm">
+          Browse official notifications, exam schedules, and government sector vacancies.
+        </p>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {SampleJobs.map((item, index) => {
+            const cardJSX = (
+              <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm flex flex-col justify-between h-full">
+                <div>
+                  <span className="text-[10px] uppercase font-bold tracking-wider text-blue-600 bg-blue-50 px-2 py-1 rounded">
+                    {item.dept}
+                  </span>
+                  <h3 className="text-lg font-bold text-slate-800 mt-3">{item.title}</h3>
+                  <p className="text-xs text-slate-500 mt-1">📍 {item.loc}</p>
+                </div>
+                <div className="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between">
+                  <span className="text-xs text-slate-400">Apply by {item.date}</span>
+                  <button className="px-3 py-1.5 text-xs font-semibold bg-slate-900 text-white rounded-lg">
+                    View Details
+                  </button>
+                </div>
+              </div>
+            );
+
+            if (!isLoggedIn && index >= 3) {
+              return (
+                <div key={item.id} className="relative">
+                  <div className="blur-sm pointer-events-none">{cardJSX}</div>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/60 backdrop-blur-sm rounded-2xl p-4 text-center z-10">
+                    <p className="text-slate-700 font-semibold text-sm mb-2">Login to see more jobs</p>
+                    <Link to="/login" className="bg-slate-900 text-white text-xs px-4 py-2 rounded-lg font-medium shadow-sm hover:bg-slate-800 transition-all">
+                      Login / Register
+                    </Link>
+                  </div>
+                </div>
+              );
+            }
+
+            return <div key={item.id}>{cardJSX}</div>;
+          })}
+        </div>
       </div>
-
-<FilterBar
-        filters={{ search, department, location, source, category, region, language }}
-        onFilterChange={handleFilterChange}
-        filterOptions={{
-          departments: ['UPSC', 'SSC', 'Railway', 'State PSC', 'Banking', 'Teaching', 'Defense', 'Medical'],
-          locations: ['All India', 'Delhi', 'Mumbai', 'Bangalore', 'Chennai', 'Kolkata', 'Hyderabad', 'Pune', 'Uttar Pradesh', 'Bihar'],
-          sources: ['ncs', 'ssc', 'upsc', 'rrb', 'employment_news'],
-          categories: ['10th/12th Pass', 'Graduate', 'Post Graduate', 'Diploma', 'Engineering'],
-          regions: ['India', 'Overseas', 'Global Remote'],
-          languages: ['English', 'Hindi']
-        }}
-      />
-
-      {activeFilterCount > 0 && (
-        <div className="active-filters-bar">
-          <span>Showing results for active filters ({activeFilterCount})</span>
-          <button className="reset-filter-btn" onClick={handleResetFilters}>
-            Clear All Filters
-          </button>
-        </div>
-      )}
-
-      {loading ? (
-        <div className="loading-container">
-          <div className="spinner"></div>
-          <p>Fetching latest government notifications...</p>
-        </div>
-      ) : error ? (
-        <div className="error-container">
-          <p className="error-message">{error}</p>
-          <button className="retry-btn" onClick={() => fetchJobs()}>
-            Try Again
-          </button>
-        </div>
-      ) : (
-        <>
-          {jobs.length > 0 ? (
-            <div className="jobs-grid">
-              {jobs.map((job, index) => (
-                <JobCard key={job.id || job._id || index} job={job} type="government" />
-              ))}
-            </div>
-          ) : (
-            <div className="no-results-card">
-              <h3>No Government Jobs Found</h3>
-              <p>Try adjusting your search terms, department, or location filters.</p>
-              {activeFilterCount > 0 && (
-                <button className="reset-filter-btn" onClick={handleResetFilters}>
-                  Reset All Filters
-                </button>
-              )}
-            </div>
-          )}
-
-          {pagination.totalPages > 1 && (
-            <Pagination
-              currentPage={pagination.page}
-              totalPages={pagination.totalPages}
-              onPageChange={handlePageChange}
-            />
-          )}
-        </>
-      )}
     </div>
   );
 };

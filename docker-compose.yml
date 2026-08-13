@@ -137,6 +137,11 @@
   # 4. GO CRAWLER
   # ---------------------------------------------------------------------------
   crawler:
+    # ... existing crawler setup ...
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
+    
     build:
       context: ./services/crawler-go
       dockerfile: Dockerfile
