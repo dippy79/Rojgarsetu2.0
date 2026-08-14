@@ -9,6 +9,9 @@ import GovtFormsDashboard from './components/GovtFormsDashboard';
 import LoginPage from './pages/auth/LoginPage';
 import ProtectedRoute from './components/ProtectedRoute';
 import { AuthProvider } from './context/AuthContext';
+import CandidateDashboard from './pages/candidate/CandidateDashboard';
+import CandidateProfile from './pages/candidate/CandidateProfile';
+import MyApplications from './pages/candidate/MyApplications';
 import './index.css';
 
 const HomePage = () => (
@@ -110,8 +113,24 @@ function AppContent() {
           <Route
             path="/dashboard/candidate"
             element={
+              <ProtectedRoute allowedRoles={['candidate', 'admin']}>
+                <CandidateDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/candidate/profile"
+            element={
               <ProtectedRoute allowedRoles={['candidate']}>
-                <div className="p-8 text-2xl font-bold">Candidate Dashboard</div>
+                <CandidateProfile />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/candidate/applications"
+            element={
+              <ProtectedRoute allowedRoles={['candidate']}>
+                <MyApplications />
               </ProtectedRoute>
             }
           />
