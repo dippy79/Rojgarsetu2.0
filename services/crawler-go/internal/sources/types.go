@@ -29,6 +29,19 @@ type GovJobSource struct {
 	CreatedAt       time.Time `json:"created_at"`
 }
 
+// GovtJobSource represents a government job with legal attribution and deduplication
+type GovtJobSource struct {
+	Source           string    `json:"source"`
+	Title            string    `json:"title"`
+	Organization     string    `json:"organization"`
+	Location         string    `json:"location"`
+	ApplyURL         string    `json:"apply_url"`
+	LegalAttribution string    `json:"legal_attribution"`
+	SHA256Hash       string    `json:"sha256_hash"`
+	PostedDate       time.Time `json:"posted_date"`
+	CreatedAt        time.Time `json:"created_at"`
+}
+
 // PrivJobSource represents a private job from various sources
 type PrivJobSource struct {
 	Source      string     `json:"source"`
@@ -196,6 +209,30 @@ func isValidJob(job *GovJobSource) bool {
 		return false
 	}
 	if job.Source == "" {
+		return false
+	}
+	// Skip if title looks like an error or junk
+	skipPatterns := []string{"error", "not found", "404", "maintenance"}
+	for _, pattern := range skipPatterns {
+		if strings.Contains(strings.ToLower(job.Title), pattern) {
+			return false
+		}
+	}
+	return true
+}
+
+// isValidGovtJob checks if government job has minimum required fields
+func isValidGovtJob(job *GovtJobSource) bool {
+	if job == nil {
+		return false
+	}
+	if job.Title == "" || len(job.Title) < 3 {
+		return false
+	}
+	if job.Source == "" {
+		return false
+	}
+	if job.ApplyURL == "" {
 		return false
 	}
 	// Skip if title looks like an error or junk

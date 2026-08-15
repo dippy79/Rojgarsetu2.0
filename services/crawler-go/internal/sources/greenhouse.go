@@ -2,6 +2,8 @@ package sources
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -51,8 +53,8 @@ type greenhouseJob struct {
 	FirstPublished string `json:"first_published"`
 }
 
-// NewGreenhouseSource creates a Greenhouse source. The third POC company is
-// GitLab (verified live: 189 jobs via boards-api.greenhouse.io/v1/boards/gitlab/jobs).
+// NewGreenhouseSource creates a Greenhouse source with expanded company pool
+// including major Indian and global tech companies.
 func NewGreenhouseSource() *GreenhouseSource {
 	return &GreenhouseSource{
 		BaseSource: BaseSource{NameStr: "greenhouse", BaseURL: "https://boards-api.greenhouse.io"},
@@ -60,8 +62,16 @@ func NewGreenhouseSource() *GreenhouseSource {
 			Timeout: 30 * time.Second,
 		},
 		orgs: []greenhouseOrg{
+			{Org: "razorpay", Company: "Razorpay"},
+			{Org: "swiggy", Company: "Swiggy"},
+			{Org: "zomato", Company: "Zomato"},
+			{Org: "phonepe", Company: "PhonePe"},
+			{Org: "cred", Company: "Cred"},
+			{Org: "meesho", Company: "Meesho"},
+			{Org: "groww", Company: "Groww"},
+			{Org: "uber", Company: "Uber"},
 			{Org: "stripe", Company: "Stripe"},
-			{Org: "gitlab", Company: "GitLab"},
+			{Org: "figma", Company: "Figma"},
 		},
 	}
 }
@@ -147,7 +157,39 @@ func (s *GreenhouseSource) jobToPriv(j *greenhouseJob, company string) PrivJobSo
 	return job
 }
 
+// GenerateSHA256Hash creates a SHA-256 hash for deduplication
+func (s *GreenhouseSource) GenerateSHA256Hash(title, url string) string {
+	hash := sha256.Sum256([]byte(title + url))
+	return hex.EncodeToString(hash[:])
+}
+
 // Name returns the source name.
 func (s *GreenhouseSource) Name() string {
 	return s.NameStr
+}
+
+// FetchJobs implements the JobSource interface for compatibility with the engine
+func (s *GreenhouseSource) FetchJobs() ([]Job, error) {
+	ctx := context.Background()
+	privJobs, err := s.Fetch(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	var jobs []Job
+	for _, privJob := range privJobs {
+		job := Job{
+			Title:             privJob.Title,
+			CompanyOrDept:     privJob.Company,
+			Location:          privJob.Location,
+			QualificationReq:  privJob.JobType,
+			SalaryOrPayScale:  "",
+			ApplyURL:          privJob.URL,
+			SourceAttribution: "Source: Greenhouse ATS API",
+			HashChecksum:      "", // Will be set by engine
+		}
+		jobs = append(jobs, job)
+	}
+
+	return jobs, nil
 }

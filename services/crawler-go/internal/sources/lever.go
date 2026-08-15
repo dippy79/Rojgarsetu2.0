@@ -46,9 +46,8 @@ type leverPosting struct {
 	} `json:"categories"`
 }
 
-// NewLeverSource creates a Lever source. The POC org is "lever" (verified live:
-// api.lever.co/v0/postings/lever?mode=json returns HTTP 200, currently an empty
-// array — i.e. no open postings for that org, which is honest to report).
+// NewLeverSource creates a Lever source with expanded company pool
+// including major Indian and global tech companies.
 func NewLeverSource() *LeverSource {
 	return &LeverSource{
 		BaseSource: BaseSource{NameStr: "lever", BaseURL: "https://api.lever.co"},
@@ -56,7 +55,11 @@ func NewLeverSource() *LeverSource {
 			Timeout: 30 * time.Second,
 		},
 		orgs: []leverOrg{
-			{Org: "lever", Company: "Lever"},
+			{Org: "urbancompany", Company: "UrbanCompany"},
+			{Org: "postman", Company: "Postman"},
+			{Org: "hotstar", Company: "Hotstar"},
+			{Org: "inmobi", Company: "InMobi"},
+			{Org: "sharechat", Company: "ShareChat"},
 		},
 	}
 }
@@ -144,4 +147,30 @@ func (s *LeverSource) postingToPriv(p *leverPosting, company string) PrivJobSour
 // Name returns the source name.
 func (s *LeverSource) Name() string {
 	return s.NameStr
+}
+
+// FetchJobs implements the JobSource interface for compatibility with the engine
+func (s *LeverSource) FetchJobs() ([]Job, error) {
+	ctx := context.Background()
+	privJobs, err := s.Fetch(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	var jobs []Job
+	for _, privJob := range privJobs {
+		job := Job{
+			Title:             privJob.Title,
+			CompanyOrDept:     privJob.Company,
+			Location:          privJob.Location,
+			QualificationReq:  privJob.JobType,
+			SalaryOrPayScale:  "",
+			ApplyURL:          privJob.URL,
+			SourceAttribution: "Source: Lever ATS API",
+			HashChecksum:      "", // Will be set by engine
+		}
+		jobs = append(jobs, job)
+	}
+
+	return jobs, nil
 }

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/rojgarsetu/crawler/internal/sources"
@@ -56,7 +57,7 @@ type SourceStat struct {
 	Error      string
 }
 
-// Run executes the crawl across all sources
+// Run executes the crawl across all sources with worker pool and error recovery
 func (e *Engine) Run() CrawlResult {
 	start := time.Now()
 	result := CrawlResult{
@@ -65,79 +66,131 @@ func (e *Engine) Run() CrawlResult {
 
 	log.Println("=== Starting crawl run ===")
 
+	// Create worker pool with max 5 concurrent goroutines
+	maxWorkers := 5
+	workerSemaphore := make(chan struct{}, maxWorkers)
+	var wg sync.WaitGroup
+	var statsMutex sync.Mutex
+
+	// Process sources with worker pool
 	for _, source := range e.sources {
-		sourceName := "unknown"
-		sourceStat := SourceStat{}
-
-		// Get source name by type assertion
-		switch source.(type) {
-		case *sources.UPSCScraper:
-			sourceName = "UPSC"
-		case *sources.SSCScraper:
-			sourceName = "SSC"
-		case *sources.RailwayScraper:
-			sourceName = "Railway"
-		case *sources.NCSScraper:
-			sourceName = "NCS"
-		case *sources.AdzunaScraper:
-			sourceName = "Adzuna"
-		case *sources.JoobleScraper:
-			sourceName = "Jooble"
-		default:
-			sourceName = "Unknown"
-		}
-
-		sourceStat.Name = sourceName
-		result.SourcesRun++
-
-		jobs, err := source.FetchJobs()
-		if err != nil {
-			log.Printf("[ERROR] %s: %v", sourceName, err)
-			sourceStat.Error = err.Error()
-			result.Errors++
-			result.SourceStats = append(result.SourceStats, sourceStat)
-			continue
-		}
-
-		sourceStat.Found = len(jobs)
-		result.Found += len(jobs)
-
-		// Process each job
-		for i := range jobs {
-			// Generate hash if not set
-			if jobs[i].HashChecksum == "" {
-				jobs[i].HashChecksum = GenerateHash(jobs[i].Title, jobs[i].ApplyURL)
-			}
-
-			if isDuplicate(e.db, jobs[i].HashChecksum) {
-				sourceStat.Duplicates++
-				result.Duplicates++
-				continue
-			}
-
-			// Insert into crawled_jobs
-			if err := e.insertCrawledJob(jobs[i]); err != nil {
-				log.Printf("[ERROR] Failed to insert job from %s: %v", sourceName, err)
-				continue
-			}
-
-			// Also insert into jobs_government if it's a govt job
-			if jobs[i].SourceAttribution == "Source: UPSC Official Portal (upsc.gov.in)" ||
-				jobs[i].SourceAttribution == "Source: SSC Official Portal (ssc.gov.in)" ||
-				jobs[i].SourceAttribution == "Source: Railway RRB Official Portal (rrbapply.gov.in)" ||
-				jobs[i].SourceAttribution == "Source: NCS Portal (ncs.gov.in)" {
-				if err := e.insertGovernmentJob(jobs[i]); err != nil {
-					log.Printf("[ERROR] Failed to insert govt job from %s: %v", sourceName, err)
+		wg.Add(1)
+		go func(src JobSource) {
+			defer wg.Done()
+			defer func() {
+				if r := recover(); r != nil {
+					log.Printf("[PANIC RECOVERED] Source crashed: %v", r)
+					statsMutex.Lock()
+					result.Errors++
+					statsMutex.Unlock()
 				}
+			}()
+
+			workerSemaphore <- struct{}{}
+			defer func() { <-workerSemaphore }()
+
+			sourceName := "unknown"
+			sourceStat := SourceStat{}
+
+			// Get source name by type assertion
+			switch src.(type) {
+			case *sources.UPSCScraper:
+				sourceName = "UPSC"
+			case *sources.SSCScraper:
+				sourceName = "SSC"
+			case *sources.RailwayScraper:
+				sourceName = "Railway"
+			case *sources.NCSScraper:
+				sourceName = "NCS"
+			case *sources.AdzunaScraper:
+				sourceName = "Adzuna"
+			case *sources.JoobleScraper:
+				sourceName = "Jooble"
+			case *sources.GreenhouseSource:
+				sourceName = "Greenhouse"
+			case *sources.LeverSource:
+				sourceName = "Lever"
+			case *sources.AshbySource:
+				sourceName = "Ashby"
+			case *sources.SmartRecruitersSource:
+				sourceName = "SmartRecruiters"
+			case *sources.WorkableSource:
+				sourceName = "Workable"
+			case *sources.RemoteOKSource:
+				sourceName = "RemoteOK"
+			case *sources.WeWorkRemotelySource:
+				sourceName = "WeWorkRemotely"
+			case *sources.IbpsSbiSource:
+				sourceName = "IBPS/SBI"
+			case *sources.StatePSCSource:
+				sourceName = "State PSCs"
+			case *sources.DefenceSource:
+				sourceName = "Defense"
+			case *sources.PSUSource:
+				sourceName = "PSU"
+			default:
+				sourceName = "Unknown"
 			}
 
-			sourceStat.Added++
-			result.Added++
-		}
+			sourceStat.Name = sourceName
 
-		result.SourceStats = append(result.SourceStats, sourceStat)
-		log.Printf("[OK] %s: found=%d added=%d duplicates=%d", sourceName, sourceStat.Found, sourceStat.Added, sourceStat.Duplicates)
+			jobs, err := src.FetchJobs()
+			if err != nil {
+				log.Printf("[ERROR] %s: %v", sourceName, err)
+				sourceStat.Error = err.Error()
+				statsMutex.Lock()
+				result.Errors++
+				result.SourceStats = append(result.SourceStats, sourceStat)
+				statsMutex.Unlock()
+				return
+			}
+
+			sourceStat.Found = len(jobs)
+
+			// Process each job
+			for i := range jobs {
+				// Generate hash if not set
+				if jobs[i].HashChecksum == "" {
+					jobs[i].HashChecksum = GenerateHash(jobs[i].Title, jobs[i].ApplyURL)
+				}
+
+				if isDuplicate(e.db, jobs[i].HashChecksum) {
+					sourceStat.Duplicates++
+					continue
+				}
+
+				// Insert into crawled_jobs
+				if err := e.insertCrawledJob(jobs[i]); err != nil {
+					log.Printf("[ERROR] Failed to insert job from %s: %v", sourceName, err)
+					continue
+				}
+
+				// Also insert into jobs_government if it's a govt job
+				if jobs[i].SourceAttribution == "Source: UPSC Official Portal (upsc.gov.in)" ||
+					jobs[i].SourceAttribution == "Source: SSC Official Portal (ssc.gov.in)" ||
+					jobs[i].SourceAttribution == "Source: Railway RRB Official Portal (rrbapply.gov.in)" ||
+					jobs[i].SourceAttribution == "Source: NCS Portal (ncs.gov.in)" {
+					if err := e.insertGovernmentJob(jobs[i]); err != nil {
+						log.Printf("[ERROR] Failed to insert govt job from %s: %v", sourceName, err)
+					}
+				}
+
+				sourceStat.Added++
+			}
+
+			statsMutex.Lock()
+			result.Found += sourceStat.Found
+			result.Added += sourceStat.Added
+			result.Duplicates += sourceStat.Duplicates
+			result.SourcesRun++
+			result.SourceStats = append(result.SourceStats, sourceStat)
+			statsMutex.Unlock()
+
+			log.Printf("[OK] %s: found=%d added=%d duplicates=%d", sourceName, sourceStat.Found, sourceStat.Added, sourceStat.Duplicates)
+		}(source)
 	}
+
+	wg.Wait()
 
 	// Log overall statistics
 	result.Duration = time.Since(start)
