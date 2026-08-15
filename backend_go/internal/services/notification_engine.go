@@ -139,13 +139,10 @@ func (e *NotificationEngine) StartPeriodicCheck(interval time.Duration) {
 			log.Printf("Initial expiring enrollment check failed: %v", err)
 		}
 
-		for {
-			select {
-			case <-ticker.C:
-				ctx := context.Background()
-				if err := e.CheckAndNotifyExpiringEnrollments(ctx); err != nil {
-					log.Printf("Periodic expiring enrollment check failed: %v", err)
-				}
+		for range ticker.C {
+			ctx := context.Background()
+			if err := e.CheckAndNotifyExpiringEnrollments(ctx); err != nil {
+				log.Printf("Periodic expiring enrollment check failed: %v", err)
 			}
 		}
 	}()
