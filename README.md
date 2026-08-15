@@ -18,6 +18,7 @@
 - **Security**: CORS env, 1MB Body Limit, CSP/HSTS Headers
 - **Mobile**: 19 Flutter Screens (auth, home, jobs, profiles, applications)
 - **Infra**: PostgreSQL, Redis, Docker Compose, K8s ready
+- **Crawler**: Automated job crawler with deduplication and scheduled execution
 
 ## 📊 Phase Status
 | Phase | Description | Status |
@@ -29,6 +30,7 @@
 | F | Flutter UI 19 Screens | ✅ |
 | G | End-to-End Testing | ✅ |
 | **H** | **Production Deploy** | **✅** |
+| **I** | **Automated Job Crawler Module** | **✅** |
 
 ## 🏃 Quick Start (Local)
 ```
@@ -89,6 +91,23 @@ flutter build apk --release --dart-define API_BASE_URL=https://yourdomain.com/ap
 | PUT | /api/v1/candidates/me | Update profile |
 | POST | /api/v1/jobs | Create job |
 | POST | /api/v1/jobs/:id/apply | Apply job |
+
+## 🕷️ Automated Job Crawler & Intelligence Engine (`backend_go/internal/crawler`)
+
+RojgarSetu 2.0 features an automated, multi-source job crawler capable of ingesting jobs from public portals and APIs with built-in deduplication and scheduled execution.
+
+### Architecture Features
+- **Deduplication Engine**: Uses SHA-256 content hashing (`hash_checksum`) to prevent duplicate job insertion.
+- **HTML & JSON Parsers**: Native parsing support for standard web pages (DOM extraction) and REST JSON responses.
+- **Cron Scheduler**: Background ticker executing periodic crawls every 6 hours (`scheduler.go`).
+- **Telemetry & Logging**: All runs are tracked in `crawler_logs` with telemetry metrics (found, added, duplicates, error count, execution time).
+
+### API Endpoints (`/api/v1/crawler`)
+| Method | Endpoint | Description |
+| :--- | :--- | :--- |
+| `POST` | `/api/v1/crawler/crawl` | Manually trigger crawler execution (optional query param: `source_id`) |
+| `GET` | `/api/v1/crawler/stats` | Fetch aggregated crawler statistics (total crawled, unique, duplicates) |
+| `GET` | `/api/v1/crawler/health` | System health check & 24h error log status |
 
 ## 🔮 Phase I — Future (Optional)
 - FCM Push Notifications

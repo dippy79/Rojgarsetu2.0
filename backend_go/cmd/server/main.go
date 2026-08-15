@@ -21,6 +21,7 @@ import (
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	_ "github.com/lib/pq"
 	"github.com/rojgarsetu/backend/config"
+	"github.com/rojgarsetu/backend/internal/crawler"
 	"github.com/rojgarsetu/backend/internal/db"
 	"github.com/rojgarsetu/backend/internal/handlers"
 	"github.com/rojgarsetu/backend/internal/middleware"
@@ -120,6 +121,7 @@ func run(cfg *config.Config) error {
 		dbReady  bool
 		database *db.PostgresDB
 		sqlDB    *sql.DB
+		crawlerScheduler *crawler.Scheduler
 	)
 
 	middleware.RegisterBuildInfo()
@@ -249,6 +251,7 @@ func run(cfg *config.Config) error {
 				videoHandler := handlers.NewVideoHandler(videoService)
 				searchHandler := handlers.NewSearchHandler(searchService)
 				featureHandler := handlers.NewFeatureHandler(featureRepo)
+				crawlerHandler := handlers.NewCrawlerHandler(sdb)
 
 				// Register DB-dependent routes
 				api := router.Group("/api/v1")
@@ -267,12 +270,21 @@ func run(cfg *config.Config) error {
 					api.POST("/search", searchHandler.Search)
 					api.GET("/search", searchHandler.SearchGET)
 
+					// Crawler Endpoints
+					api.POST("/crawler/crawl", crawlerHandler.TriggerCrawl)
+					api.GET("/crawler/stats", crawlerHandler.GetStats)
+					api.GET("/crawler/health", crawlerHandler.GetHealth)
 					// New Feature Endpoints
 					api.POST("/company/reviews", featureHandler.CreateReviewHandler)
 					api.POST("/jobs/report", featureHandler.ReportJobHandler)
 					api.POST("/candidate/ratings", featureHandler.InternalRatingHandler)
 				}
 				logger.Info().Msg("API routes registered")
+
+				// Start Crawler Scheduler (Runs every 6 hours in background)
+				crawlerScheduler = crawler.NewScheduler(sdb, 6*time.Hour)
+				crawlerScheduler.Start()
+				logger.Info().Msg("Crawler scheduler started with 6-hour interval")
 				return
 			}
 			sdb.Close()
@@ -319,6 +331,14 @@ func run(cfg *config.Config) error {
 	// Wait for shutdown
 	<-ctx.Done()
 	logger.Info().Msg("Shutting down server...")
+
+	// Stop crawler scheduler if running
+	mu.RLock()
+	if crawlerScheduler != nil {
+		logger.Info().Msg("Stopping crawler scheduler...")
+		crawlerScheduler.Stop()
+	}
+	mu.RUnlock()
 
 	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer shutdownCancel()
