@@ -117,10 +117,10 @@ func run(cfg *config.Config) error {
 
 	// Track DB readiness with thread-safe flag
 	var (
-		mu       sync.RWMutex
-		dbReady  bool
-		database *db.PostgresDB
-		sqlDB    *sql.DB
+		mu               sync.RWMutex
+		dbReady          bool
+		database         *db.PostgresDB
+		sqlDB            *sql.DB
 		crawlerScheduler *crawler.Scheduler
 	)
 
@@ -179,34 +179,6 @@ func run(cfg *config.Config) error {
 	router.GET("/health", healthHandler)
 	router.HEAD("/health", healthHandler)
 
-	api := router.Group("/api/v1")
-	api.GET("/forms", func(c *gin.Context) {
-		forms := []gin.H{
-			{
-				"id":         "stub-1",
-				"title":      "SSC CGL 2025 Online Application",
-				"department": "Staff Selection Commission",
-				"last_date":  time.Now().Add(48 * time.Hour).Format(time.RFC3339),
-				"apply_url":  "https://ssc.gov.in",
-			},
-			{
-				"id":         "stub-2",
-				"title":      "RRB NTPC 2025 Application Form",
-				"department": "Railway Recruitment Board",
-				"last_date":  time.Now().Add(6 * 24 * time.Hour).Format(time.RFC3339),
-				"apply_url":  "https://rrbcdg.gov.in",
-			},
-			{
-				"id":         "stub-3",
-				"title":      "UPSC Civil Services Prelims 2025",
-				"department": "Union Public Service Commission",
-				"last_date":  time.Now().Add(10 * 24 * time.Hour).Format(time.RFC3339),
-				"apply_url":  "https://upsc.gov.in",
-			},
-		}
-		c.JSON(http.StatusOK, gin.H{"data": forms, "count": len(forms), "source": "stub"})
-	})
-
 	// Attempt database connection in background, then register DB routes
 	go func() {
 		maxRetries := 30
@@ -252,6 +224,7 @@ func run(cfg *config.Config) error {
 				searchHandler := handlers.NewSearchHandler(searchService)
 				featureHandler := handlers.NewFeatureHandler(featureRepo)
 				crawlerHandler := handlers.NewCrawlerHandler(sdb)
+				legalHandler := handlers.NewLegalHandler(sdb)
 
 				// Register DB-dependent routes
 				api := router.Group("/api/v1")
@@ -274,6 +247,10 @@ func run(cfg *config.Config) error {
 					api.POST("/crawler/crawl", crawlerHandler.TriggerCrawl)
 					api.GET("/crawler/stats", crawlerHandler.GetStats)
 					api.GET("/crawler/health", crawlerHandler.GetHealth)
+					// Legal Endpoints
+					api.GET("/legal/disclaimer", legalHandler.GetDisclaimer)
+					api.POST("/legal/takedown", legalHandler.PostTakedown)
+					api.GET("/crawler/forms", legalHandler.GetForms)
 					// New Feature Endpoints
 					api.POST("/company/reviews", featureHandler.CreateReviewHandler)
 					api.POST("/jobs/report", featureHandler.ReportJobHandler)

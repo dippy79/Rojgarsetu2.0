@@ -123,3 +123,36 @@ RojgarSetu 2.0 features an automated, multi-source job crawler capable of ingest
 MIT — Free for commercial use.
 
 **⭐ Star if useful!** https://github.com/dippy79/Rojgarsetu2.0
+
+## ⚖️ Legal Compliance
+
+RojgarSetu operates as a legally compliant job aggregation platform in accordance with Indian IT laws:
+
+### IT Act 2000 Section 79 Compliance
+- **Intermediary Platform**: RojgarSetu acts as an intermediary, sourcing job listings from official government portals (public records) and authorized API partners
+- **Content Attribution**: All job listings include source attribution and links to original official portals
+- **No Content Modification**: We do not modify or host original content; users are redirected to official sources
+
+### Crawler Best Practices
+- **Bot Identification**: Crawler identifies itself via User-Agent: `RojgarSetuBot/2.0 (+https://rojgarsetu.in/bot-policy; support@rojgarsetu.in)`
+- **Robots.txt Respect**: All crawls check and respect robots.txt directives before fetching content
+- **Rate Limiting**: Polite 2-second delay between requests to avoid overloading source servers
+- **SHA-256 Deduplication**: Prevents duplicate listings through content hashing
+
+### Data Protection (DPDP Act 2023)
+- User data processed solely for job matching and recruitment purposes
+- Users may request data deletion or access by contacting privacy@rojgarsetu.in
+- Minimal data collection with explicit consent mechanisms
+
+### Takedown Rights
+- **Takedown API**: `POST /api/v1/legal/takedown` for content removal requests
+- **Response Time**: Takedown requests processed as per IT Act guidelines
+- **Contact**: legal@rojgarsetu.in for legal inquiries
+- **Bot Policy**: https://rojgarsetu.in/bot-policy
+
+### Legal Endpoints
+|| Method | Endpoint | Description |
+|| :--- | :--- | :--- |
+|| `GET` | `/api/v1/legal/disclaimer` | Returns IT Act compliance disclaimer, privacy policy, and terms of service |
+|| `POST` | `/api/v1/legal/takedown` | Submit takedown requests for content removal |
+|| `GET` | `/api/v1/crawler/forms` | Access government forms and admit card information |
