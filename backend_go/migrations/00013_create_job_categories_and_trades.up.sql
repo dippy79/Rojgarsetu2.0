@@ -103,7 +103,8 @@ CREATE TABLE IF NOT EXISTS user_notification_logs (
 CREATE INDEX IF NOT EXISTS idx_user_notification_logs_user_id ON user_notification_logs(user_id);
 CREATE INDEX IF NOT EXISTS idx_user_notification_logs_enrollment_id ON user_notification_logs(enrollment_id);
 CREATE INDEX IF NOT EXISTS idx_user_notification_logs_sent_at ON user_notification_logs(sent_at DESC);
-CREATE INDEX IF NOT EXISTS idx_user_notification_logs_user_sent_date ON user_notification_logs(user_id, DATE(sent_at));
+-- ✅ UPDATED: Composite IMMUTABLE Index replacing DATE(sent_at)
+CREATE INDEX IF NOT EXISTS idx_user_notification_logs_user_sent_at ON user_notification_logs(user_id, sent_at DESC);
 CREATE INDEX IF NOT EXISTS idx_user_notification_logs_type ON user_notification_logs(notification_type);
 
 -- ============================================
