@@ -7,9 +7,9 @@
     container_name: rojgar-postgres
     restart: always
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
-      POSTGRES_DB: ${POSTGRES_DB:-rojgarsetu}
+      POSTGRES_USER: ${POSTGRES_USER:-amitsharma}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-Asha12@Ashok24}
+      POSTGRES_DB: ${POSTGRES_DB:-rojgarsetu2}
       
     ports:
       - "5432:5432"
@@ -18,7 +18,7 @@
     networks:
       - rojgar-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-rojgarsetu}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-amitsharma} -d ${POSTGRES_DB:-rojgarsetu2}"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -52,7 +52,7 @@
       - "8083:8083"
     environment:
       PORT: 8083
-      DATABASE_URL: ${DATABASE_URL}
+      DATABASE_URL: postgres://amitsharma:Asha12@Ashok24@postgres:5432/rojgarsetu2?sslmode=disable
       REDIS_URL: redis://redis:6379
       JWT_SECRET: ${JWT_SECRET:-rojgarsetu-shared-jwt-secret-please-change-2025}
       RATE_LIMIT: "100"
@@ -81,9 +81,9 @@
     environment:
       PORT: 8081
       SPRING_PROFILES_ACTIVE: dev
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-rojgarsetu}
-      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-postgres}
-      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-rojgarsetu2}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-amitsharma}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-Asha12@Ashok24}
       SPRING_REDIS_HOST: redis
       SPRING_REDIS_PORT: 6379
       # JWT config - MUST match backend_go exactly for cross-service token validation
@@ -117,7 +117,7 @@
       - "8000:8000"
     environment:
       PORT: 8000
-      DATABASE_URL: ${DATABASE_URL}
+      DATABASE_URL: postgres://amitsharma:Asha12@Ashok24@postgres:5432/rojgarsetu2?sslmode=disable
       REDIS_URL: redis://redis:6379/0
     depends_on:
       postgres:
@@ -152,7 +152,7 @@
     environment:
       CHROME_BIN: /usr/bin/chromium-browser
       PORT: 8080
-      DATABASE_URL: ${DATABASE_URL}
+      DATABASE_URL: postgres://amitsharma:Asha12@Ashok24@postgres:5432/rojgarsetu2?sslmode=disable
       REDIS_URL: redis://redis:6379
       CRAWL_INTERVAL_HOURS: 6
     depends_on:
@@ -207,7 +207,7 @@
     container_name: rojgar-frontend
     restart: always
     ports:
-      - "80:80"
+      - "8080:80"
     environment:
       REACT_APP_BACKEND_URL: http://localhost:8083
       REACT_APP_API_URL: http://localhost:8083
@@ -223,6 +223,143 @@
       retries: 3
       start_period: 10s
 
+  nginx-ssl:
+    image: nginx:alpine
+    container_name: rojgar-nginx-ssl
+    restart: always
+    ports:
+      - "443:443"
+      - "8443:80"
+    volumes:
+      - ./deployment/nginx_ssl.conf:/etc/nginx/conf.d/default.conf
+      - ./certs:/etc/ssl
+    depends_on:
+      api-gateway:
+        condition: service_healthy
+    networks:
+      - rojgar-network
+    profiles:
+      - ssl
+
+  backup:
+    image: postgres:16-alpine
+    container_name: rojgar-backup
+    restart: always
+    volumes:
+      - ./backups:/backups
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./scripts/db-backup.sh:/scripts/db-backup.sh
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-amitsharma}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-Asha12@Ashok24}
+      POSTGRES_DB: ${POSTGRES_DB:-rojgarsetu2}
+    entrypoint: /bin/sh -c "chmod +x /scripts/db-backup.sh && echo '0 2 * * * /scripts/db-backup.sh' > /etc/crontabs/root && crond -f"
+    networks:
+      - rojgar-network
+    profiles:
+      - backup
+
+  # ---------------------------------------------------------------------------
+  # 6. MONITORING
+  # ---------------------------------------------------------------------------
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: rojgar-prometheus
+    restart: always
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./monitoring/prometheus/rules.yml:/etc/prometheus/rules.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+      - '--storage.tsdb.retention.time=30d'
+    networks:
+      - rojgar-network
+    profiles:
+      - monitoring
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: rojgar-grafana
+    restart: always
+    ports:
+      - "3002:3000"
+    volumes:
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
+      - grafana_data:/var/lib/grafana
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
+      GF_INSTALL_PLUGINS: grafana-piechart-panel
+    depends_on:
+      - prometheus
+    networks:
+      - rojgar-network
+    profiles:
+      - monitoring
+
+  postgres_exporter:
+    image: prometheuscommunity/postgres-exporter:latest
+    container_name: rojgar-postgres-exporter
+    restart: always
+    environment:
+      DATA_SOURCE_NAME: "postgresql://amitsharma:Asha12@Ashok24@postgres:5432/rojgarsetu2?sslmode=disable"
+    depends_on:
+      - postgres
+    networks:
+      - rojgar-network
+    profiles:
+      - monitoring
+
+  redis_exporter:
+    image: oliver006/redis_exporter:latest
+    container_name: rojgar-redis-exporter
+    restart: always
+    environment:
+      REDIS_ADDR: "redis://redis:6379"
+    depends_on:
+      - redis
+    networks:
+      - rojgar-network
+    profiles:
+      - monitoring
+
+  loki:
+    image: grafana/loki:latest
+    container_name: rojgar-loki
+    restart: always
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./monitoring/loki-config.yml:/etc/loki/local-config.yaml
+      - loki_data:/loki
+    command: -config.file=/etc/loki/local-config.yaml
+    networks:
+      - rojgar-network
+    profiles:
+      - monitoring
+
+  promtail:
+    image: grafana/promtail:latest
+    container_name: rojgar-promtail
+    restart: always
+    volumes:
+      - ./monitoring/promtail-config.yml:/etc/promtail/config.yml
+    command: -config.file=/etc/promtail/config.yml
+    networks:
+      - rojgar-network
+    depends_on:
+      - loki
+    profiles:
+      - monitoring
+    # Note: Docker socket mounting requires Linux/Unix environment
+    # For Windows, configure Promtail to read from file-based log sources
+
 networks:
   rojgar-network:
     driver: bridge
@@ -230,3 +367,6 @@ networks:
 volumes:
   postgres_data:
   redis_data:
+  prometheus_data:
+  grafana_data:
+  loki_data:

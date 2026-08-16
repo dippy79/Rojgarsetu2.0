@@ -1,10 +1,11 @@
 const express = require('express');
 const { createProxyMiddleware } = require('http-proxy-middleware');
+const rateLimit = require('express-rate-limit');
 require('dotenv').config();
 
 const app = express();
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(express.json({ limit: '1mb' }));
+app.use(express.urlencoded({ limit: '1mb', extended: true }));
 
 const cors = require('cors');
 app.use(cors({
@@ -30,7 +31,53 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));
 
-const PORT = process.env.PORT || 8000;
+// Rate limiting
+const generalLimiter = rateLimit({
+  windowMs: 60000,
+  max: 100,
+  message: { error: 'Too many requests, please try again later' }
+});
+
+const loginLimiter = rateLimit({
+  windowMs: 60000,
+  max: 5,
+  message: { error: 'Too many login attempts, please try again later' }
+});
+
+const applyLimiter = rateLimit({
+  windowMs: 60000,
+  max: 10,
+  message: { error: 'Too many application attempts, please try again later' }
+});
+
+// Apply rate limiters before proxy middleware
+app.use('/auth/login', loginLimiter);
+app.use('/api/', generalLimiter);
+
+// Apply specific limiters for job application endpoints
+app.use('/api/v1/gov-jobs', applyLimiter);
+app.use('/api/v1/priv-jobs', applyLimiter);
+
+// Input validation middleware
+app.use((req, res, next) => {
+  // Sanitize query parameters
+  if (req.query) {
+    for (const key in req.query) {
+      if (typeof req.query[key] === 'string') {
+        req.query[key] = req.query[key].trim();
+        // Basic XSS prevention
+        req.query[key] = req.query[key]
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#x27;');
+      }
+    }
+  }
+  next();
+});
+
+const PORT = process.env.PORT || 3002;
 
 // Dynamic target URLs from env with local fallbacks
 const BACKEND_SERVICE_URL = process.env.BACKEND_SERVICE_URL || 'http://localhost:8080';

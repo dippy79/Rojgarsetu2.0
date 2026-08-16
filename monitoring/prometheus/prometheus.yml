@@ -35,7 +35,7 @@ scrape_configs:
   # Crawler Service metrics
   - job_name: 'crawler'
     static_configs:
-      - targets: ['crawler-service:8082']
+      - targets: ['crawler:8080']
     metrics_path: '/metrics'
 
   # Backend API metrics

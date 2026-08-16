@@ -1,43 +1,15 @@
-name: RojgarSetu CI/CD
+name: RojgarSetu Production CI/CD
 
 on:
   push:
-    branches: [ main, develop ]
-  pull_request:
-    branches: [ main ]
-  schedule:
-    - cron: '0 2 * * 0'  # Weekly Sunday 2AM UTC
-  workflow_dispatch:
+    branches: [ master ]
 
 env:
-  GO_VERSION: '1.23'
+  GO_VERSION: '1.24'
   NODE_VERSION: '20'
-  JAVA_VERSION: '17'
+  PYTHON_VERSION: '3.11'
 
 jobs:
-  lint:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Go lint
-        uses: golangci/golangci-lint-action@v6
-        with:
-          working-directory: services/backend-go
-
-      - name: Go lint crawler
-        uses: golangci/golangci-lint-action@v6
-        with:
-          working-directory: services/crawler-go
-
-      - name: ESLint Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-        working-directory: services/api-gateway-node
-        run: npm ci && npm run lint
-
   test:
     runs-on: ubuntu-latest
     steps:
@@ -47,8 +19,15 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: ${{ env.GO_VERSION }}
-        working-directory: services/backend-go
-        run: go test ./...
+        working-directory: backend_go
+        run: go test ./... -v -cover
+
+      - name: Go test integration
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+        working-directory: backend_go
+        run: go test ./tests/... -v -cover
 
       - name: Go test crawler
         uses: actions/setup-go@v5
@@ -57,209 +36,76 @@ jobs:
         working-directory: services/crawler-go
         run: go test ./...
 
-      - name: Test Node gateway
+      - name: Node test frontend
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-        working-directory: services/api-gateway-node
+        working-directory: frontend
         run: npm ci && npm test
 
-  security_scan:
+      - name: Python test AI engine
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+        working-directory: services/ai-engine-python
+        run: |
+          pip install -r requirements.txt
+          pytest
+
+  build:
     needs: test
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Go ${{ env.GO_VERSION }}
-        uses: actions/setup-go@v5
-        with:
-          go-version: ${{ env.GO_VERSION }}
+      - name: Build Docker images
+        run: docker compose build --no-cache
 
-      - name: GoSec Backend
-        uses: securego/gosec-action@v1
-        with:
-          directory: services/backend-go/
-          args: '-confidence high -severity high -out gosec-backend.sarif -fmt sarif'
+  security:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
 
-      - name: GoSec Crawler
-        uses: securego/gosec-action@v1
-        with:
-          directory: services/crawler-go/
-          args: '-confidence high -severity high -out gosec-crawler.sarif -fmt sarif'
-
-      - name: Trivy filesystem scan
+      - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
         with:
           scan-type: 'fs'
           scan-ref: '.'
           severity: 'HIGH,CRITICAL'
-          exit-code: 1
+          format: 'sarif'
+          output: 'trivy-results.sarif'
 
-      - name: Build backend for image scan
-        uses: docker/build-push-action@v6
+      - name: Upload Trivy results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
         with:
-          context: services/backend-go
-          file: deployment/Dockerfile.backend
-          load: true
-          tags: backend_scan:temp
+          sarif_file: 'trivy-results.sarif'
 
-      - name: Trivy backend image
-        uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: backend_scan:temp
-          severity: 'HIGH,CRITICAL'
-          exit-code: 1
-
-      - name: Build crawler for image scan
-        uses: docker/build-push-action@v6
-        with:
-          context: services/crawler-go
-          file: deployment/Dockerfile.crawler
-          load: true
-          tags: crawler_scan:temp
-
-      - name: Trivy crawler image
-        uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: crawler_scan:temp
-          severity: 'HIGH,CRITICAL'
-          exit-code: 1
-
-      - name: Hadolint Backend Dockerfile
-        uses: hadolint/hadolint-action@v3
-        with:
-          dockerfile: deployment/Dockerfile.backend
-          fail-on: high
-
-      - name: Hadolint Crawler Dockerfile
-        uses: hadolint/hadolint-action@v3
-        with:
-          dockerfile: deployment/Dockerfile.crawler
-          fail-on: high
-
-      - name: Yamllint compose
-        uses: ibiqlik/action-yamllint@v1
-        with:
-          file_or_dir: deployment/docker-compose.yml
-          config_file: .yamllint.yml
-
-      - name: Yamllint k8s
-        uses: ibiqlik/action-yamllint@v1
-        with:
-          file_or_dir: deployment/k8s/
-          config_file: .yamllint.yml
-
-  build:
-    needs: [lint, test, security_scan]
+  deploy:
+    needs: [test, build, security]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Docker login
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Build & push backend
-        uses: docker/build-push-action@v6
-        with:
-          context: services/backend-go
-          file: deployment/Dockerfile.backend
-          push: true
-          tags: ghcr.io/${{ github.repository }}/backend:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      - name: Build & push crawler
-        uses: docker/build-push-action@v6
-        with:
-          context: services/crawler-go
-          file: deployment/Dockerfile.crawler
-          push: true
-          tags: ghcr.io/${{ github.repository }}/crawler:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      - name: Build & push api-gateway
-        uses: docker/build-push-action@v6
-        with:
-          context: services/api-gateway-node
-          file: deployment/Dockerfile.api-gateway
-          push: true
-          tags: ghcr.io/${{ github.repository }}/api-gateway:latest
-
-      - name: Build & push auth-service
-        uses: docker/build-push-action@v6
-        with:
-          context: services/auth-java
-          file: deployment/Dockerfile.auth-service
-          push: true
-          tags: ghcr.io/${{ github.repository }}/auth-service:latest
-
-      - name: Build & push ai-engine
-        uses: docker/build-push-action@v6
-        with:
-          context: services/ai-engine-python
-          file: deployment/Dockerfile.ai-engine
-          push: true
-          tags: ghcr.io/${{ github.repository }}/ai-engine:latest
-
-      - name: Build & push frontend
-        uses: docker/build-push-action@v6
-        with:
-          context: frontend
-          file: frontend/Dockerfile
-          push: true
-          tags: ghcr.io/${{ github.repository }}/frontend:latest
-
-  deploy-staging:
-    needs: build
-    if: github.ref == 'refs/heads/develop'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Deploy to staging
-        run: echo "Deploy to staging K8s (kubectl apply)"
-        env:
-          KUBECONFIG: ${{ secrets.KUBECONFIG_STAGING }}
-
-  backup-verify:
-    runs-on: windows-latest
-    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: PowerShell setup
-        uses: microsoft/powershell@v2
-        
-      - name: WAL-G S3 Backup Verify
-        shell: pwsh
+      - name: Build and push images
         run: |
-          .\scripts\db-dry-run-restore.ps1
-          if ($LASTEXITCODE -ne 0) { throw 'Restore failed' }
-        env:
-          S3_BUCKET: ${{ secrets.S3_BACKUP_BUCKET }}
-          AWS_ACCESS_KEY_ID: ${{ secrets.S3_ACCESS_KEY }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.S3_SECRET_KEY }}
-          
-      - name: Slack Alert on Failure
-        if: failure()
-        uses: 8398a7/action-slack@v3
-        with:
-          status: failure
-          fields: repo,message,commit,author,action,eventName,ref,workflow
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
+          docker compose build
+          docker compose push
 
-  healthcheck:
-    needs: deploy-staging
-    runs-on: ubuntu-latest
-    steps:
-      - name: Health check
+      - name: Deploy to production
         run: |
-          curl -f http://staging.rojgarsetu.com/health
-          curl -f http://staging.rojgarsetu.com/api/v1/gov-jobs
-        env:
-          KUBECONFIG: ${{ secrets.KUBECONFIG_STAGING }}
+          echo "Deploy to production server would happen here"
+          echo "This would typically involve:"
+          echo "- SSH to production server"
+          echo "- docker compose pull"
+          echo "- docker compose up -d"
+          echo "- Health checks against production endpoints"

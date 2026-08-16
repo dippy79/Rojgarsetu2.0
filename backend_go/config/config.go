@@ -1,12 +1,13 @@
 package config
 
 import (
+	"crypto/tls"
 	"flag"
+	"io/ioutil"
 	"os"
 	"strconv"
+	"strings"
 	"time"
-
-	"crypto/tls"
 )
 
 type Config struct {
@@ -25,6 +26,24 @@ type Config struct {
 	} `json:"jwt"`
 	LoginRateLimit int `json:"login_rate_limit"`
 	RateLimit      int `json:"rate_limit"`
+	Database       struct {
+		MaxOpenConns    int           `json:"max_open_conns"`
+		MaxIdleConns    int           `json:"max_idle_conns"`
+		ConnMaxLifetime time.Duration `json:"conn_max_lifetime"`
+		ConnMaxIdleTime time.Duration `json:"conn_max_idle_time"`
+	} `json:"database"`
+}
+
+// readSecret reads a secret from file if available, otherwise returns env var
+func readSecret(envVar, fileVar string) string {
+	// Try file first (Docker secrets)
+	if fileContent := os.Getenv(fileVar); fileContent != "" {
+		if data, err := ioutil.ReadFile(fileContent); err == nil {
+			return strings.TrimSpace(string(data))
+		}
+	}
+	// Fall back to environment variable
+	return os.Getenv(envVar)
 }
 
 func Load() *Config {
@@ -56,13 +75,16 @@ func Load() *Config {
 	if cfg.JWT.Audience == "" {
 		cfg.JWT.Audience = "rojgarsetu-api"
 	}
-	cfg.JWT.Secret = os.Getenv("JWT_SECRET")
+
+	// Read JWT secret from file or environment
+	cfg.JWT.Secret = readSecret("JWT_SECRET", "JWT_SECRET_FILE")
 	if cfg.JWT.Secret == "" {
-		panic("JWT_SECRET environment variable required")
+		panic("JWT_SECRET environment variable or file required")
 	}
 	if len(cfg.JWT.Secret) < 32 {
 		panic("JWT_SECRET must be at least 32 characters long for security")
 	}
+
 	expiryStr := os.Getenv("JWT_EXPIRY_SECONDS")
 	expiry, _ := strconv.Atoi(expiryStr)
 	if expiry > 0 {
@@ -82,7 +104,6 @@ func Load() *Config {
 	}
 
 	// Rate limit
-	// Rate limit
 	rateStr := os.Getenv("RATE_LIMIT")
 	cfg.RateLimit, _ = strconv.Atoi(rateStr)
 	if cfg.RateLimit == 0 {
@@ -93,6 +114,24 @@ func Load() *Config {
 	cfg.LoginRateLimit, _ = strconv.Atoi(loginRateStr)
 	if cfg.LoginRateLimit == 0 {
 		cfg.LoginRateLimit = 5
+	}
+
+	// Database connection pool settings
+	cfg.Database.MaxOpenConns, _ = strconv.Atoi(os.Getenv("DB_MAX_OPEN_CONNS"))
+	if cfg.Database.MaxOpenConns == 0 {
+		cfg.Database.MaxOpenConns = 25
+	}
+	cfg.Database.MaxIdleConns, _ = strconv.Atoi(os.Getenv("DB_MAX_IDLE_CONNS"))
+	if cfg.Database.MaxIdleConns == 0 {
+		cfg.Database.MaxIdleConns = 5
+	}
+	cfg.Database.ConnMaxLifetime, _ = time.ParseDuration(os.Getenv("DB_CONN_MAX_LIFETIME"))
+	if cfg.Database.ConnMaxLifetime == 0 {
+		cfg.Database.ConnMaxLifetime = 5 * time.Minute
+	}
+	cfg.Database.ConnMaxIdleTime, _ = time.ParseDuration(os.Getenv("DB_CONN_MAX_IDLE_TIME"))
+	if cfg.Database.ConnMaxIdleTime == 0 {
+		cfg.Database.ConnMaxIdleTime = 1 * time.Minute
 	}
 
 	flag.Parse()

@@ -19,6 +19,7 @@ func NewSearchService(database *db.PostgresDB) *SearchService {
 
 type SearchRequest struct {
 	Query string `json:"query"`
+	Type  string `json:"type"` // "gov", "private", "all", or empty for all
 	Page  int    `json:"page"`
 	Limit int    `json:"limit"`
 }
@@ -78,23 +79,15 @@ type SearchResult struct {
 	Limit       int                      `json:"limit"`
 }
 
-func (s *SearchService) validateAndNormalizeQuery(query string) (string, string, error) {
+func (s *SearchService) validateAndNormalizeQuery(query string) (string, error) {
 	query = strings.TrimSpace(query)
 	if query == "" {
-		return "", "", fmt.Errorf("search query is required")
+		return "", fmt.Errorf("search query is required")
 	}
 	if len(query) < 2 {
-		return "", "", fmt.Errorf("search query must be at least 2 characters")
+		return "", fmt.Errorf("search query must be at least 2 characters")
 	}
-	words := strings.Fields(query)
-	tsqueryParts := make([]string, 0, len(words))
-	for _, w := range words {
-		w = strings.ToLower(w)
-		w = strings.ReplaceAll(w, "'", "''")
-		tsqueryParts = append(tsqueryParts, w+":*")
-	}
-	tsquery := strings.Join(tsqueryParts, " & ")
-	return query, tsquery, nil
+	return query, nil
 }
 
 func (s *SearchService) Search(ctx context.Context, req SearchRequest) (*SearchResult, error) {
@@ -102,38 +95,58 @@ func (s *SearchService) Search(ctx context.Context, req SearchRequest) (*SearchR
 	limit := clampLimit(req.Limit)
 	offset := (page - 1) * limit
 
-	rawQuery, tsquery, err := s.validateAndNormalizeQuery(req.Query)
+	rawQuery, err := s.validateAndNormalizeQuery(req.Query)
 	if err != nil {
 		return nil, err
 	}
 
 	result := &SearchResult{Page: page, Limit: limit}
 
-	companyJobs, companyCount, err := s.searchCompanyJobs(ctx, tsquery, rawQuery, limit, offset)
-	if err != nil {
-		return nil, fmt.Errorf("company jobs search failed: %w", err)
-	}
-	result.CompanyJobs = companyJobs
-	result.Total += companyCount
+	// Search based on type filter
+	if req.Type == "" || req.Type == "all" {
+		// Search all types
+		companyJobs, companyCount, err := s.searchCompanyJobs(ctx, rawQuery, limit, offset)
+		if err != nil {
+			return nil, fmt.Errorf("company jobs search failed: %w", err)
+		}
+		result.CompanyJobs = companyJobs
+		result.Total += companyCount
 
-	govJobs, govCount, err := s.searchGovJobs(ctx, tsquery, rawQuery, limit, offset)
-	if err != nil {
-		return nil, fmt.Errorf("gov jobs search failed: %w", err)
-	}
-	result.GovJobs = govJobs
-	result.Total += govCount
+		govJobs, govCount, err := s.searchGovJobs(ctx, rawQuery, limit, offset)
+		if err != nil {
+			return nil, fmt.Errorf("gov jobs search failed: %w", err)
+		}
+		result.GovJobs = govJobs
+		result.Total += govCount
 
-	privJobs, privCount, err := s.searchPrivJobs(ctx, tsquery, rawQuery, limit, offset)
-	if err != nil {
-		return nil, fmt.Errorf("priv jobs search failed: %w", err)
+		privJobs, privCount, err := s.searchPrivJobs(ctx, rawQuery, limit, offset)
+		if err != nil {
+			return nil, fmt.Errorf("priv jobs search failed: %w", err)
+		}
+		result.PrivJobs = privJobs
+		result.Total += privCount
+	} else if req.Type == "gov" {
+		// Search only government jobs
+		govJobs, govCount, err := s.searchGovJobs(ctx, rawQuery, limit, offset)
+		if err != nil {
+			return nil, fmt.Errorf("gov jobs search failed: %w", err)
+		}
+		result.GovJobs = govJobs
+		result.Total = govCount
+	} else if req.Type == "private" {
+		// Search only private jobs
+		privJobs, privCount, err := s.searchPrivJobs(ctx, rawQuery, limit, offset)
+		if err != nil {
+			return nil, fmt.Errorf("priv jobs search failed: %w", err)
+		}
+		result.PrivJobs = privJobs
+		result.Total = privCount
 	}
-	result.PrivJobs = privJobs
-	result.Total += privCount
 
 	return result, nil
 }
 
-func (s *SearchService) searchCompanyJobs(ctx context.Context, tsquery, rawQuery string, limit, offset int) ([]CompanyJobSearchResult, int, error) {
+func (s *SearchService) searchCompanyJobs(ctx context.Context, rawQuery string, limit, offset int) ([]CompanyJobSearchResult, int, error) {
 	database := s.database.GetDB()
 	var total int
 	err := database.QueryRowContext(ctx, `
@@ -142,12 +155,12 @@ func (s *SearchService) searchCompanyJobs(ctx context.Context, tsquery, rawQuery
 		LEFT JOIN companies c ON cj.company_id = c.id
 		WHERE cj.is_active = true
 		AND (
-			cj.search_vector @@ to_tsquery('english', $1)
-			OR cj.title ILIKE '%' || $2 || '%'
-			OR cj.description ILIKE '%' || $2 || '%'
-			OR cj.location ILIKE '%' || $2 || '%'
-			OR c.name ILIKE '%' || $2 || '%'
-		)`, tsquery, rawQuery).Scan(&total)
+			cj.search_vector @@ plainto_tsquery('english', $1)
+			OR cj.title ILIKE '%' || $1 || '%'
+			OR cj.description ILIKE '%' || $1 || '%'
+			OR cj.location ILIKE '%' || $1 || '%'
+			OR c.name ILIKE '%' || $1 || '%'
+		)`, rawQuery).Scan(&total)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -165,20 +178,20 @@ func (s *SearchService) searchCompanyJobs(ctx context.Context, tsquery, rawQuery
 			COALESCE(cj.is_remote, false),
 			COALESCE(c.name, ''),
 			COALESCE(cj.created_at::text, ''),
-			ts_rank(cj.search_vector, to_tsquery('english', $1)) as rank
+			ts_rank(cj.search_vector, plainto_tsquery('english', $1)) as rank
 		FROM company_jobs cj
 		LEFT JOIN companies c ON cj.company_id = c.id
 		WHERE cj.is_active = true
 		AND (
-			cj.search_vector @@ to_tsquery('english', $1)
-			OR cj.title ILIKE '%' || $2 || '%'
-			OR cj.description ILIKE '%' || $2 || '%'
-			OR cj.location ILIKE '%' || $2 || '%'
-			OR c.name ILIKE '%' || $2 || '%'
+			cj.search_vector @@ plainto_tsquery('english', $1)
+			OR cj.title ILIKE '%' || $1 || '%'
+			OR cj.description ILIKE '%' || $1 || '%'
+			OR cj.location ILIKE '%' || $1 || '%'
+			OR c.name ILIKE '%' || $1 || '%'
 		)
 		ORDER BY rank DESC, cj.created_at DESC
-		LIMIT $3 OFFSET $4
-	`, tsquery, rawQuery, limit, offset)
+		LIMIT $2 OFFSET $3
+	`, rawQuery, limit, offset)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -225,7 +238,7 @@ func (s *SearchService) searchCompanyJobs(ctx context.Context, tsquery, rawQuery
 	return results, total, nil
 }
 
-func (s *SearchService) searchGovJobs(ctx context.Context, tsquery, rawQuery string, limit, offset int) ([]GovJobSearchResult, int, error) {
+func (s *SearchService) searchGovJobs(ctx context.Context, rawQuery string, limit, offset int) ([]GovJobSearchResult, int, error) {
 	db := s.database.GetDB()
 	var total int
 	err := db.QueryRowContext(ctx, `
@@ -233,13 +246,13 @@ func (s *SearchService) searchGovJobs(ctx context.Context, tsquery, rawQuery str
 		FROM jobs_government
 		WHERE is_active = true
 		AND (
-			search_vector @@ to_tsquery('english', $1)
-			OR title ILIKE '%' || $2 || '%'
-			OR department ILIKE '%' || $2 || '%'
-			OR location ILIKE '%' || $2 || '%'
-			OR eligibility ILIKE '%' || $2 || '%'
+			search_vector @@ plainto_tsquery('english', $1)
+			OR title ILIKE '%' || $1 || '%'
+			OR department ILIKE '%' || $1 || '%'
+			OR location ILIKE '%' || $1 || '%'
+			OR eligibility ILIKE '%' || $1 || '%'
 		)
-	`, tsquery, rawQuery).Scan(&total)
+	`, rawQuery).Scan(&total)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -257,19 +270,19 @@ func (s *SearchService) searchGovJobs(ctx context.Context, tsquery, rawQuery str
 			vacancy_count,
 			COALESCE(salary, ''),
 			COALESCE(created_at::text, ''),
-			ts_rank(search_vector, to_tsquery('english', $1)) as rank
+			ts_rank(search_vector, plainto_tsquery('english', $1)) as rank
 		FROM jobs_government
 		WHERE is_active = true
 		AND (
-			search_vector @@ to_tsquery('english', $1)
-			OR title ILIKE '%' || $2 || '%'
-			OR department ILIKE '%' || $2 || '%'
-			OR location ILIKE '%' || $2 || '%'
-			OR eligibility ILIKE '%' || $2 || '%'
+			search_vector @@ plainto_tsquery('english', $1)
+			OR title ILIKE '%' || $1 || '%'
+			OR department ILIKE '%' || $1 || '%'
+			OR location ILIKE '%' || $1 || '%'
+			OR eligibility ILIKE '%' || $1 || '%'
 		)
 		ORDER BY rank DESC, created_at DESC
-		LIMIT $3 OFFSET $4
-	`, tsquery, rawQuery, limit, offset)
+		LIMIT $2 OFFSET $3
+	`, rawQuery, limit, offset)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -302,7 +315,7 @@ func (s *SearchService) searchGovJobs(ctx context.Context, tsquery, rawQuery str
 	return results, total, nil
 }
 
-func (s *SearchService) searchPrivJobs(ctx context.Context, tsquery, rawQuery string, limit, offset int) ([]PrivJobSearchResult, int, error) {
+func (s *SearchService) searchPrivJobs(ctx context.Context, rawQuery string, limit, offset int) ([]PrivJobSearchResult, int, error) {
 	db := s.database.GetDB()
 	var total int
 	err := db.QueryRowContext(ctx, `
@@ -310,13 +323,13 @@ func (s *SearchService) searchPrivJobs(ctx context.Context, tsquery, rawQuery st
 		FROM jobs_private
 		WHERE is_active = true
 		AND (
-			search_vector @@ to_tsquery('english', $1)
-			OR title ILIKE '%' || $2 || '%'
-			OR company ILIKE '%' || $2 || '%'
-			OR location ILIKE '%' || $2 || '%'
-			OR description ILIKE '%' || $2 || '%'
+			search_vector @@ plainto_tsquery('english', $1)
+			OR title ILIKE '%' || $1 || '%'
+			OR company ILIKE '%' || $1 || '%'
+			OR location ILIKE '%' || $1 || '%'
+			OR description ILIKE '%' || $1 || '%'
 		)
-	`, tsquery, rawQuery).Scan(&total)
+	`, rawQuery).Scan(&total)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -335,19 +348,19 @@ func (s *SearchService) searchPrivJobs(ctx context.Context, tsquery, rawQuery st
 			COALESCE(description, ''),
 			COALESCE(source, ''),
 			COALESCE(created_at::text, ''),
-			ts_rank(search_vector, to_tsquery('english', $1)) as rank
+			ts_rank(search_vector, plainto_tsquery('english', $1)) as rank
 		FROM jobs_private
 		WHERE is_active = true
 		AND (
-			search_vector @@ to_tsquery('english', $1)
-			OR title ILIKE '%' || $2 || '%'
-			OR company ILIKE '%' || $2 || '%'
-			OR location ILIKE '%' || $2 || '%'
-			OR description ILIKE '%' || $2 || '%'
+			search_vector @@ plainto_tsquery('english', $1)
+			OR title ILIKE '%' || $1 || '%'
+			OR company ILIKE '%' || $1 || '%'
+			OR location ILIKE '%' || $1 || '%'
+			OR description ILIKE '%' || $1 || '%'
 		)
 		ORDER BY rank DESC, created_at DESC
-		LIMIT $3 OFFSET $4
-	`, tsquery, rawQuery, limit, offset)
+		LIMIT $2 OFFSET $3
+	`, rawQuery, limit, offset)
 	if err != nil {
 		return nil, 0, err
 	}

@@ -20,7 +20,9 @@ import (
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	_ "github.com/lib/pq"
+	"github.com/redis/go-redis/v9"
 	"github.com/rojgarsetu/backend/config"
+	_ "github.com/rojgarsetu/backend/docs" // swagger docs
 	"github.com/rojgarsetu/backend/internal/crawler"
 	"github.com/rojgarsetu/backend/internal/db"
 	"github.com/rojgarsetu/backend/internal/handlers"
@@ -30,11 +32,12 @@ import (
 )
 
 var (
-	version    = "2.0.0"
-	logger     zerolog.Logger
-	dbURL      string
-	serverPort int
-	redisURL   string
+	version     = "2.0.0"
+	logger      zerolog.Logger
+	dbURL       string
+	serverPort  int
+	redisURL    string
+	redisClient *redis.Client
 )
 
 func main() {
@@ -59,6 +62,24 @@ func main() {
 	redisURL = os.Getenv("REDIS_URL")
 	if redisURL == "" {
 		redisURL = "redis://localhost:6379"
+	}
+
+	// Initialize Redis client
+	opt, err := redis.ParseURL(redisURL)
+	if err != nil {
+		logger.Fatal().Err(err).Msg("Failed to parse Redis URL")
+		return
+	}
+	redisClient = redis.NewClient(opt)
+
+	// Test Redis connection
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	if err := redisClient.Ping(ctx).Err(); err != nil {
+		logger.Warn().Err(err).Msg("Redis connection failed, caching will be disabled")
+		redisClient = nil
+	} else {
+		logger.Info().Msg("Redis connected successfully")
 	}
 
 	serverPort = 8083
@@ -134,9 +155,16 @@ func run(cfg *config.Config) error {
 
 	// Security middleware first
 	router.Use(middleware.SecurityHeaders())
+	router.Use(middleware.BodyLimit())
+	router.Use(middleware.SanitizeInput())
 
 	// Rate limiting
 	router.Use(middleware.RateLimitMiddleware(cfg.RateLimit))
+
+	// Cache invalidation for write operations (if Redis is available)
+	if redisClient != nil {
+		router.Use(middleware.CacheInvalidationMiddleware(redisClient))
+	}
 
 	// CORS Configuration (Dynamic via Environment Variables)
 	origins := os.Getenv("CORS_ORIGINS")
@@ -157,6 +185,9 @@ func run(cfg *config.Config) error {
 
 	// Metrics endpoint
 	router.GET("/metrics", middleware.MetricsHandler())
+
+	// Swagger documentation
+	router.GET("/docs/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	// Health check - responds immediately with 200 even before DB is ready
 	// Handles both GET and HEAD (the latter is used by Docker wget --spider healthcheck)
@@ -195,6 +226,20 @@ func run(cfg *config.Config) error {
 				time.Sleep(2 * time.Second)
 				continue
 			}
+
+			// Configure connection pool
+			sdb.SetMaxOpenConns(cfg.Database.MaxOpenConns)
+			sdb.SetMaxIdleConns(cfg.Database.MaxIdleConns)
+			sdb.SetConnMaxLifetime(cfg.Database.ConnMaxLifetime)
+			sdb.SetConnMaxIdleTime(cfg.Database.ConnMaxIdleTime)
+
+			logger.Info().
+				Int("max_open_conns", cfg.Database.MaxOpenConns).
+				Int("max_idle_conns", cfg.Database.MaxIdleConns).
+				Dur("conn_max_lifetime", cfg.Database.ConnMaxLifetime).
+				Dur("conn_max_idle_time", cfg.Database.ConnMaxIdleTime).
+				Msg("Database connection pool configured")
+
 			pingCtx, pingCancel := context.WithTimeout(context.Background(), 5*time.Second)
 			err = sdb.PingContext(pingCtx)
 			pingCancel()
@@ -212,6 +257,7 @@ func run(cfg *config.Config) error {
 				courseService := services.NewCourseService(database)
 				videoService := services.NewVideoService(database)
 				searchService := services.NewSearchService(database)
+				notificationService := services.NewNotificationService()
 
 				// Initialize new feature repo and handlers
 				featureRepo := db.NewFeatureRepository(sdb)
@@ -225,27 +271,48 @@ func run(cfg *config.Config) error {
 				featureHandler := handlers.NewFeatureHandler(featureRepo)
 				crawlerHandler := handlers.NewCrawlerHandler(sdb)
 				legalHandler := handlers.NewLegalHandler(sdb)
+				wsHandler := handlers.NewWSHandler(notificationService)
 
 				// Register DB-dependent routes
 				api := router.Group("/api/v1")
 				{
-					api.GET("/gov-jobs", govJobHandler.GetGovJobs)
+					// Apply caching with different TTLs based on endpoint
+					if redisClient != nil {
+						// 5 minute cache for jobs
+						api.GET("/gov-jobs", middleware.CacheMiddleware(redisClient, 5*time.Minute), govJobHandler.GetGovJobs)
+						api.GET("/private-jobs", middleware.CacheMiddleware(redisClient, 5*time.Minute), privJobHandler.GetPrivJobs)
+
+						// 10 minute cache for courses and videos
+						api.GET("/courses", middleware.CacheMiddleware(redisClient, 10*time.Minute), courseHandler.GetCourses)
+						api.GET("/courses/providers", middleware.CacheMiddleware(redisClient, 10*time.Minute), courseHandler.GetCourseProviders)
+						api.GET("/videos", middleware.CacheMiddleware(redisClient, 10*time.Minute), videoHandler.GetVideos)
+						api.GET("/videos/channels", middleware.CacheMiddleware(redisClient, 10*time.Minute), videoHandler.GetVideoChannels)
+						api.GET("/videos/categories", middleware.CacheMiddleware(redisClient, 10*time.Minute), videoHandler.GetVideoCategories)
+
+						// 1 minute cache for stats
+						api.GET("/crawler/stats", middleware.CacheMiddleware(redisClient, 1*time.Minute), crawlerHandler.GetStats)
+					} else {
+						// No caching if Redis is unavailable
+						api.GET("/gov-jobs", govJobHandler.GetGovJobs)
+						api.GET("/private-jobs", privJobHandler.GetPrivJobs)
+						api.GET("/courses", courseHandler.GetCourses)
+						api.GET("/courses/providers", courseHandler.GetCourseProviders)
+						api.GET("/videos", videoHandler.GetVideos)
+						api.GET("/videos/channels", videoHandler.GetVideoChannels)
+						api.GET("/videos/categories", videoHandler.GetVideoCategories)
+						api.GET("/crawler/stats", crawlerHandler.GetStats)
+					}
+
+					// Uncached endpoints
 					api.GET("/gov-jobs/:id", govJobHandler.GetGovJobByID)
-					api.GET("/private-jobs", privJobHandler.GetPrivJobs)
 					api.GET("/private-jobs/:id", privJobHandler.GetPrivJobByID)
-					api.GET("/courses", courseHandler.GetCourses)
-					api.GET("/courses/providers", courseHandler.GetCourseProviders)
 					api.GET("/courses/:id", courseHandler.GetCourseByID)
-					api.GET("/videos", videoHandler.GetVideos)
-					api.GET("/videos/channels", videoHandler.GetVideoChannels)
-					api.GET("/videos/categories", videoHandler.GetVideoCategories)
 					api.GET("/videos/:id", videoHandler.GetVideoByID)
 					api.POST("/search", searchHandler.Search)
 					api.GET("/search", searchHandler.SearchGET)
 
 					// Crawler Endpoints
 					api.POST("/crawler/crawl", crawlerHandler.TriggerCrawl)
-					api.GET("/crawler/stats", crawlerHandler.GetStats)
 					api.GET("/crawler/health", crawlerHandler.GetHealth)
 					// Legal Endpoints
 					api.GET("/legal/disclaimer", legalHandler.GetDisclaimer)
@@ -255,6 +322,9 @@ func run(cfg *config.Config) error {
 					api.POST("/company/reviews", featureHandler.CreateReviewHandler)
 					api.POST("/jobs/report", featureHandler.ReportJobHandler)
 					api.POST("/candidate/ratings", featureHandler.InternalRatingHandler)
+
+					// WebSocket endpoint for real-time notifications
+					api.GET("/ws", wsHandler.HandleWebSocket)
 				}
 				logger.Info().Msg("API routes registered")
 
@@ -330,6 +400,11 @@ func run(cfg *config.Config) error {
 		sqlDB.Close()
 	}
 	mu.RUnlock()
+
+	// Close Redis connection if connected
+	if redisClient != nil {
+		redisClient.Close()
+	}
 
 	logger.Info().Msg("Server shutdown complete")
 	return nil

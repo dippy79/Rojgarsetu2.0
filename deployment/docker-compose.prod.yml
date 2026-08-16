@@ -1,0 +1,61 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: rojgar-postgres
+    restart: always
+    environment:
+      POSTGRES_USER_FILE: /run/secrets/db_user
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+      POSTGRES_DB: rojgarsetu2
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    secrets:
+      - db_user
+      - db_password
+    networks:
+      - rojgar-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$(cat /run/secrets/db_user) -d rojgarsetu2"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend_go
+      dockerfile: Dockerfile
+    container_name: rojgar-backend
+    restart: always
+    ports:
+      - "8083:8083"
+    environment:
+      PORT: 8083
+      DATABASE_URL: postgres://$$(cat /run/secrets/db_user):$$(cat /run/secrets/db_password)@postgres:5432/rojgarsetu2?sslmode=disable
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET_FILE: /run/secrets/jwt_secret
+    secrets:
+      - db_user
+      - db_password
+      - jwt_secret
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - rojgar-network
+
+secrets:
+  db_user:
+    external: true
+  db_password:
+    external: true
+  jwt_secret:
+    external: true
+
+networks:
+  rojgar-network:
+    driver: bridge
+
+volumes:
+  postgres_data:

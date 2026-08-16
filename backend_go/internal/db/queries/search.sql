@@ -1,5 +1,60 @@
 -- Search queries using full-text search and pg_trgm
 
+-- name: UnifiedSearch :many
+-- Unified search across government and private jobs using plainto_tsquery
+SELECT 
+    'gov' as job_type,
+    id,
+    title,
+    department,
+    location,
+    apply_url,
+    last_date,
+    source,
+    eligibility,
+    vacancy_count,
+    salary,
+    exam_date,
+    created_at,
+    ts_rank(search_vector, plainto_tsquery('english', $1)) as rank
+FROM jobs_government
+WHERE 
+    is_active = true
+    AND search_vector @@ plainto_tsquery('english', $1)
+
+UNION ALL
+
+SELECT 
+    'private' as job_type,
+    id,
+    company as department,
+    location,
+    url as apply_url,
+    posted_at as last_date,
+    source,
+    description as eligibility,
+    0 as vacancy_count,
+    salary,
+    NULL as exam_date,
+    created_at,
+    ts_rank(search_vector, plainto_tsquery('english', $1)) as rank
+FROM jobs_private
+WHERE 
+    is_active = true
+    AND search_vector @@ plainto_tsquery('english', $1)
+
+ORDER BY rank DESC
+LIMIT $2 OFFSET $3;
+
+-- name: UnifiedSearchCount :one
+SELECT COUNT(*) FROM (
+    SELECT 1 FROM jobs_government
+    WHERE is_active = true AND search_vector @@ plainto_tsquery('english', $1)
+    UNION ALL
+    SELECT 1 FROM jobs_private
+    WHERE is_active = true AND search_vector @@ plainto_tsquery('english', $1)
+) as combined;
+
 -- name: SearchCompanyJobs :many
 SELECT 
     cj.id,
@@ -13,13 +68,13 @@ SELECT
     cj.is_remote,
     cj.created_at,
     c.name as company_name,
-    ts_rank(cj.search_vector, to_tsquery('english', $1)) as rank
+    ts_rank(cj.search_vector, plainto_tsquery('english', $1)) as rank
 FROM company_jobs cj
 LEFT JOIN companies c ON cj.company_id = c.id
 WHERE 
     cj.is_active = true
     AND (
-        cj.search_vector @@ to_tsquery('english', $1)
+        cj.search_vector @@ plainto_tsquery('english', $1)
         OR cj.title ILIKE '%' || $2 || '%'
         OR cj.description ILIKE '%' || $2 || '%'
         OR cj.location ILIKE '%' || $2 || '%'
@@ -35,7 +90,7 @@ LEFT JOIN companies c ON cj.company_id = c.id
 WHERE 
     cj.is_active = true
     AND (
-        cj.search_vector @@ to_tsquery('english', $1)
+        cj.search_vector @@ plainto_tsquery('english', $1)
         OR cj.title ILIKE '%' || $2 || '%'
         OR cj.description ILIKE '%' || $2 || '%'
         OR cj.location ILIKE '%' || $2 || '%'
@@ -56,12 +111,12 @@ SELECT
     salary,
     exam_date,
     created_at,
-    ts_rank(search_vector, to_tsquery('english', $1)) as rank
+    ts_rank(search_vector, plainto_tsquery('english', $1)) as rank
 FROM jobs_government
 WHERE 
     is_active = true
     AND (
-        search_vector @@ to_tsquery('english', $1)
+        search_vector @@ plainto_tsquery('english', $1)
         OR title ILIKE '%' || $2 || '%'
         OR department ILIKE '%' || $2 || '%'
         OR location ILIKE '%' || $2 || '%'
@@ -76,7 +131,7 @@ FROM jobs_government
 WHERE 
     is_active = true
     AND (
-        search_vector @@ to_tsquery('english', $1)
+        search_vector @@ plainto_tsquery('english', $1)
         OR title ILIKE '%' || $2 || '%'
         OR department ILIKE '%' || $2 || '%'
         OR location ILIKE '%' || $2 || '%'
@@ -98,12 +153,12 @@ SELECT
     source,
     posted_at,
     created_at,
-    ts_rank(search_vector, to_tsquery('english', $1)) as rank
+    ts_rank(search_vector, plainto_tsquery('english', $1)) as rank
 FROM jobs_private
 WHERE 
     is_active = true
     AND (
-        search_vector @@ to_tsquery('english', $1)
+        search_vector @@ plainto_tsquery('english', $1)
         OR title ILIKE '%' || $2 || '%'
         OR company ILIKE '%' || $2 || '%'
         OR location ILIKE '%' || $2 || '%'
@@ -118,7 +173,7 @@ FROM jobs_private
 WHERE 
     is_active = true
     AND (
-        search_vector @@ to_tsquery('english', $1)
+        search_vector @@ plainto_tsquery('english', $1)
         OR title ILIKE '%' || $2 || '%'
         OR company ILIKE '%' || $2 || '%'
         OR location ILIKE '%' || $2 || '%'
