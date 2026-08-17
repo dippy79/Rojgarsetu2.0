@@ -72,8 +72,8 @@ docker compose --profile backup up -d
 ### Production with Secrets
 ```bash
 # Create Docker secrets
-echo "amitsharma" | docker secret create db_user -
-echo "Asha12@Ashok24" | docker secret create db_password -
+echo "" | docker secret create db_user -
+echo "" | docker secret create db_password -
 echo "your-jwt-secret" | docker secret create jwt_secret -
 
 # Deploy with secrets
