@@ -17,7 +17,7 @@ import (
 // @Param department query string false "Filter by department"
 // @Param location query string false "Filter by location"
 // @Param source query string false "Filter by source"
-// @Success 200 {object} db.SuccessResponse
+// @Success 200 {object} map[string]interface{}
 // @Router /api/v1/gov-jobs [get]
 func (h *GovJobHandler) GetGovJobs(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
@@ -51,32 +51,6 @@ type GovJobHandler struct {
 
 func NewGovJobHandler(service *services.GovJobService) *GovJobHandler {
 	return &GovJobHandler{service: service}
-}
-
-func (h *GovJobHandler) GetGovJobs(c *gin.Context) {
-	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
-	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
-
-	filter := db.GovJobFilter{
-		Department: c.Query("department"),
-		Location:   c.Query("location"),
-		Source:     c.Query("source"),
-	}
-
-	jobs, total, err := h.service.GetGovJobs(filter, page, limit)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, db.ErrorResponse(500, "Failed to fetch jobs"))
-		return
-	}
-
-	pagination := db.NewPagination(page, limit, total)
-
-	respJobs := make([]GovJobResponse, 0, len(jobs))
-	for _, j := range jobs {
-		respJobs = append(respJobs, toGovJobResponse(j))
-	}
-
-	c.JSON(http.StatusOK, db.SuccessResponse(respJobs, &pagination))
 }
 
 func (h *GovJobHandler) GetGovJobByID(c *gin.Context) {

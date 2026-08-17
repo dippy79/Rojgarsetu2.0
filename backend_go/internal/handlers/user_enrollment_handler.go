@@ -18,6 +18,15 @@ func NewUserEnrollmentHandler(service *services.UserEnrollmentService) *UserEnro
 	return &UserEnrollmentHandler{service: service}
 }
 
+// @Summary Get user enrollments
+// @Description Retrieve paginated list of user enrollments with optional filters
+// @Tags enrollments
+// @Param user_id path string true "User ID"
+// @Param page query int false "Page number" default(1)
+// @Param limit query int false "Items per page" default(20)
+// @Param status query string false "Filter by status"
+// @Success 200 {object} map[string]interface{}
+// @Router /api/v1/users/{user_id}/enrollments [get]
 func (h *UserEnrollmentHandler) GetUserEnrollments(c *gin.Context) {
 	userID := c.Param("user_id")
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
@@ -39,6 +48,12 @@ func (h *UserEnrollmentHandler) GetUserEnrollments(c *gin.Context) {
 	c.JSON(http.StatusOK, db.SuccessResponse(enrollments, &pagination))
 }
 
+// @Summary Get user enrollment by ID
+// @Description Retrieve a specific user enrollment by ID
+// @Tags enrollments
+// @Param id path string true "Enrollment ID"
+// @Success 200 {object} map[string]interface{}
+// @Router /api/v1/enrollments/{id} [get]
 func (h *UserEnrollmentHandler) GetUserEnrollmentByID(c *gin.Context) {
 	id := c.Param("id")
 
@@ -57,6 +72,13 @@ type CreateEnrollmentRequest struct {
 	Metadata  map[string]interface{} `json:"metadata"`
 }
 
+// @Summary Create user enrollment
+// @Description Create a new user enrollment
+// @Tags enrollments
+// @Param user_id path string true "User ID"
+// @Param request body CreateEnrollmentRequest true "Enrollment request"
+// @Success 201 {object} map[string]interface{}
+// @Router /api/v1/users/{user_id}/enrollments [post]
 func (h *UserEnrollmentHandler) CreateUserEnrollment(c *gin.Context) {
 	userID := c.Param("user_id")
 
@@ -83,6 +105,13 @@ type UpdateEnrollmentRequest struct {
 	Metadata    map[string]interface{} `json:"metadata"`
 }
 
+// @Summary Update user enrollment
+// @Description Update an existing user enrollment
+// @Tags enrollments
+// @Param id path string true "Enrollment ID"
+// @Param request body UpdateEnrollmentRequest true "Update request"
+// @Success 200 {object} map[string]interface{}
+// @Router /api/v1/enrollments/{id} [put]
 func (h *UserEnrollmentHandler) UpdateUserEnrollment(c *gin.Context) {
 	id := c.Param("id")
 
@@ -101,6 +130,13 @@ func (h *UserEnrollmentHandler) UpdateUserEnrollment(c *gin.Context) {
 	c.JSON(http.StatusOK, db.SuccessResponse(enrollment, nil))
 }
 
+// @Summary Update enrollment progress
+// @Description Update the progress percentage of an enrollment
+// @Tags enrollments
+// @Param id path string true "Enrollment ID"
+// @Param request body object true "Progress request"
+// @Success 200 {object} map[string]interface{}
+// @Router /api/v1/enrollments/{id}/progress [put]
 func (h *UserEnrollmentHandler) UpdateEnrollmentProgress(c *gin.Context) {
 	id := c.Param("id")
 
@@ -121,6 +157,12 @@ func (h *UserEnrollmentHandler) UpdateEnrollmentProgress(c *gin.Context) {
 	c.JSON(http.StatusOK, db.SuccessResponse(enrollment, nil))
 }
 
+// @Summary Complete enrollment
+// @Description Mark an enrollment as completed
+// @Tags enrollments
+// @Param id path string true "Enrollment ID"
+// @Success 200 {object} map[string]interface{}
+// @Router /api/v1/enrollments/{id}/complete [post]
 func (h *UserEnrollmentHandler) CompleteEnrollment(c *gin.Context) {
 	id := c.Param("id")
 
@@ -133,6 +175,12 @@ func (h *UserEnrollmentHandler) CompleteEnrollment(c *gin.Context) {
 	c.JSON(http.StatusOK, db.SuccessResponse(enrollment, nil))
 }
 
+// @Summary Cancel enrollment
+// @Description Cancel an enrollment
+// @Tags enrollments
+// @Param id path string true "Enrollment ID"
+// @Success 200 {object} map[string]interface{}
+// @Router /api/v1/enrollments/{id}/cancel [post]
 func (h *UserEnrollmentHandler) CancelEnrollment(c *gin.Context) {
 	id := c.Param("id")
 
@@ -145,8 +193,11 @@ func (h *UserEnrollmentHandler) CancelEnrollment(c *gin.Context) {
 	c.JSON(http.StatusOK, db.SuccessResponse(enrollment, nil))
 }
 
-// GetExpiringEnrollments returns enrollments expiring in <= 7 days
-// This is the main endpoint for the notification engine
+// @Summary Get expiring enrollments
+// @Description Retrieve enrollments expiring in <= 7 days
+// @Tags enrollments
+// @Success 200 {object} map[string]interface{}
+// @Router /api/v1/enrollments/expiring [get]
 func (h *UserEnrollmentHandler) GetExpiringEnrollments(c *gin.Context) {
 	enrollments, err := h.service.GetExpiringEnrollmentsWithTrade()
 	if err != nil {

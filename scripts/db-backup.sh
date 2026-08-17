@@ -4,8 +4,8 @@
 
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 BACKUP_DIR="/backups"
-POSTGRES_USER=${POSTGRES_USER:-amitsharma}
-POSTGRES_DB=${POSTGRES_DB:-rojgarsetu2}
+POSTGRES_USER="amitsharma"
+POSTGRES_DB="rojgarsetu2"
 CONTAINER_NAME="rojgar-postgres"
 
 # Create backup directory if it doesn't exist

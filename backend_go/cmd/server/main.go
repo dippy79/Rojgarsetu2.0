@@ -29,6 +29,8 @@ import (
 	"github.com/rojgarsetu/backend/internal/middleware"
 	"github.com/rojgarsetu/backend/internal/services"
 	"github.com/rs/zerolog"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
 var (

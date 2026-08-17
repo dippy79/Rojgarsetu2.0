@@ -1,0 +1,693 @@
+definitions:
+  handlers.CreateEnrollmentRequest:
+    properties:
+      expires_at:
+        type: string
+      metadata:
+        additionalProperties: true
+        type: object
+      trade_id:
+        type: string
+    required:
+    - expires_at
+    - trade_id
+    type: object
+  handlers.CreateNotificationRequest:
+    properties:
+      channel:
+        type: string
+      enrollment_id:
+        type: string
+      message:
+        type: string
+      notification_type:
+        type: string
+      payload:
+        additionalProperties: true
+        type: object
+      title:
+        type: string
+    required:
+    - channel
+    - message
+    - notification_type
+    - title
+    type: object
+  handlers.UpdateEnrollmentRequest:
+    properties:
+      completed_at:
+        type: string
+      expires_at:
+        type: string
+      metadata:
+        additionalProperties: true
+        type: object
+      progress_pct:
+        type: integer
+      status:
+        type: string
+    type: object
+info:
+  contact: {}
+paths:
+  /api/v1/categories:
+    get:
+      description: Retrieve list of job categories
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get job categories
+      tags:
+      - categories
+  /api/v1/categories/{category_id}/trades:
+    get:
+      description: Retrieve job trades for a specific category
+      parameters:
+      - description: Category ID
+        in: path
+        name: category_id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get job trades by category
+      tags:
+      - trades
+  /api/v1/categories/{category_id}/trades/{slug}:
+    get:
+      description: Retrieve a specific job trade by slug and category
+      parameters:
+      - description: Job trade slug
+        in: path
+        name: slug
+        required: true
+        type: string
+      - description: Category ID
+        in: path
+        name: category_id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get job trade by slug
+      tags:
+      - trades
+  /api/v1/categories/{id}:
+    get:
+      description: Retrieve a specific job category by ID
+      parameters:
+      - description: Category ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get job category by ID
+      tags:
+      - categories
+  /api/v1/categories/slug/{slug}:
+    get:
+      description: Retrieve a specific job category by slug
+      parameters:
+      - description: Category slug
+        in: path
+        name: slug
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get job category by slug
+      tags:
+      - categories
+  /api/v1/courses:
+    get:
+      description: Retrieve paginated list of courses with optional filters
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: Items per page
+        in: query
+        name: limit
+        type: integer
+      - description: Filter by provider
+        in: query
+        name: provider
+        type: string
+      - description: Filter by mode
+        in: query
+        name: mode
+        type: string
+      - description: Filter by level
+        in: query
+        name: level
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get courses
+      tags:
+      - courses
+  /api/v1/courses/providers:
+    get:
+      description: Retrieve list of course providers
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get course providers
+      tags:
+      - courses
+  /api/v1/enrollments/{id}:
+    get:
+      description: Retrieve a specific user enrollment by ID
+      parameters:
+      - description: Enrollment ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get user enrollment by ID
+      tags:
+      - enrollments
+    put:
+      description: Update an existing user enrollment
+      parameters:
+      - description: Enrollment ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Update request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.UpdateEnrollmentRequest'
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Update user enrollment
+      tags:
+      - enrollments
+  /api/v1/enrollments/{id}/cancel:
+    post:
+      description: Cancel an enrollment
+      parameters:
+      - description: Enrollment ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Cancel enrollment
+      tags:
+      - enrollments
+  /api/v1/enrollments/{id}/complete:
+    post:
+      description: Mark an enrollment as completed
+      parameters:
+      - description: Enrollment ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Complete enrollment
+      tags:
+      - enrollments
+  /api/v1/enrollments/{id}/progress:
+    put:
+      description: Update the progress percentage of an enrollment
+      parameters:
+      - description: Enrollment ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Progress request
+        in: body
+        name: request
+        required: true
+        schema:
+          type: object
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Update enrollment progress
+      tags:
+      - enrollments
+  /api/v1/enrollments/expiring:
+    get:
+      description: Retrieve enrollments expiring in <= 7 days
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get expiring enrollments
+      tags:
+      - enrollments
+  /api/v1/gov-jobs:
+    get:
+      description: Retrieve paginated list of government jobs with optional filters
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: Items per page
+        in: query
+        name: limit
+        type: integer
+      - description: Filter by department
+        in: query
+        name: department
+        type: string
+      - description: Filter by location
+        in: query
+        name: location
+        type: string
+      - description: Filter by source
+        in: query
+        name: source
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get government jobs
+      tags:
+      - jobs
+  /api/v1/notifications/{id}:
+    get:
+      description: Retrieve a specific notification log by ID
+      parameters:
+      - description: Notification log ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get notification log by ID
+      tags:
+      - notifications
+  /api/v1/notifications/{id}/clicked:
+    post:
+      description: Mark a notification as clicked
+      parameters:
+      - description: Notification log ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Mark notification as clicked
+      tags:
+      - notifications
+  /api/v1/notifications/{id}/read:
+    post:
+      description: Mark a notification as read
+      parameters:
+      - description: Notification log ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Mark notification as read
+      tags:
+      - notifications
+  /api/v1/priv-jobs:
+    get:
+      description: Retrieve paginated list of private jobs with optional filters
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: Items per page
+        in: query
+        name: limit
+        type: integer
+      - description: Filter by company
+        in: query
+        name: company
+        type: string
+      - description: Filter by location
+        in: query
+        name: location
+        type: string
+      - description: Filter by source
+        in: query
+        name: source
+        type: string
+      - description: Filter by job type
+        in: query
+        name: job_type
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get private jobs
+      tags:
+      - jobs
+  /api/v1/search:
+    get:
+      description: Full-text search across government and private jobs
+      parameters:
+      - description: Search query
+        in: query
+        name: q
+        required: true
+        type: string
+      - default: all
+        description: Job type (gov, private, all)
+        in: query
+        name: type
+        type: string
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: Items per page
+        in: query
+        name: limit
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Search jobs
+      tags:
+      - search
+  /api/v1/trades:
+    get:
+      description: Retrieve paginated list of job trades with optional filters
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: Items per page
+        in: query
+        name: limit
+        type: integer
+      - description: Filter by category ID
+        in: query
+        name: category_id
+        type: string
+      - description: Filter by demand level
+        in: query
+        name: demand_level
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get job trades
+      tags:
+      - trades
+  /api/v1/trades/{id}:
+    get:
+      description: Retrieve a specific job trade by ID
+      parameters:
+      - description: Job trade ID
+        in: path
+        name: id
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get job trade by ID
+      tags:
+      - trades
+  /api/v1/users/{user_id}/enrollments:
+    get:
+      description: Retrieve paginated list of user enrollments with optional filters
+      parameters:
+      - description: User ID
+        in: path
+        name: user_id
+        required: true
+        type: string
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: Items per page
+        in: query
+        name: limit
+        type: integer
+      - description: Filter by status
+        in: query
+        name: status
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get user enrollments
+      tags:
+      - enrollments
+    post:
+      description: Create a new user enrollment
+      parameters:
+      - description: User ID
+        in: path
+        name: user_id
+        required: true
+        type: string
+      - description: Enrollment request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.CreateEnrollmentRequest'
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Create user enrollment
+      tags:
+      - enrollments
+  /api/v1/users/{user_id}/notifications:
+    get:
+      description: Retrieve paginated list of user notification logs with optional
+        filters
+      parameters:
+      - description: User ID
+        in: path
+        name: user_id
+        required: true
+        type: string
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: Items per page
+        in: query
+        name: limit
+        type: integer
+      - description: Filter by notification type
+        in: query
+        name: notification_type
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get user notification logs
+      tags:
+      - notifications
+    post:
+      description: Create a new notification log
+      parameters:
+      - description: User ID
+        in: path
+        name: user_id
+        required: true
+        type: string
+      - description: Notification request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.CreateNotificationRequest'
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Create notification log
+      tags:
+      - notifications
+  /api/v1/videos:
+    get:
+      description: Retrieve paginated list of videos with optional filters
+      parameters:
+      - default: 1
+        description: Page number
+        in: query
+        name: page
+        type: integer
+      - default: 20
+        description: Items per page
+        in: query
+        name: limit
+        type: integer
+      - description: Filter by channel
+        in: query
+        name: channel
+        type: string
+      - description: Filter by category
+        in: query
+        name: category
+        type: string
+      - description: Exclude specific video IDs
+        in: query
+        name: exclude
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get videos
+      tags:
+      - videos
+  /api/v1/videos/categories:
+    get:
+      description: Retrieve list of video categories
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get video categories
+      tags:
+      - videos
+  /api/v1/videos/channels:
+    get:
+      description: Retrieve list of video channels
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get video channels
+      tags:
+      - videos
+  /api/v1/ws:
+    get:
+      description: Establish WebSocket connection for real-time notifications
+      responses:
+        "101":
+          description: Switching Protocols
+          schema:
+            type: string
+      summary: WebSocket connection for real-time notifications
+      tags:
+      - websocket
+swagger: "2.0"

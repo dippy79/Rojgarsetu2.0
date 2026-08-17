@@ -19,7 +19,7 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: ${{ env.GO_VERSION }}
-        working-directory: backend_go
+        working-directory: rojgarsetu2/backend_go
         run: |
           go mod tidy
           go test ./... -v -cover
@@ -28,7 +28,7 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: ${{ env.GO_VERSION }}
-        working-directory: backend_go
+        working-directory: rojgarsetu2/backend_go
         run: |
           go mod tidy
           go test ./tests/... -v -cover
@@ -37,7 +37,7 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: ${{ env.GO_VERSION }}
-        working-directory: services/crawler-go
+        working-directory: rojgarsetu2/services/crawler-go
         run: |
           go mod tidy
           go test ./...
@@ -46,14 +46,14 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-        working-directory: frontend
+        working-directory: rojgarsetu2/frontend
         run: npm ci && npm test
 
       - name: Python test AI engine
         uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-        working-directory: services/ai-engine-python
+        working-directory: rojgarsetu2/services/ai-engine-python
         run: |
           pip install -r requirements.txt
           pytest

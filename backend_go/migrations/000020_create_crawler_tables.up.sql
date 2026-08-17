@@ -1,4 +1,4 @@
-﻿-- 1. Crawler Sources Table
+-- 1. Crawler Sources Table
 CREATE TABLE IF NOT EXISTS crawler_sources (
     id SERIAL PRIMARY KEY,
     name VARCHAR(100) NOT NULL UNIQUE,

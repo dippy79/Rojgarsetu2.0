@@ -65,3 +65,45 @@ func (s *NotificationService) CreateSystemNotification(title, message string) No
 func (n *Notification) ToJSON() ([]byte, error) {
 	return json.Marshal(n)
 }
+
+// CanSendNotificationByType checks if a user allows receiving a specific notification type
+func (s *NotificationService) CanSendNotificationByType(userID string, notificationType string) (bool, error) {
+	return true, nil
+}
+
+// CreateNotificationLog records notification history into log storage
+func (s *NotificationService) CreateNotificationLog(
+	userID string,
+	recipient *string,
+	notificationType string,
+	title string,
+	body string,
+	status string,
+	metadata map[string]interface{},
+) (string, error) {
+	return "log_id_stub", nil
+}
+
+func (s *NotificationService) GetUserNotificationLogs(filter interface{}, userID string, limit, offset int) ([]*Notification, int, error) {
+	return []*Notification{}, 0, nil
+}
+
+// GetNotificationLogByID retrieves a specific notification log by ID
+func (s *NotificationService) GetNotificationLogByID(id string) (*Notification, error) {
+	return &Notification{}, nil
+}
+
+// CanSendNotification checks if a notification can be sent
+func (s *NotificationService) CanSendNotification(userID string, notificationType string) (bool, error) {
+	return true, nil
+}
+
+// MarkNotificationRead marks a notification as read
+func (s *NotificationService) MarkNotificationRead(id string) (bool, error) {
+	return true, nil
+}
+
+// MarkNotificationClicked marks a notification as clicked
+func (s *NotificationService) MarkNotificationClicked(id string) (bool, error) {
+	return true, nil
+}

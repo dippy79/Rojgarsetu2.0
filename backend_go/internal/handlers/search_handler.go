@@ -16,7 +16,7 @@ import (
 // @Param type query string false "Job type (gov, private, all)" default(all)
 // @Param page query int false "Page number" default(1)
 // @Param limit query int false "Items per page" default(20)
-// @Success 200 {object} db.SuccessResponse
+// @Success 200 {object} map[string]interface{}
 // @Router /api/v1/search [get]
 func (h *SearchHandler) SearchGET(c *gin.Context) {
 	query := c.Query("q")

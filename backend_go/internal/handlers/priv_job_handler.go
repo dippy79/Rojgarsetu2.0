@@ -17,6 +17,17 @@ func NewPrivJobHandler(service *services.PrivJobService) *PrivJobHandler {
 	return &PrivJobHandler{service: service}
 }
 
+// @Summary Get private jobs
+// @Description Retrieve paginated list of private jobs with optional filters
+// @Tags jobs
+// @Param page query int false "Page number" default(1)
+// @Param limit query int false "Items per page" default(20)
+// @Param company query string false "Filter by company"
+// @Param location query string false "Filter by location"
+// @Param source query string false "Filter by source"
+// @Param job_type query string false "Filter by job type"
+// @Success 200 {object} map[string]interface{}
+// @Router /api/v1/priv-jobs [get]
 func (h *PrivJobHandler) GetPrivJobs(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))

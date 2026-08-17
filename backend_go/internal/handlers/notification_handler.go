@@ -17,6 +17,15 @@ func NewNotificationHandler(service *services.NotificationService) *Notification
 	return &NotificationHandler{service: service}
 }
 
+// @Summary Get user notification logs
+// @Description Retrieve paginated list of user notification logs with optional filters
+// @Tags notifications
+// @Param user_id path string true "User ID"
+// @Param page query int false "Page number" default(1)
+// @Param limit query int false "Items per page" default(20)
+// @Param notification_type query string false "Filter by notification type"
+// @Success 200 {object} map[string]interface{}
+// @Router /api/v1/users/{user_id}/notifications [get]
 func (h *NotificationHandler) GetUserNotificationLogs(c *gin.Context) {
 	userID := c.Param("user_id")
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
@@ -38,6 +47,12 @@ func (h *NotificationHandler) GetUserNotificationLogs(c *gin.Context) {
 	c.JSON(http.StatusOK, db.SuccessResponse(logs, &pagination))
 }
 
+// @Summary Get notification log by ID
+// @Description Retrieve a specific notification log by ID
+// @Tags notifications
+// @Param id path string true "Notification log ID"
+// @Success 200 {object} map[string]interface{}
+// @Router /api/v1/notifications/{id} [get]
 func (h *NotificationHandler) GetNotificationLogByID(c *gin.Context) {
 	id := c.Param("id")
 
@@ -59,6 +74,13 @@ type CreateNotificationRequest struct {
 	Payload          map[string]interface{} `json:"payload"`
 }
 
+// @Summary Create notification log
+// @Description Create a new notification log
+// @Tags notifications
+// @Param user_id path string true "User ID"
+// @Param request body CreateNotificationRequest true "Notification request"
+// @Success 201 {object} map[string]interface{}
+// @Router /api/v1/users/{user_id}/notifications [post]
 func (h *NotificationHandler) CreateNotificationLog(c *gin.Context) {
 	userID := c.Param("user_id")
 
@@ -88,6 +110,12 @@ func (h *NotificationHandler) CreateNotificationLog(c *gin.Context) {
 	c.JSON(http.StatusCreated, db.SuccessResponse(log, nil))
 }
 
+// @Summary Mark notification as read
+// @Description Mark a notification as read
+// @Tags notifications
+// @Param id path string true "Notification log ID"
+// @Success 200 {object} map[string]interface{}
+// @Router /api/v1/notifications/{id}/read [post]
 func (h *NotificationHandler) MarkNotificationRead(c *gin.Context) {
 	id := c.Param("id")
 
@@ -100,6 +128,12 @@ func (h *NotificationHandler) MarkNotificationRead(c *gin.Context) {
 	c.JSON(http.StatusOK, db.SuccessResponse(log, nil))
 }
 
+// @Summary Mark notification as clicked
+// @Description Mark a notification as clicked
+// @Tags notifications
+// @Param id path string true "Notification log ID"
+// @Success 200 {object} map[string]interface{}
+// @Router /api/v1/notifications/{id}/clicked [post]
 func (h *NotificationHandler) MarkNotificationClicked(c *gin.Context) {
 	id := c.Param("id")
 

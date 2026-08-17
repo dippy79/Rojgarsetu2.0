@@ -1,4 +1,4 @@
-﻿services:
+services:
   # ---------------------------------------------------------------------------
   # 1. DATABASE & CACHE
   # ---------------------------------------------------------------------------
@@ -9,8 +9,7 @@
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-amitsharma}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-Asha12@Ashok24}
-      POSTGRES_DB: ${POSTGRES_DB:-rojgarsetu2}
-      
+      POSTGRES_DB: rojgarsetu2
     ports:
       - "5432:5432"
     volumes:
@@ -18,7 +17,7 @@
     networks:
       - rojgar-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-amitsharma} -d ${POSTGRES_DB:-rojgarsetu2}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-amitsharma}"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -54,7 +53,7 @@
       PORT: 8083
       DATABASE_URL: postgres://amitsharma:Asha12@Ashok24@postgres:5432/rojgarsetu2?sslmode=disable
       REDIS_URL: redis://redis:6379
-      JWT_SECRET: ${JWT_SECRET:-rojgarsetu-shared-jwt-secret-please-change-2025}
+      JWT_SECRET: ${JWT_SECRET:-rojgarsetu2-shared-jwt-secret-please-change-2025}
       RATE_LIMIT: "100"
     depends_on:
       postgres:
@@ -87,9 +86,9 @@
       SPRING_REDIS_HOST: redis
       SPRING_REDIS_PORT: 6379
       # JWT config - MUST match backend_go exactly for cross-service token validation
-      JWT_SECRET: ${JWT_SECRET:-rojgarsetu-shared-jwt-secret-please-change-2025}
-      JWT_ISSUER: ${JWT_ISSUER:-rojgarsetu-backend}
-      JWT_AUDIENCE: ${JWT_AUDIENCE:-rojgarsetu-api}
+      JWT_SECRET: ${JWT_SECRET:-rojgarsetu2-shared-jwt-secret-please-change-2025}
+      JWT_ISSUER: ${JWT_ISSUER:-rojgarsetu2-backend}
+      JWT_AUDIENCE: ${JWT_AUDIENCE:-rojgarsetu2-api}
     depends_on:
       postgres:
         condition: service_healthy

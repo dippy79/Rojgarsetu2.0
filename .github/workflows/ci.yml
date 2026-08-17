@@ -25,7 +25,7 @@ jobs:
       - name: Go lint backend
         uses: golangci/golangci-lint-action@v6
         with:
-          working-directory: backend_go
+          working-directory: rojgarsetu2/backend_go
 
   test:
     runs-on: ubuntu-latest
@@ -38,7 +38,7 @@ jobs:
           go-version: ${{ env.GO_VERSION }}
 
       - name: Go test backend
-        working-directory: backend_go
+        working-directory: rojgarsetu2/backend_go
         run: go test ./...
 
   build:
@@ -63,15 +63,15 @@ jobs:
       - name: Build & push backend
         uses: docker/build-push-action@v6
         with:
-          context: backend_go
-          file: backend_go/Dockerfile
+          context: rojgarsetu2/backend_go
+          file: rojgarsetu2/backend_go/Dockerfile
           push: true
           tags: ghcr.io/${{ steps.lowercase.outputs.repo_lc }}/backend:latest
 
       - name: Build & push frontend
         uses: docker/build-push-action@v6
         with:
-          context: frontend
-          file: frontend/Dockerfile
+          context: rojgarsetu2/frontend
+          file: rojgarsetu2/frontend/Dockerfile
           push: true
           tags: ghcr.io/${{ steps.lowercase.outputs.repo_lc }}/frontend:latest
