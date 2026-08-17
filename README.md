@@ -189,11 +189,11 @@ docker compose -f deployment/docker-compose.prod.yml up -d
 
 ### Environment Variables
 ```env
-POSTGRES_USER=amitsharma
-POSTGRES_PASSWORD=Asha12@Ashok24
+POSTGRES_USER=
+POSTGRES_PASSWORD=
 POSTGRES_DB=rojgarsetu2
 JWT_SECRET=your-jwt-secret-min-32-chars
-DATABASE_URL=postgres://amitsharma:Asha12@Ashok24@localhost:5432/rojgarsetu2?sslmode=disable
+DATABASE_URL=
 REDIS_URL=redis://localhost:6379
 ```
 
