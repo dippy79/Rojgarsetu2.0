@@ -37,7 +37,7 @@ type Config struct {
 func readSecret(envVar, fileVar string) string {
 	// Try file first (Docker secrets)
 	if fileContent := os.Getenv(fileVar); fileContent != "" {
-		if data, err := ioutil.ReadFile(fileContent); err == nil {
+		if data, err := os.ReadFile(fileContent); err == nil {
 			return strings.TrimSpace(string(data))
 		}
 	}
