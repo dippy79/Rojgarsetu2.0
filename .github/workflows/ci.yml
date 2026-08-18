@@ -8,76 +8,80 @@ on:
   schedule:
     - cron: '0 2 * * 0'
   workflow_dispatch:
-# GitHub Packages (GHCR) mein push karne ki permissions
+
 permissions:
   contents: read
   packages: write
+
 env:
   GO_VERSION: '1.25.0'
-  NODE_VERSION: '24'
 
 jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
       - name: Setup Go ${{ env.GO_VERSION }}
         uses: actions/setup-go@v5
         with:
           go-version: ${{ env.GO_VERSION }}
+          cache-dependency-path: backend_go/go.sum
 
-      - name: Go lint backend
-        uses: golangci/golangci-lint-action@v6
-        with:
-          version: latest
-          working-directory: backend_go
+      - name: Go Lint Backend
+        working-directory: backend_go
+        run: |
+          go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+          golangci-lint run ./...
 
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
       - name: Setup Go ${{ env.GO_VERSION }}
         uses: actions/setup-go@v5
         with:
           go-version: ${{ env.GO_VERSION }}
+          cache-dependency-path: backend_go/go.sum
 
-      - name: Go test backend
+      - name: Go Test Backend
         working-directory: backend_go
-        run: go test ./...
+        run: go test -v ./...
 
   build:
     needs: [lint, test]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
-      # GHCR ke liye repository name ko lowercase kar rahe hain
-      - name: Lowercase repo name
+      - name: Lowercase Repo Name
         id: lowercase
         run: |
           echo "repo_lc=${GITHUB_REPOSITORY,,}" >> $GITHUB_OUTPUT
 
-      - name: Docker login
+      - name: Docker Login
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build & push backend
+      - name: Build & Push Backend
         uses: docker/build-push-action@v6
         with:
-          context: rojgarsetu2/backend_go
-          file: rojgarsetu2/backend_go/Dockerfile
+          context: ./backend_go
+          file: ./backend_go/Dockerfile
           push: true
           tags: ghcr.io/${{ steps.lowercase.outputs.repo_lc }}/backend:latest
 
-      - name: Build & push frontend
+      - name: Build & Push Frontend
         uses: docker/build-push-action@v6
         with:
-          context: rojgarsetu2/frontend
-          file: rojgarsetu2/frontend/Dockerfile
+          context: ./frontend
+          file: ./frontend/Dockerfile
           push: true
           tags: ghcr.io/${{ steps.lowercase.outputs.repo_lc }}/frontend:latest
