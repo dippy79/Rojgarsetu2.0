@@ -1,43 +1,30 @@
-# Environment
-.env
-.env.*
-*.pem
-*.key
-*.crt
-*.p12
-*.jks
-*.keystore
-
-# Secrets
-**/secrets/
-**/secret.yaml
-**/credentials.json
-**/values.yaml
-
-# Terraform
-*.tfstate
-*.tfvars
-
-# Node
-node_modules/
-
-# Python
-__pycache__/
-
-# Go
+# Binaries & Compiled Go files
 bin/
 dist/
+*.exe
+*.dll
+*.so
+vendor/
 
-# Logs
-*.log
-
-# K8s
-kubeconfig
-deployment/k8s/secrets/
-
-# OS
+# OS & IDE
+.idea/
+.vscode/
 .DS_Store
 Thumbs.db
 
+# Environment Variables (CRITICAL)
+.env
+.env.local
+.env.*
+*.env
 
-.fake
+# Secrets & Keys
+*.pem
+*.key
+*.crt
+credentials.json
+secrets/
+
+# Logs & Caches
+*.log
+__pycache__/
