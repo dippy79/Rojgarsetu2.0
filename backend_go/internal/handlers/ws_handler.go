@@ -18,14 +18,14 @@ var upgrader = websocket.Upgrader{
 
 type WSHandler struct {
 	notificationService *services.NotificationService
-	clients              map[string]*websocket.Conn
-	clientsMutex         sync.RWMutex
+	clients             map[string]*websocket.Conn
+	clientsMutex        sync.RWMutex
 }
 
 func NewWSHandler(notificationService *services.NotificationService) *WSHandler {
 	return &WSHandler{
 		notificationService: notificationService,
-		clients:              make(map[string]*websocket.Conn),
+		clients:             make(map[string]*websocket.Conn),
 	}
 }
 
@@ -58,8 +58,8 @@ func (h *WSHandler) HandleWebSocket(c *gin.Context) {
 	log.Printf("WebSocket client connected: %s", userID)
 
 	// Send welcome message
-	conn.WriteJSON(gin.H{
-		"type": "connected",
+	_ = conn.WriteJSON(gin.H{
+		"type":    "connected",
 		"message": "WebSocket connection established",
 		"user_id": userID,
 	})

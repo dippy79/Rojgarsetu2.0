@@ -3,7 +3,6 @@ package config
 import (
 	"crypto/tls"
 	"flag"
-	"io/ioutil"
 	"os"
 	"strconv"
 	"strings"

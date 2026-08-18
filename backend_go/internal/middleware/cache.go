@@ -99,13 +99,13 @@ func CacheInvalidationMiddleware(redisClient *redis.Client) gin.HandlerFunc {
 				// Invalidate related cache entries
 				switch {
 				case strings.Contains(path, "/gov-jobs"):
-					InvalidateCacheByPath(redisClient, "GET", "/api/v1/gov-jobs")
+				_=	InvalidateCacheByPath(redisClient, "GET", "/api/v1/gov-jobs")
 				case strings.Contains(path, "/private-jobs"):
-					InvalidateCacheByPath(redisClient, "GET", "/api/v1/private-jobs")
+				_=	InvalidateCacheByPath(redisClient, "GET", "/api/v1/private-jobs")
 				case strings.Contains(path, "/courses"):
-					InvalidateCacheByPath(redisClient, "GET", "/api/v1/courses")
+				_=	InvalidateCacheByPath(redisClient, "GET", "/api/v1/courses")
 				case strings.Contains(path, "/videos"):
-					InvalidateCacheByPath(redisClient, "GET", "/api/v1/videos")
+				_=	InvalidateCacheByPath(redisClient, "GET", "/api/v1/videos")
 				}
 			}
 		} else {

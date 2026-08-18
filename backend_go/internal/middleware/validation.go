@@ -20,7 +20,7 @@ func SanitizeInput() gin.HandlerFunc {
 
 		// Sanitize form data
 		if c.Request.Method == "POST" || c.Request.Method == "PUT" || c.Request.Method == "PATCH" {
-			c.Request.ParseForm()
+			_ = c.Request.ParseForm()
 			for key, values := range c.Request.PostForm {
 				for i, value := range values {
 					c.Request.PostForm[key][i] = sanitizeString(value)
@@ -36,17 +36,17 @@ func SanitizeInput() gin.HandlerFunc {
 func sanitizeString(input string) string {
 	// Trim whitespace
 	input = strings.TrimSpace(input)
-	
+
 	// Escape HTML entities to prevent XSS
 	input = html.EscapeString(input)
-	
+
 	// Remove potential script tags (additional protection)
 	input = strings.ReplaceAll(input, "<script", "")
 	input = strings.ReplaceAll(input, "</script>", "")
 	input = strings.ReplaceAll(input, "javascript:", "")
 	input = strings.ReplaceAll(input, "onerror=", "")
 	input = strings.ReplaceAll(input, "onload=", "")
-	
+
 	return input
 }
 
@@ -60,7 +60,7 @@ func ValidateContentType(contentType string) gin.HandlerFunc {
 				c.Abort()
 				return
 			}
-			
+
 			// Check if content type matches expected type
 			if !strings.HasPrefix(ct, contentType) {
 				c.JSON(http.StatusUnsupportedMediaType, gin.H{"error": "Invalid Content-Type"})
@@ -82,7 +82,7 @@ func ValidateRequiredFields(fields []string) gin.HandlerFunc {
 				c.Abort()
 				return
 			}
-			
+
 			for _, field := range fields {
 				if _, exists := body[field]; !exists {
 					c.JSON(http.StatusBadRequest, gin.H{"error": "Missing required field: " + field})
