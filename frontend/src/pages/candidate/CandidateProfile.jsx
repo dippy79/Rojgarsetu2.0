@@ -77,11 +77,15 @@ export const CandidateProfile = () => {
     skills: [],
     experience: [],
     education: [],
+    portfolio_links: { github: '', linkedin: '', website: '' },
+    certifications: [],
     resume_url: '',
     profile_completion: 0
   });
 
-  const [newSkill, setNewSkill] = useState('');
+  const [newSkill, setNewSkill] = useState({ name: '', level: 'Intermediate' });
+  const [showCertForm, setShowCertForm] = useState(false);
+  const [newCert, setNewCert] = useState({ name: '', issuer: '', year: '' });
   const [showExpForm, setShowExpForm] = useState(false);
   const [showEduForm, setShowEduForm] = useState(false);
   const [newExp, setNewExp] = useState({ company: '', role: '', years: '', description: '' });
@@ -133,6 +137,8 @@ export const CandidateProfile = () => {
           skills: Array.isArray(cand?.skills) ? cand.skills : [],
           experience: Array.isArray(cand?.experience) ? cand.experience : [],
           education: Array.isArray(cand?.education) ? cand.education : [],
+          portfolio_links: cand?.portfolio_links || { github: '', linkedin: '', website: '' },
+          certifications: Array.isArray(cand?.certifications) ? cand.certifications : [],
           resume_url: cand?.resume_url || '',
           profile_completion: cand?.profile_completion || 0
         });
@@ -184,11 +190,13 @@ export const CandidateProfile = () => {
 
   const calculateCompletion = (p) => {
     let score = 0;
-    if (p?.full_name) score += 20;
+    if (p?.full_name) score += 10;
     if (p?.skills?.length > 0) score += 20;
     if (p?.experience?.length > 0) score += 20;
     if (p?.education?.length > 0) score += 20;
-    if (p?.resume_url) score += 20;
+    if (p?.resume_url) score += 10;
+    if (p?.portfolio_links?.github || p?.portfolio_links?.linkedin) score += 10;
+    if (p?.certifications?.length > 0) score += 10;
     return score;
   };
 
@@ -228,16 +236,16 @@ export const CandidateProfile = () => {
 
   const handleAddSkill = (e) => {
     e.preventDefault();
-    if (newSkill.trim() && !profile.skills.includes(newSkill.trim())) {
-      setProfile(prev => ({ ...prev, skills: [...prev.skills, newSkill.trim()] }));
-      setNewSkill('');
+    if (newSkill.name.trim() && !profile.skills.find(s => s.name === newSkill.name.trim())) {
+      setProfile(prev => ({ ...prev, skills: [...prev.skills, { ...newSkill, id: Date.now() }] }));
+      setNewSkill({ name: '', level: 'Intermediate' });
     }
   };
 
-  const handleRemoveSkill = (skillToRemove) => {
+  const handleRemoveSkill = (id) => {
     setProfile(prev => ({
       ...prev,
-      skills: prev.skills.filter(s => s !== skillToRemove)
+      skills: prev.skills.filter(s => s.id !== id)
     }));
   };
 
@@ -276,6 +284,25 @@ export const CandidateProfile = () => {
     setProfile(prev => ({
       ...prev,
       education: prev.education.filter(edu => edu.id !== id)
+    }));
+  };
+
+  const handleAddCertification = (e) => {
+    e.preventDefault();
+    if (newCert.name && newCert.issuer) {
+      setProfile(prev => ({
+        ...prev,
+        certifications: [...(prev.certifications || []), { ...newCert, id: Date.now() }]
+      }));
+      setNewCert({ name: '', issuer: '', year: '' });
+      setShowCertForm(false);
+    }
+  };
+
+  const handleRemoveCertification = (id) => {
+    setProfile(prev => ({
+      ...prev,
+      certifications: prev.certifications.filter(c => c.id !== id)
     }));
   };
 
@@ -440,6 +467,25 @@ export const CandidateProfile = () => {
                     <input id="phone" name="phone" type="tel" value={profile.phone || ''} onChange={(e) => setProfile({...profile, phone: e.target.value})} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500/20 outline-none" placeholder="+91 98765 43210" autoComplete="tel" />
                   </div>
 
+                  {/* Portfolio Links */}
+                  <div className="space-y-3 p-4 bg-blue-50/50 rounded-2xl border border-blue-100">
+                    <label className="text-xs font-bold text-blue-800 uppercase">Professional Links</label>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="space-y-1">
+                        <label htmlFor="github" className="text-[10px] font-bold text-slate-500 uppercase">GitHub</label>
+                        <input id="github" type="url" value={profile.portfolio_links.github} onChange={(e) => setProfile({...profile, portfolio_links: {...profile.portfolio_links, github: e.target.value}})} className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm outline-none" placeholder="github.com/username" />
+                      </div>
+                      <div className="space-y-1">
+                        <label htmlFor="linkedin" className="text-[10px] font-bold text-slate-500 uppercase">LinkedIn</label>
+                        <input id="linkedin" type="url" value={profile.portfolio_links.linkedin} onChange={(e) => setProfile({...profile, portfolio_links: {...profile.portfolio_links, linkedin: e.target.value}})} className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm outline-none" placeholder="linkedin.com/in/user" />
+                      </div>
+                      <div className="space-y-1">
+                        <label htmlFor="portfolio" className="text-[10px] font-bold text-slate-500 uppercase">Website</label>
+                        <input id="portfolio" type="url" value={profile.portfolio_links.website} onChange={(e) => setProfile({...profile, portfolio_links: {...profile.portfolio_links, website: e.target.value}})} className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm outline-none" placeholder="portfolio.com" />
+                      </div>
+                    </div>
+                  </div>
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-1.5">
                       <label htmlFor="targetRole" className="text-xs font-bold text-slate-700 uppercase">Target Role</label>
@@ -453,18 +499,27 @@ export const CandidateProfile = () => {
 
                   {/* Skills Tag Input */}
                   <div className="space-y-3">
-                    <label htmlFor="skill-input" className="text-xs font-bold text-slate-700 uppercase">Skills & Expertise</label>
-                    <div className="flex flex-wrap gap-2">
+                    <label htmlFor="skill-input" className="text-xs font-bold text-slate-700 uppercase">Skill Graph (Expertise Level)</label>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       {(profile.skills || []).map((skill) => (
-                        <span key={skill} className="px-3 py-1 bg-slate-100 text-slate-700 text-xs font-bold rounded-lg border border-slate-200 flex items-center gap-2">
-                          {skill}
-                          <button type="button" onClick={() => handleRemoveSkill(skill)} className="text-slate-400 hover:text-red-500 text-lg">×</button>
-                        </span>
+                        <div key={skill.id} className="p-3 bg-white rounded-xl border border-slate-200 flex justify-between items-center group hover:border-blue-400 transition-colors shadow-sm">
+                          <div>
+                            <p className="text-sm font-bold text-slate-900">{skill.name}</p>
+                            <p className="text-[10px] text-blue-600 font-bold uppercase">{skill.level}</p>
+                          </div>
+                          <button type="button" onClick={() => handleRemoveSkill(skill.id)} className="text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity">×</button>
+                        </div>
                       ))}
                     </div>
-                    <div className="flex gap-2">
-                      <input id="skill-input" name="skill-input" type="text" value={newSkill} onChange={(e) => setNewSkill(e.target.value)} onKeyPress={(e) => e.key === 'Enter' && handleAddSkill(e)} placeholder="Add a skill..." className="flex-1 px-4 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500/20 outline-none text-sm" autoComplete="off" />
-                      <button type="button" onClick={handleAddSkill} className="px-4 py-2 bg-slate-900 text-white text-xs font-bold rounded-xl hover:bg-slate-800">Add</button>
+                    <div className="flex gap-2 p-2 bg-slate-50 rounded-xl border border-dashed border-slate-300">
+                      <input id="skill-input" type="text" value={newSkill.name} onChange={(e) => setNewSkill({...newSkill, name: e.target.value})} placeholder="Skill name..." className="flex-1 px-3 py-1.5 rounded-lg border border-slate-200 text-sm outline-none" />
+                      <select value={newSkill.level} onChange={(e) => setNewSkill({...newSkill, level: e.target.value})} className="px-2 py-1.5 rounded-lg border border-slate-200 text-sm outline-none">
+                        <option>Beginner</option>
+                        <option>Intermediate</option>
+                        <option>Advanced</option>
+                        <option>Expert</option>
+                      </select>
+                      <button type="button" onClick={handleAddSkill} className="px-4 py-1.5 bg-slate-900 text-white text-xs font-bold rounded-lg hover:bg-slate-800">Add</button>
                     </div>
                   </div>
 
@@ -557,6 +612,47 @@ export const CandidateProfile = () => {
                             <p className="text-xs text-slate-500">{edu.institution} {edu.year && `• ${edu.year}`}</p>
                           </div>
                           <button type="button" onClick={() => handleRemoveEducation(edu.id)} className="text-slate-400 hover:text-red-500 text-sm">×</button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Certifications Section */}
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-bold text-slate-700 uppercase">Certifications</label>
+                      <button type="button" onClick={() => setShowCertForm(!showCertForm)} className="text-xs font-bold text-blue-600 hover:text-blue-700">
+                        {showCertForm ? 'Cancel' : '+ Add Certification'}
+                      </button>
+                    </div>
+
+                    {showCertForm && (
+                      <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-3">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          <div>
+                            <label className="text-xs font-bold text-slate-600">Certificate Name</label>
+                            <input type="text" value={newCert.name} onChange={(e) => setNewCert({...newCert, name: e.target.value})} className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm outline-none" placeholder="e.g. AWS Solutions Architect" />
+                          </div>
+                          <div>
+                            <label className="text-xs font-bold text-slate-600">Issuing Organization</label>
+                            <input type="text" value={newCert.issuer} onChange={(e) => setNewCert({...newCert, issuer: e.target.value})} className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm outline-none" placeholder="e.g. Amazon Web Services" />
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          <button type="button" onClick={handleAddCertification} className="px-4 py-2 bg-blue-600 text-white text-xs font-bold rounded-lg hover:bg-blue-700">Add</button>
+                          <button type="button" onClick={() => setShowCertForm(false)} className="px-4 py-2 bg-slate-200 text-slate-700 text-xs font-bold rounded-lg hover:bg-slate-300">Cancel</button>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="space-y-2">
+                      {(profile.certifications || []).map((cert) => (
+                        <div key={cert.id} className="p-3 bg-slate-50 rounded-lg border border-slate-200 flex justify-between items-start">
+                          <div>
+                            <p className="text-sm font-bold text-slate-900">{cert.name}</p>
+                            <p className="text-xs text-slate-500">{cert.issuer} {cert.year && `• ${cert.year}`}</p>
+                          </div>
+                          <button type="button" onClick={() => handleRemoveCertification(cert.id)} className="text-slate-400 hover:text-red-500 text-sm">×</button>
                         </div>
                       ))}
                     </div>

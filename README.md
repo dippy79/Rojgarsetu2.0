@@ -72,8 +72,8 @@ docker compose --profile backup up -d
 ### Production with Secrets
 ```bash
 # Create Docker secrets
-echo "" | docker secret create db_user -
-echo "" | docker secret create db_password -
+echo "amitsharma" | docker secret create db_user -
+echo "Asha12@Ashok24" | docker secret create db_password -
 echo "your-jwt-secret" | docker secret create jwt_secret -
 
 # Deploy with secrets
@@ -189,11 +189,11 @@ docker compose -f deployment/docker-compose.prod.yml up -d
 
 ### Environment Variables
 ```env
-POSTGRES_USER=
-POSTGRES_PASSWORD=
+POSTGRES_USER=amitsharma
+POSTGRES_PASSWORD=Asha12@Ashok24
 POSTGRES_DB=rojgarsetu2
 JWT_SECRET=your-jwt-secret-min-32-chars
-DATABASE_URL=
+DATABASE_URL=postgres://amitsharma:Asha12@Ashok24@localhost:5432/rojgarsetu2?sslmode=disable
 REDIS_URL=redis://localhost:6379
 ```
 

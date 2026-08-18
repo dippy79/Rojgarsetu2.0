@@ -10,11 +10,14 @@ import (
 	"github.com/rojgarsetu/crawler/internal/courses"
 	"github.com/rojgarsetu/crawler/internal/jobs/gov"
 	"github.com/rojgarsetu/crawler/internal/jobs/priv"
+	"github.com/rojgarsetu/crawler/internal/legal"
 	"github.com/rojgarsetu/crawler/internal/proxy"
 	"github.com/rojgarsetu/crawler/internal/shared"
 	"github.com/rojgarsetu/crawler/internal/store"
 	"github.com/rojgarsetu/crawler/internal/videos"
 )
+
+var antiFake = legal.NewAntiFakeEngine()
 
 // RunSummary captures the aggregate result of a crawl run.
 type RunSummary struct {
@@ -76,6 +79,9 @@ func RunAll(
 		priv.NewCompanyPagesSource(),
 		priv.NewGreenhouseSource(),
 		priv.NewLeverSource(),
+		priv.NewApnaSource(),
+		priv.NewInternshalaSource(),
+		priv.NewShineSource(),
 	}
 	for _, s := range privSources {
 		summary.SourcesRun++
@@ -125,6 +131,18 @@ func RunAll(
 		}
 	}
 	summary.Duration = time.Since(start).Round(time.Second).String()
+
+	// Log to database
+	status := "COMPLETED"
+	errMsg := ""
+	if summary.Failed > 0 {
+		status = "PARTIAL_FAILURE"
+		errMsg = fmt.Sprintf("%d sources failed", summary.Failed)
+	}
+	if err := st.SaveLog(summary.SourcesRun, 0, summary.TotalSaved, 0, status, errMsg); err != nil {
+		log.Printf("ERROR saving crawl log: %v", err)
+	}
+
 	return summary
 }
 
@@ -141,6 +159,18 @@ func runGovSource(ctx context.Context, st *store.PostgresStore, s shared.GovJobF
 	}
 	saved := 0
 	for i := range items {
+		// Anti-Fake Validation
+		verified, reason := antiFake.ValidateGovJob(items[i].Title, items[i].Department, items[i].ApplyURL)
+		items[i].IsVerified = verified
+		items[i].VerificationMeta = map[string]any{
+			"engine": "AntiFakeEngine v1",
+			"reason": reason,
+			"ts":     time.Now().Unix(),
+		}
+		if !verified {
+			items[i].ScamScore = 0.8
+		}
+
 		if err := st.SaveGovJob(&items[i]); err != nil {
 			log.Printf("ERROR saving gov job from %s: %v", s.Name(), err)
 			continue
@@ -161,6 +191,18 @@ func runPrivSource(ctx context.Context, st *store.PostgresStore, s shared.PrivJo
 	}
 	saved := 0
 	for i := range items {
+		// Anti-Fake Validation (Basic for Private)
+		isScam := antiFake.ContainsScamKeywords(items[i].Title) || antiFake.ContainsScamKeywords(items[i].Description)
+		items[i].IsVerified = !isScam
+		if isScam {
+			items[i].ScamScore = 0.9
+		}
+		items[i].VerificationMeta = map[string]any{
+			"engine": "AntiFakeEngine v1",
+			"isScam": isScam,
+			"ts":     time.Now().Unix(),
+		}
+
 		if err := st.SavePrivJob(&items[i]); err != nil {
 			log.Printf("ERROR saving priv job from %s: %v", s.Name(), err)
 			continue

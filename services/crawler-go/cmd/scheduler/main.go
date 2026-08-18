@@ -1,7 +1,7 @@
 package main
 
 import (
-	"database/sql"
+	"context"
 	"encoding/json"
 	"log"
 	"net/http"
@@ -11,16 +11,19 @@ import (
 	"time"
 
 	_ "github.com/lib/pq"
-	"github.com/rojgarsetu/crawler/internal"
-	"github.com/rojgarsetu/crawler/internal/sources"
+	"github.com/rojgarsetu/crawler/internal/browser"
+	"github.com/rojgarsetu/crawler/internal/proxy"
+	"github.com/rojgarsetu/crawler/internal/scheduler"
+	"github.com/rojgarsetu/crawler/internal/store"
 )
 
 var (
-	db          *sql.DB
-	engine      *internal.Engine
-	crawlMu     sync.Mutex
-	lastRunTime time.Time
-	jobsToday   int
+	pgStore      *store.PostgresStore
+	browserPool  *browser.Pool
+	proxyRotator *proxy.Rotator
+	crawlMu      sync.Mutex
+	lastRunTime  time.Time
+	jobsToday    int
 )
 
 func main() {
@@ -31,50 +34,25 @@ func main() {
 	}
 
 	var err error
-	db, err = sql.Open("postgres", databaseURL)
+	pgStore, err = store.NewPostgresStore(databaseURL)
 	if err != nil {
 		log.Fatalf("failed to connect to database: %v", err)
 	}
-	defer db.Close()
+	defer pgStore.Close()
+	log.Println("connected to database via PostgresStore")
 
-	if err := db.Ping(); err != nil {
-		log.Fatalf("failed to ping database: %v", err)
+	// ── Browser pool setup ────────────────────────────────────────────────────
+	browserPool, err = browser.NewPool(2) // Max 2 concurrent browser instances
+	if err != nil {
+		log.Fatalf("failed to initialize browser pool: %v", err)
 	}
-	log.Println("connected to database")
+	defer browserPool.Close()
+	log.Println("browser pool initialized")
 
-	// ── Polite client setup ───────────────────────────────────────────────────
-	userAgent := os.Getenv("CRAWLER_USER_AGENT")
-	if userAgent == "" {
-		userAgent = "RojgarSetuBot/2.0 (+https://rojgarsetu.in/bot-policy; support@rojgarsetu.in)"
-	}
+	// ── Proxy rotator setup ───────────────────────────────────────────────────
+	proxyRotator = proxy.NewRotator()
+	log.Println("proxy rotator initialized")
 
-	delayMs := 2000
-	if v := os.Getenv("CRAWLER_REQUEST_DELAY_MS"); v != "" {
-		if n, err := strconv.Atoi(v); err == nil && n > 0 {
-			delayMs = n
-		}
-	}
-
-	robotsStrict := true
-	if v := os.Getenv("CRAWLER_ROBOTS_TXT_STRICT"); v != "" {
-		robotsStrict = v == "true"
-	}
-
-	client := internal.New(userAgent, delayMs, robotsStrict)
-	log.Printf("polite client initialized: delay=%dms, robots_strict=%v", delayMs, robotsStrict)
-
-	// ── Engine setup ──────────────────────────────────────────────────────────
-	engine = internal.NewEngine(db, client)
-
-	// Add all sources
-	engine.AddSource(sources.NewUPSCScraper(client))
-	engine.AddSource(sources.NewSSCScraper(client))
-	engine.AddSource(sources.NewRailwayScraper(client))
-	engine.AddSource(sources.NewNCSScraper(client))
-	engine.AddSource(sources.NewAdzunaScraper(client))
-	engine.AddSource(sources.NewJoobleScraper(client))
-
-	log.Println("crawler engine initialized with 6 sources")
 
 	// ── HTTP routes ──────────────────────────────────────────────────────────
 	http.HandleFunc("/health", healthHandler)
@@ -143,6 +121,7 @@ func healthHandler(w http.ResponseWriter, r *http.Request) {
 
 func statsHandler(w http.ResponseWriter, r *http.Request) {
 	var totalCrawled, newAdded, duplicates, errors int
+	db := pgStore.DB()
 
 	// Get stats from crawler_logs
 	db.QueryRow("SELECT COALESCE(SUM(jobs_found), 0) FROM crawler_logs WHERE created_at > NOW() - INTERVAL '24 hours'").Scan(&totalCrawled)
@@ -201,7 +180,7 @@ func crawlHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func sourcesHandler(w http.ResponseWriter, r *http.Request) {
-	rows, err := db.Query("SELECT id, name, category, source_type, base_url, is_active FROM crawler_sources ORDER BY id")
+	rows, err := pgStore.DB().Query("SELECT id, name, category, source_type, base_url, is_active FROM crawler_sources ORDER BY id")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -232,7 +211,7 @@ func sourcesHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func formsHandler(w http.ResponseWriter, r *http.Request) {
-	rows, err := db.Query("SELECT id, title, conducting_body, form_type, official_website, is_taken_down FROM gov_forms_info ORDER BY created_at DESC LIMIT 50")
+	rows, err := pgStore.DB().Query("SELECT id, title, conducting_body, form_type, official_website, is_taken_down FROM gov_forms_info ORDER BY created_at DESC LIMIT 50")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -290,7 +269,7 @@ func takedownHandler(w http.ResponseWriter, r *http.Request) {
 		VALUES ($1, $2, $3, $4, 'PENDING')
 	`
 
-	_, err := db.Exec(query, request.JobID, request.FormID, request.Requester, request.Reason)
+	_, err := pgStore.DB().Exec(query, request.JobID, request.FormID, request.Requester, request.Reason)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -313,12 +292,12 @@ func runCrawl() {
 	}
 	defer crawlMu.Unlock()
 
-	log.Println("=== starting crawl run ===")
-	result := engine.Run()
+	log.Println("=== starting crawl run (expanded sources) ===")
+	summary := scheduler.RunAll(context.Background(), pgStore, browserPool, proxyRotator)
 
 	lastRunTime = time.Now()
-	jobsToday += result.Added
+	jobsToday += summary.TotalSaved
 
-	log.Printf("=== crawl complete: sources_run=%d found=%d added=%d duplicates=%d errors=%d duration=%s ===",
-		result.SourcesRun, result.Found, result.Added, result.Duplicates, result.Errors, result.Duration)
+	log.Printf("=== crawl complete: sources_run=%d succeeded=%d failed=%d total_saved=%d duration=%s ===",
+		summary.SourcesRun, summary.Succeeded, summary.Failed, summary.TotalSaved, summary.Duration)
 }

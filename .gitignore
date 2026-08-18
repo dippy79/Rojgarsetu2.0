@@ -28,3 +28,4 @@ secrets/
 # Logs & Caches
 *.log
 __pycache__/
+node_modules

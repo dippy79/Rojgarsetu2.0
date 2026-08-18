@@ -47,6 +47,11 @@ func (s *PostgresStore) Close() error {
 	return s.db.Close()
 }
 
+// DB returns the underlying sql.DB connection.
+func (s *PostgresStore) DB() *sql.DB {
+	return s.db
+}
+
 func (s *PostgresStore) SaveJob(job *parser.Job) error {
 
 	if job == nil {
@@ -560,4 +565,14 @@ func (s *PostgresStore) GetJobsBySource(source string, limit int) ([]parser.Job,
 	}
 
 	return jobs, nil
+}
+
+// SaveLog records a crawl run summary in the crawler_logs table.
+func (s *PostgresStore) SaveLog(sourcesRun, found, saved, duplicates int, status, errMsg string) error {
+	query := `
+		INSERT INTO crawler_logs (source, status, jobs_found, jobs_saved, errors, started_at, completed_at)
+		VALUES ('all_sources', $1, $2, $3, $4, NOW() - INTERVAL '1 second', NOW())
+	`
+	_, err := s.db.Exec(query, status, found, saved, errMsg)
+	return err
 }

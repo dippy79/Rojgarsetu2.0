@@ -12,6 +12,9 @@ import { AuthProvider } from './context/AuthContext';
 import CandidateDashboard from './pages/candidate/CandidateDashboard';
 import CandidateProfile from './pages/candidate/CandidateProfile';
 import MyApplications from './pages/candidate/MyApplications';
+import CompanyDashboard from './pages/company/CompanyDashboard';
+import CompanyProfile from './pages/company/CompanyProfile';
+import PostJob from './pages/company/PostJob';
 import './index.css';
 
 const HomePage = () => (
@@ -138,7 +141,23 @@ function AppContent() {
             path="/dashboard/company"
             element={
               <ProtectedRoute allowedRoles={['company']}>
-                <div className="p-8 text-2xl font-bold">Employer Dashboard</div>
+                <CompanyDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/company/profile"
+            element={
+              <ProtectedRoute allowedRoles={['company']}>
+                <CompanyProfile />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/company/post-job"
+            element={
+              <ProtectedRoute allowedRoles={['company']}>
+                <PostJob />
               </ProtectedRoute>
             }
           />

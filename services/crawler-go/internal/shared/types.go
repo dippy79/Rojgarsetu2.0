@@ -15,36 +15,44 @@ import (
 
 // GovJobSource represents a government job from various sources
 type GovJobSource struct {
-	Source          string    `json:"source"`
-	Title           string    `json:"title"`
-	Department      string    `json:"department"`
-	Location        string    `json:"location"`
-	ApplyURL        string    `json:"apply_url"`
-	LastDate        *string   `json:"last_date,omitempty"`
-	Eligibility     string    `json:"eligibility"`
-	VacancyCount    *int      `json:"vacancy_count,omitempty"`
-	Salary          string    `json:"salary"`
-	ExamDate        *string   `json:"exam_date,omitempty"`
-	NotificationURL string    `json:"notification_url,omitempty"`
-	JobRegion       string    `json:"job_region,omitempty"`
-	CreatedAt       time.Time `json:"created_at"`
+	Source           string         `json:"source"`
+	Title            string         `json:"title"`
+	Department       string         `json:"department"`
+	Location         string         `json:"location"`
+	ApplyURL         string         `json:"apply_url"`
+	LastDate         *string        `json:"last_date,omitempty"`
+	Eligibility      string         `json:"eligibility"`
+	VacancyCount     *int           `json:"vacancy_count,omitempty"`
+	Salary           string         `json:"salary"`
+	ExamDate         *string        `json:"exam_date,omitempty"`
+	NotificationURL  string         `json:"notification_url,omitempty"`
+	JobRegion        string         `json:"job_region,omitempty"`
+	IsVerified       bool           `json:"is_verified"`
+	VerificationMeta map[string]any `json:"verification_meta,omitempty"`
+	ScamScore        float64        `json:"scam_score"`
+	CanonicalURL     string         `json:"canonical_url,omitempty"`
+	CreatedAt        time.Time      `json:"created_at"`
 }
 
 // PrivJobSource represents a private job from various sources
 type PrivJobSource struct {
-	Source      string     `json:"source"`
-	Company     string     `json:"company"`
-	Title       string     `json:"title"`
-	Location    string     `json:"location"`
-	URL         string     `json:"url"`
-	Salary      string     `json:"salary"`
-	Experience  string     `json:"experience"`
-	JobType     string     `json:"job_type"`
-	Skills      []string   `json:"skills"`
-	Description string     `json:"description"`
-	PostedAt    *time.Time `json:"posted_at,omitempty"`
-	JobRegion   string     `json:"job_region,omitempty"`
-	CreatedAt   time.Time  `json:"created_at"`
+	Source           string         `json:"source"`
+	Company          string         `json:"company"`
+	Title            string         `json:"title"`
+	Location         string         `json:"location"`
+	URL              string         `json:"url"`
+	Salary           string         `json:"salary"`
+	Experience       string         `json:"experience"`
+	JobType          string         `json:"job_type"`
+	Skills           []string       `json:"skills"`
+	Description      string         `json:"description"`
+	PostedAt         *time.Time     `json:"posted_at,omitempty"`
+	JobRegion        string         `json:"job_region,omitempty"`
+	IsVerified       bool           `json:"is_verified"`
+	VerificationMeta map[string]any `json:"verification_meta,omitempty"`
+	ScamScore        float64        `json:"scam_score"`
+	CanonicalURL     string         `json:"canonical_url,omitempty"`
+	CreatedAt        time.Time      `json:"created_at"`
 }
 
 // CourseSource represents a course from various providers
