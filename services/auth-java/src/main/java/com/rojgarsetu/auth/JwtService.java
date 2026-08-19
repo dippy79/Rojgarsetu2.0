@@ -1,4 +1,4 @@
- package com.rojgarsetu.auth;
+package com.rojgarsetu.auth;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
@@ -10,7 +10,7 @@ import org.springframework.stereotype.Service;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
+// SignatureAlgorithm is removed because 0.12.x auto-determines it from the Key, or you can specify the Jwts.SIG algorithm directly.
 import io.jsonwebtoken.security.Keys;
 
 /**
@@ -62,15 +62,15 @@ public class JwtService {
         Date now = new Date();
         Date expiry = new Date(now.getTime() + expirationMs);
         return Jwts.builder()
-                .setSubject(userId)
+                .subject(userId)                 // Updated: setSubject -> subject
                 .claim("user_id", userId)
                 .claim("email", email)
                 .claim("role", role)
-                .setIssuer(issuer)
-                .setAudience(audience)
-                .setIssuedAt(now)
-                .setExpiration(expiry)
-                .signWith(signingKey, SignatureAlgorithm.HS256)
+                .issuer(issuer)                  // Updated: setIssuer -> issuer
+                .audience().add(audience).and()  // Updated: setAudience -> audience().add(...).and()
+                .issuedAt(now)                   // Updated: setIssuedAt -> issuedAt
+                .expiration(expiry)              // Updated: setExpiration -> expiration
+                .signWith(signingKey)            // Updated: signWith(Key, Alg) -> signWith(Key)
                 .compact();
     }
 
@@ -78,11 +78,10 @@ public class JwtService {
      * Validate and parse a token. Throws JwtException on invalid/expired tokens.
      */
     public Claims validateToken(String token) {
-        return Jwts.parserBuilder()
-                .setSigningKey(signingKey)
+        return Jwts.parser()                     // Updated: parserBuilder() -> parser()
+                .verifyWith(signingKey)          // Updated: setSigningKey() -> verifyWith()
                 .build()
-                .parseClaimsJws(token)
-                .getBody();
+                .parseSignedClaims(token)        // Updated: parseClaimsJws() -> parseSignedClaims()
+                .getPayload();                   // Updated: getBody() -> getPayload()
     }
 }
-
