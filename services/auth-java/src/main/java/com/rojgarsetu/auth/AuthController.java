@@ -58,7 +58,7 @@ public class AuthController {
      * @return ResponseEntity with success message or error details
      */
     @PostMapping("/register")
-    public ResponseEntity register(@RequestBody AuthRequest body) {
+    public ResponseEntity<?> register(@RequestBody AuthRequest body) {
         String email = body.getEmail();
         String password = body.getPassword();
 
@@ -88,7 +88,7 @@ public class AuthController {
      * @return ResponseEntity with JWT token and user role or error details
      */
     @PostMapping("/login")
-    public ResponseEntity login(@RequestBody AuthRequest body) {
+    public ResponseEntity<?> login(@RequestBody AuthRequest body) {
         String email = body.getEmail();
         String password = body.getPassword();
 
