@@ -39,7 +39,7 @@ export const CandidateApplications = () => {
       }
     } catch (err) {
       setMockData();
-    } fontally {
+    } finally {
       setLoading(false);
     }
   };

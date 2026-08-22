@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import Link from 'next/link';
+import { useRouter } from 'next/router';
 import { useAuth } from '../../hooks/useAuth';
 
 // Icon Components
@@ -56,8 +57,7 @@ const XIcon = () => (
 
 export const CandidateProfile = () => {
   const { user, logout } = useAuth();
-  const navigate = useNavigate();
-  const location = useLocation();
+  const router = useRouter();
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -100,8 +100,8 @@ export const CandidateProfile = () => {
   const handleAuthError = useCallback(() => {
     localStorage.removeItem('rojgar_token');
     setToast({ message: 'Session expired. Please login again.', type: 'error' });
-    setTimeout(() => navigate('/login'), 1500);
-  }, [navigate]);
+    setTimeout(() => router.push('/login'), 1500);
+  }, [router]);
 
   const fetchProfile = useCallback(async () => {
     setLoading(true);
@@ -308,7 +308,7 @@ export const CandidateProfile = () => {
 
   const handleLogout = () => {
     logout();
-    navigate('/login');
+    router.push('/login');
   };
 
   const navItems = [
@@ -363,11 +363,11 @@ export const CandidateProfile = () => {
           <nav className="space-y-1">
             {navItems.map((item) => {
               const Icon = item.icon;
-              const isActive = location.pathname === item.path;
+              const isActive = router.pathname === item.path;
               return (
                 <Link
                   key={item.path}
-                  to={item.path}
+                  href={item.path}
                   onClick={() => setSidebarOpen(false)}
                   className={`flex items-center px-4 py-3 text-sm font-medium transition-all ${
                     isActive ? 'bg-white/10 text-white rounded-lg' : 'text-slate-400 hover:text-white hover:bg-white/5 rounded-lg'

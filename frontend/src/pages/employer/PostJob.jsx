@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useRouter } from 'next/router';
 
 export const PostJob = () => {
-  const navigate = useNavigate();
+  const router = useRouter();
   const API_BASE = 'http://localhost:3001';
 
   const [formData, setFormData] = useState({
@@ -64,14 +64,14 @@ export const PostJob = () => {
 
       if (res.ok) {
         showToast('Job position posted successfully!');
-        setTimeout(() => navigate('/employer/dashboard'), 1200);
+        setTimeout(() => router.push('/employer/dashboard'), 1200);
       } else {
         showToast('Job position published to live portal!');
-        setTimeout(() => navigate('/employer/dashboard'), 1200);
+        setTimeout(() => router.push('/employer/dashboard'), 1200);
       }
     } catch (err) {
       showToast('Job position published to live portal!');
-      setTimeout(() => navigate('/employer/dashboard'), 1200);
+      setTimeout(() => router.push('/employer/dashboard'), 1200);
     } finally {
       setSubmitting(false);
     }
@@ -95,7 +95,7 @@ export const PostJob = () => {
           </div>
           <button
             type="button"
-            onClick={() => navigate('/employer/dashboard')}
+            onClick={() => router.push('/employer/dashboard')}
             className="px-4 py-2 bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl hover:bg-slate-300"
           >
             ← Back to Dashboard
@@ -242,7 +242,7 @@ export const PostJob = () => {
           <div className="pt-2 flex justify-end gap-3">
             <button
               type="button"
-              onClick={() => navigate('/employer/dashboard')}
+              onClick={() => router.push('/employer/dashboard')}
               className="px-5 py-2.5 bg-slate-100 text-slate-700 text-xs font-bold rounded-xl hover:bg-slate-200"
             >
               Cancel

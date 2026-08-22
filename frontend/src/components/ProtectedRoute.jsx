@@ -1,15 +1,37 @@
-import React from 'react';
-import { Navigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { useRouter } from 'next/router';
 import { useAuth } from '../context/AuthContext';
 
 const ProtectedRoute = ({ children, allowedRoles }) => {
+  const router = useRouter();
   const { user, loading } = useAuth();
-  const token = localStorage.getItem('token');
-  const role = user?.role || localStorage.getItem('userRole') || localStorage.getItem('role');
+  const [isAuthorized, setIsAuthorized] = useState(false);
 
-  if (loading) return <div>Loading...</div>;
-  if (!token) return <Navigate to="/login" replace />;
-  if (allowedRoles && !allowedRoles.includes(role)) return <Navigate to="/unauthorized" replace />;
+  useEffect(() => {
+    if (!loading) {
+      const token = localStorage.getItem('token');
+      const role = user?.role || localStorage.getItem('userRole') || localStorage.getItem('role');
+
+      if (!token) {
+        router.replace('/login');
+      } else if (allowedRoles && !allowedRoles.includes(role)) {
+        router.replace('/unauthorized');
+      } else {
+        setIsAuthorized(true);
+      }
+    }
+  }, [loading, user, allowedRoles, router]);
+
+  if (loading || !isAuthorized) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-slate-50">
+        <div className="animate-pulse flex flex-col items-center">
+          <div className="w-12 h-12 bg-blue-600 rounded-full mb-4"></div>
+          <p className="text-slate-500 font-medium">Verifying access...</p>
+        </div>
+      </div>
+    );
+  }
 
   return children;
 };

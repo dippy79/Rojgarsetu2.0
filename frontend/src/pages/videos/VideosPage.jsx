@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import Link from 'next/link';
 import { useAuth } from '../../context/AuthContext';
 
 const SampleVideos = [
@@ -22,7 +22,7 @@ const VideosPage = () => {
       {!isLoggedIn && (
         <div className="bg-slate-900 text-white text-center py-3 text-sm">
           <span>Showing demo view — </span>
-          <Link to="/login" className="underline font-semibold">
+          <Link href="/login" className="underline font-semibold">
             Login to access all {total} videos →
           </Link>
         </div>
@@ -60,7 +60,7 @@ const VideosPage = () => {
                   <div className="blur-sm pointer-events-none">{cardJSX}</div>
                   <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/60 backdrop-blur-sm rounded-2xl p-4 text-center z-10">
                     <p className="text-slate-700 font-semibold text-sm mb-2">Login to see more jobs</p>
-                    <Link to="/login" className="bg-slate-900 text-white text-xs px-4 py-2 rounded-lg font-medium shadow-sm hover:bg-slate-800 transition-all">
+                    <Link href="/login" className="bg-slate-900 text-white text-xs px-4 py-2 rounded-lg font-medium shadow-sm hover:bg-slate-800 transition-all">
                       Login / Register
                     </Link>
                   </div>

@@ -1,6 +1,6 @@
 // FilterBar Component
 import React from 'react';
-import './FilterBar.css';
+// import './FilterBar.css';
 
 const FilterBar = ({ filters, onFilterChange, filterOptions }) => {
   const handleChange = (key, value) => {

@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/router';
 
 export const EmployerApplicants = () => {
+  const router = useRouter();
   const API_BASE = 'http://localhost:3001';
 
   const [applicants, setApplicants] = useState([]);

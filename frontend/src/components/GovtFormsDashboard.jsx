@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { apiUrl } from '../apiConfig';
-import './GovtFormsDashboard.css';
+// Removed global CSS import - moved to _app.js or use CSS Modules
+// import './GovtFormsDashboard.css';
 
 /**
  * GovtFormsDashboard — "Govt Forms & Exams" dashboard.

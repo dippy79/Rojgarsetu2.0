@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useAuth } from '../context/AppContext';
-import './FloatingNotification.css';
+import { useAuth } from '../context/AuthContext';
+// import './FloatingNotification.css';
 
 const FloatingNotification = () => {
   const { user, isAuthenticated } = useAuth();

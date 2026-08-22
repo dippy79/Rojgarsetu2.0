@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useRouter } from 'next/router';
+import Link from 'next/link';
 import { useAuth } from '../../context/AuthContext';
 
 const LoginPage = () => {
   const [activeTab, setActiveTab] = useState('login'); // 'login' or 'register'
-  const navigate = useNavigate();
+  const router = useRouter();
   const auth = useAuth();
   const login = auth?.login;
   const register = auth?.register;
@@ -41,7 +42,7 @@ const LoginPage = () => {
         localStorage.setItem('userName', loginForm.email.split('@')[0]);
         localStorage.setItem('userRole', loginForm.role);
       }
-      navigate(`/dashboard/${loginForm.role.toLowerCase()}`);
+      router.push(`/dashboard/${loginForm.role.toLowerCase()}`);
     } catch (err) {
       setError(err.message || 'Login failed. Please try again.');
     } finally {
@@ -69,7 +70,7 @@ const LoginPage = () => {
         localStorage.setItem('userName', registerForm.full_name || registerForm.email.split('@')[0]);
         localStorage.setItem('userRole', registerForm.role);
       }
-      navigate(`/dashboard/${registerForm.role.toLowerCase()}`);
+      router.push(`/dashboard/${registerForm.role.toLowerCase()}`);
     } catch (err) {
       setError(err.message || 'Registration failed. Please try again.');
     } finally {
@@ -80,7 +81,7 @@ const LoginPage = () => {
   return (
     <div className="min-h-screen bg-slate-100 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md mb-6 text-center">
-        <Link to="/" className="text-3xl font-extrabold text-slate-900 tracking-tight">
+        <Link href="/" className="text-3xl font-extrabold text-slate-900 tracking-tight">
           Rojgar<span className="text-blue-600">Setu</span>
         </Link>
         <p className="mt-2 text-sm text-slate-600">

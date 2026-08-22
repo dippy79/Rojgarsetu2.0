@@ -1,6 +1,6 @@
 // Video Card Component
 import React from 'react';
-import './VideoCard.css';
+// import './VideoCard.css';
 
 const VideoCard = ({ video }) => {
   return (

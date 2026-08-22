@@ -1,6 +1,6 @@
 // Course Card Component
 import React from 'react';
-import './CourseCard.css';
+// import './CourseCard.css';
 
 const CourseCard = ({ course }) => {
   return (

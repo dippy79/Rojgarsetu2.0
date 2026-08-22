@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import Link from 'next/link';
+import { useRouter } from 'next/router';
 import { useAuth } from '../../hooks/useAuth';
 
 // Icon Components
@@ -56,8 +57,7 @@ const XIcon = () => (
 
 export const MyApplications = () => {
   const { user, logout } = useAuth();
-  const navigate = useNavigate();
-  const location = useLocation();
+  const router = useRouter();
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [applications, setApplications] = useState([]);
@@ -72,8 +72,8 @@ export const MyApplications = () => {
   const handleAuthError = useCallback(() => {
     localStorage.removeItem('rojgar_token');
     alert('Session expired. Please login again.');
-    navigate('/login');
-  }, [navigate]);
+    router.push('/login');
+  }, [router]);
 
   const fetchApplications = useCallback(async () => {
     setLoading(true);
@@ -112,7 +112,7 @@ export const MyApplications = () => {
 
   const handleLogout = () => {
     logout();
-    navigate('/login');
+    router.push('/login');
   };
 
   const filteredApps = (applications || []).filter((app) => {
@@ -183,11 +183,11 @@ export const MyApplications = () => {
           <nav className="space-y-1">
             {navItems.map((item) => {
               const Icon = item.icon;
-              const isActive = location.pathname === item.path;
+              const isActive = router.pathname === item.path;
               return (
                 <Link
                   key={item.path}
-                  to={item.path}
+                  href={item.path}
                   onClick={() => setSidebarOpen(false)}
                   className={`flex items-center px-4 py-3 text-sm font-medium transition-all ${
                     isActive ? 'bg-white/10 text-white rounded-lg shadow-sm' : 'text-slate-400 hover:text-white hover:bg-white/5 rounded-lg'
@@ -275,7 +275,7 @@ export const MyApplications = () => {
                 {searchTerm ? 'Try adjusting your search filters to find what you are looking for.' : 'Start applying to jobs to track your progress here.'}
               </p>
               {!searchTerm && (
-                <Link to="/gov-jobs" className="px-6 py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 shadow-lg shadow-blue-500/25 transition-all">
+                <Link href="/gov-jobs" className="px-6 py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 shadow-lg shadow-blue-500/25 transition-all">
                   Browse Jobs →
                 </Link>
               )}

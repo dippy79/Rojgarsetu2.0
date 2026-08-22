@@ -1,24 +1,37 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Link, NavLink, useNavigate } from 'react-router-dom';
+import Link from 'next/link';
+import { useRouter } from 'next/router';
 import { User, LogOut, LayoutDashboard, ChevronDown, Briefcase } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 const Navbar = () => {
-  const navigate = useNavigate();
+  const router = useRouter();
   const { user, logout, isAuthenticated } = useAuth();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
 
-  // Check auth status from context or localStorage fallback
-  const token = localStorage.getItem('token');
-  const storedName = localStorage.getItem('userName') || localStorage.getItem('name');
-  const storedRole = localStorage.getItem('userRole') || localStorage.getItem('role') || 'candidate';
+  // Use local state for SSR-safe auth info
+  const [authState, setAuthState] = useState({
+    token: null,
+    name: 'Simranjeet Singh',
+    role: 'candidate'
+  });
 
-  const isLoggedIn = Boolean(isAuthenticated || user || token);
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setAuthState({
+        token: localStorage.getItem('token'),
+        name: localStorage.getItem('userName') || localStorage.getItem('name') || 'Simranjeet Singh',
+        role: localStorage.getItem('userRole') || localStorage.getItem('role') || 'candidate'
+      });
+    }
+  }, [isAuthenticated, user]);
+
+  const isLoggedIn = Boolean(isAuthenticated || user || authState.token);
 
   const currentUser = user || {
-    name: storedName || 'Simranjeet Singh',
-    role: storedRole,
+    name: authState.name,
+    role: authState.role,
   };
 
   // Close dropdown on outside click
@@ -36,7 +49,7 @@ const Navbar = () => {
     setDropdownOpen(false);
     if (logout) logout();
     localStorage.clear();
-    navigate('/login');
+    router.push('/login');
   };
 
   const getInitials = (name) => {
@@ -50,10 +63,12 @@ const Navbar = () => {
       .slice(0, 2);
   };
 
-  const navLinkStyle = ({ isActive }) =>
-    isActive
+  const navLinkStyle = (path) => {
+    const isActive = router.pathname === path;
+    return isActive
       ? 'text-blue-600 font-semibold border-b-2 border-blue-600 pb-1 transition-all'
       : 'text-slate-600 hover:text-slate-900 font-medium transition-all';
+  }
 
   const userRole = (currentUser.role || 'candidate').toLowerCase();
   const dashboardPath = `/dashboard/${userRole}`;
@@ -62,7 +77,7 @@ const Navbar = () => {
   return (
     <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-slate-200 h-16 flex items-center justify-between px-6 shadow-sm">
       {/* Brand Logo */}
-      <Link to="/" className="flex items-center gap-2 text-xl font-bold text-slate-900">
+      <Link href="/" className="flex items-center gap-2 text-xl font-bold text-slate-900">
         <div className="bg-slate-900 text-white p-2 rounded-xl">
           <Briefcase className="w-5 h-5 text-blue-400" />
         </div>
@@ -72,22 +87,22 @@ const Navbar = () => {
       {/* Existing Nav Links Preserved Exactly */}
       <ul className="hidden lg:flex items-center gap-6 text-sm font-medium">
         <li>
-          <NavLink to="/" end className={navLinkStyle}>🏛️ Home</NavLink>
+          <Link href="/" className={navLinkStyle('/')}>🏛️ Home</Link>
         </li>
         <li>
-          <NavLink to="/gov-jobs" className={navLinkStyle}>🛡️ Govt Jobs</NavLink>
+          <Link href="/gov-jobs" className={navLinkStyle('/gov-jobs')}>🛡️ Govt Jobs</Link>
         </li>
         <li>
-          <NavLink to="/private-jobs" className={navLinkStyle}>🏢 Private Jobs</NavLink>
+          <Link href="/private-jobs" className={navLinkStyle('/private-jobs')}>🏢 Private Jobs</Link>
         </li>
         <li>
-          <NavLink to="/courses" className={navLinkStyle}>📚 Courses</NavLink>
+          <Link href="/courses" className={navLinkStyle('/courses')}>📚 Courses</Link>
         </li>
         <li>
-          <NavLink to="/videos" className={navLinkStyle}>🎥 Videos</NavLink>
+          <Link href="/videos" className={navLinkStyle('/videos')}>🎥 Videos</Link>
         </li>
         <li>
-          <NavLink to="/govt-forms" className={navLinkStyle}>🗂️ Govt Forms</NavLink>
+          <Link href="/govt-forms" className={navLinkStyle('/govt-forms')}>🗂️ Govt Forms</Link>
         </li>
       </ul>
 
@@ -97,13 +112,13 @@ const Navbar = () => {
           /* Unauthenticated State */
           <div className="flex items-center gap-3">
             <Link
-              to="/login"
+              href="/login"
               className="text-slate-700 hover:text-slate-900 text-sm font-semibold px-4 py-2 rounded-xl hover:bg-slate-100 transition-all"
             >
               Login
             </Link>
             <Link
-              to="/register"
+              href="/register"
               className="bg-slate-900 hover:bg-slate-800 text-white px-4 py-2 rounded-xl text-sm font-semibold shadow-md transition-all"
             >
               Register
@@ -142,7 +157,7 @@ const Navbar = () => {
                 </div>
 
                 <Link
-                  to={dashboardPath}
+                  href={dashboardPath}
                   onClick={() => setDropdownOpen(false)}
                   className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 hover:text-blue-600 transition-all font-medium"
                 >
@@ -151,7 +166,7 @@ const Navbar = () => {
                 </Link>
 
                 <Link
-                  to={profilePath}
+                  href={profilePath}
                   onClick={() => setDropdownOpen(false)}
                   className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 hover:text-blue-600 transition-all font-medium"
                 >

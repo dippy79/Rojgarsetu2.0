@@ -1,8 +1,13 @@
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/router';
+import { useAuth } from '../../hooks/useAuth';
+import { useRouter } from 'next/router';
 import { useAuth } from '../../hooks/useAuth';
 
 export const EmployerDashboard = () => {
   const { user } = useAuth();
+  const router = useRouter();
   const API_BASE = 'http://localhost:3001';
 
   const [stats, setStats] = useState({
@@ -120,12 +125,12 @@ export const EmployerDashboard = () => {
               Welcome back, {user?.name || 'Recruiter'}. Manage postings and review AI-ranked candidates.
             </p>
           </div>
-          <a
+          <Link
             href="/employer/post-job"
             className="px-5 py-2.5 bg-blue-600 text-white text-xs font-bold rounded-xl hover:bg-blue-700 shadow-md transition-all self-start md:self-auto flex items-center gap-2"
           >
             <span>+</span> Post New Opening
-          </a>
+          </Link>
         </div>
 
         {/* Metrics Overview Grid */}
