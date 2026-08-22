@@ -1,0 +1,62 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 248 250 252;
+    --foreground: 15 23 42;
+  }
+
+  .dark {
+    --background: 15 23 42;
+    --foreground: 248 250 252;
+  }
+
+
+  
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+
+@layer components {
+  .bento-card {
+    @apply bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-bento-lg p-6 shadow-bento transition-all duration-300 hover:shadow-bento-hover hover:scale-[1.02];
+  }
+
+  .bento-card-dark {
+    @apply bg-slate-900/90 border border-slate-800 hover:border-slate-700 rounded-bento-lg p-5 shadow-bento transition-all duration-300;
+  }
+
+  .btn-primary {
+    @apply bg-cyan-500 text-slate-950 font-semibold rounded-lg px-4 py-2 hover:bg-cyan-400 transition-colors;
+  }
+
+  .btn-secondary {
+    @apply bg-slate-800 text-slate-300 font-medium rounded-lg px-4 py-2 hover:bg-slate-700 hover:text-white transition-colors;
+  }
+
+  .badge {
+    @apply px-3 py-1 rounded-full text-xs font-medium;
+  }
+
+  .badge-emerald {
+    @apply bg-emerald-500/10 text-emerald-500 border border-emerald-500/20;
+  }
+
+  .badge-amber {
+    @apply bg-amber-500/10 text-amber-500 border border-amber-500/20;
+  }
+
+  .badge-cyan {
+    @apply bg-cyan-500/10 text-cyan-500 border border-cyan-500/20;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
