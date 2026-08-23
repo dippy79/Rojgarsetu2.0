@@ -1,8 +1,1 @@
-{
-  "/_app": "pages/_app.js",
-  "/_error": "pages/_error.js",
-  "/_document": "pages/_document.js",
-  "/gov-jobs": "pages/gov-jobs.js",
-  "/private-jobs": "pages/private-jobs.js",
-  "/": "pages/index.js"
-}
+{}

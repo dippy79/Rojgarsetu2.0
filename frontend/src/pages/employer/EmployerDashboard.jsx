@@ -1,43 +1,36 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useAuth } from '../../hooks/useAuth';
-import { useRouter } from 'next/router';
-import { useAuth } from '../../hooks/useAuth';
+import DashboardAnalytics from '../../components/DashboardAnalytics';
+import {
+  Plus, Users, Briefcase, Zap, Search, Bell,
+  Menu, X, LayoutDashboard, Settings, FileText,
+  ChevronRight, ArrowUpRight, TrendingUp, Filter, Loader2
+} from 'lucide-react';
+import { apiUrl } from '../../apiConfig';
 
 export const EmployerDashboard = () => {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const router = useRouter();
-  const API_BASE = 'http://localhost:3001';
-
+  const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
     activeJobs: 4,
     totalApplicants: 128,
     shortlisted: 18,
     aiMatched: 42
   });
-
   const [recentJobs, setRecentJobs] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [toast, setToast] = useState(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  useEffect(() => {
-    fetchDashboardData();
-  }, []);
-
-  const showToast = (message, type = 'success') => {
-    setToast({ message, type });
-    setTimeout(() => setToast(null), 3500);
-  };
-
-  const fetchDashboardData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     const token = localStorage.getItem('rojgar_token') || localStorage.getItem('token');
     try {
-      const res = await fetch(`${API_BASE}/api/v1/employer/dashboard`, {
+      const res = await fetch(apiUrl('/api/v1/employer/dashboard'), {
         headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
+          'Authorization': token ? `Bearer ${token}` : '',
+          'Content-Type': 'application/json'
         },
       });
 
@@ -46,186 +39,188 @@ export const EmployerDashboard = () => {
         setStats(data.stats || stats);
         setRecentJobs(data.jobs || []);
       } else {
-        setMockJobs();
+        setRecentJobs(SAMPLE_EMPLOYER_JOBS);
       }
     } catch (err) {
-      setMockJobs();
+      setRecentJobs(SAMPLE_EMPLOYER_JOBS);
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const setMockJobs = () => {
-    setRecentJobs([
-      {
-        id: 'job-101',
-        title: 'Senior React / Frontend Engineer',
-        location: 'Bengaluru / Remote',
-        type: 'Full-time',
-        applicantsCount: 45,
-        aiMatchedCount: 14,
-        status: 'Active',
-        postedDate: '2026-02-28'
-      },
-      {
-        id: 'job-102',
-        title: 'Full Stack Node.js & React Developer',
-        location: 'Gurugram / Hybrid',
-        type: 'Full-time',
-        applicantsCount: 32,
-        aiMatchedCount: 11,
-        status: 'Active',
-        postedDate: '2026-03-01'
-      },
-      {
-        id: 'job-103',
-        title: 'Flutter Mobile App Engineer',
-        location: 'Delhi NCR',
-        type: 'Full-time',
-        applicantsCount: 29,
-        aiMatchedCount: 9,
-        status: 'Active',
-        postedDate: '2026-02-22'
-      },
-      {
-        id: 'job-104',
-        title: 'Backend API Developer (Python/FastAPI)',
-        location: 'Noida',
-        type: 'Full-time',
-        applicantsCount: 22,
-        aiMatchedCount: 8,
-        status: 'Draft',
-        postedDate: '2026-03-02'
-      }
-    ]);
-  };
-
-  const handleToggleJobStatus = (jobId, currentStatus) => {
-    const nextStatus = currentStatus === 'Active' ? 'Closed' : 'Active';
-    setRecentJobs(
-      recentJobs.map((j) => (j.id === jobId ? { ...j, status: nextStatus } : j))
-    );
-    showToast(`Job status updated to ${nextStatus}`);
-  };
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   return (
-    <div className="min-h-screen bg-slate-50 p-8 font-sans">
-      {toast && (
-        <div className="fixed top-6 right-6 z-50 px-5 py-3 rounded-xl shadow-lg border text-sm font-semibold bg-emerald-50 text-emerald-800 border-emerald-200">
-          <span>{toast.message}</span>
-        </div>
-      )}
-
-      <div className="max-w-6xl mx-auto space-y-8">
-        {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Employer Portal</h1>
-            <p className="text-slate-500 text-sm mt-1 font-medium">
-              Welcome back, {user?.name || 'Recruiter'}. Manage postings and review AI-ranked candidates.
-            </p>
+    <div className="flex min-h-screen bg-[#F8FAFC]">
+      {/* Sidebar - Pro Recruitment Interface */}
+      <aside className={`
+        fixed inset-y-0 left-0 z-50 w-72 bg-slate-950 text-white transform transition-transform duration-500 ease-[cubic-bezier(0.2,0,0,1)]
+        md:translate-x-0 md:static md:h-screen sticky top-0
+        ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+        flex flex-col p-8
+      `}>
+        <div className="flex items-center gap-3 mb-16">
+          <div className="p-2 bg-emerald-500 rounded-xl">
+            <Briefcase className="w-6 h-6 text-slate-950" />
           </div>
-          <Link
-            href="/employer/post-job"
-            className="px-5 py-2.5 bg-blue-600 text-white text-xs font-bold rounded-xl hover:bg-blue-700 shadow-md transition-all self-start md:self-auto flex items-center gap-2"
-          >
-            <span>+</span> Post New Opening
-          </Link>
+          <span className="font-black text-2xl tracking-tighter">ROJGAR<span className="text-emerald-500 uppercase">Pro</span></span>
         </div>
 
-        {/* Metrics Overview Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-          <div className="bg-white p-5 rounded-2xl border border-slate-200/60 shadow-sm">
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Active Openings</span>
-            <div className="text-3xl font-black text-slate-900 mt-2">{stats.activeJobs}</div>
-            <p className="text-[11px] text-emerald-600 font-semibold mt-1">4 roles receiving applications</p>
-          </div>
+        <nav className="space-y-2 flex-1">
+          {[
+            { label: 'Overview', path: '/dashboard/company', icon: LayoutDashboard },
+            { label: 'Job Postings', path: '/employer/jobs', icon: FileText },
+            { label: 'Talent Pool', path: '/employer/candidates', icon: Users },
+            { label: 'Settings', path: '/employer/settings', icon: Settings },
+          ].map((item) => {
+            const isActive = router.pathname.includes(item.path) || (item.path === '/dashboard/company' && router.pathname.includes('company'));
+            const Icon = item.icon;
+            return (
+              <Link
+                key={item.path}
+                href={item.path}
+                className={`flex items-center gap-4 px-6 py-4 rounded-2xl text-sm font-bold transition-all ${
+                  isActive ? 'bg-emerald-500 text-slate-950 shadow-xl shadow-emerald-500/20' : 'text-slate-500 hover:text-white hover:bg-white/5'
+                }`}
+              >
+                <Icon className="w-5 h-5" />
+                {item.label}
+              </Link>
+            );
+          })}
+        </nav>
 
-          <div className="bg-white p-5 rounded-2xl border border-slate-200/60 shadow-sm">
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Applicants</span>
-            <div className="text-3xl font-black text-slate-900 mt-2">{stats.totalApplicants}</div>
-            <p className="text-[11px] text-blue-600 font-semibold mt-1">+12 this week</p>
-          </div>
-
-          <div className="bg-white p-5 rounded-2xl border border-slate-200/60 shadow-sm">
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Shortlisted</span>
-            <div className="text-3xl font-black text-slate-900 mt-2">{stats.shortlisted}</div>
-            <p className="text-[11px] text-purple-600 font-semibold mt-1">Ready for interviews</p>
-          </div>
-
-          <div className="bg-white p-5 rounded-2xl border border-slate-200/60 shadow-sm">
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">High AI Match Score</span>
-            <div className="text-3xl font-black text-emerald-600 mt-2">{stats.aiMatched}</div>
-            <p className="text-[11px] text-slate-500 font-semibold mt-1">&gt;85% Skill Fit</p>
-          </div>
-        </div>
-
-        {/* Recent Jobs Table */}
-        <div className="bg-white rounded-2xl border border-slate-200/60 shadow-sm overflow-hidden">
-          <div className="p-6 border-b border-slate-100 flex items-center justify-between">
-            <h2 className="text-lg font-bold text-slate-900">Manage Active Job Listings</h2>
-            <span className="text-xs font-medium text-slate-500">Showing {recentJobs.length} positions</span>
-          </div>
-
-          {loading ? (
-            <div className="p-8 text-center text-slate-400">Loading active job postings...</div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm text-slate-600">
-                <thead className="bg-slate-50 text-[11px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100">
-                  <tr>
-                    <th className="py-3.5 px-6">Job Title</th>
-                    <th className="py-3.5 px-6">Location</th>
-                    <th className="py-3.5 px-6">Applicants</th>
-                    <th className="py-3.5 px-6">AI Fit</th>
-                    <th className="py-3.5 px-6">Status</th>
-                    <th className="py-3.5 px-6 text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {recentJobs.map((job) => (
-                    <tr key={job.id} className="hover:bg-slate-50/80 transition-colors">
-                      <td className="py-4 px-6 font-bold text-slate-900">
-                        {job.title}
-                        <span className="block text-[11px] font-normal text-slate-400">Posted on {job.postedDate}</span>
-                      </td>
-                      <td className="py-4 px-6 text-xs font-medium">{job.location}</td>
-                      <td className="py-4 px-6 font-bold text-slate-800">{job.applicantsCount}</td>
-                      <td className="py-4 px-6">
-                        <span className="px-2.5 py-1 bg-emerald-50 text-emerald-700 text-xs font-extrabold rounded-full border border-emerald-100">
-                          {job.aiMatchedCount} Top Matches
-                        </span>
-                      </td>
-                      <td className="py-4 px-6">
-                        <span
-                          className={`px-2.5 py-1 text-xs font-bold rounded-lg ${
-                            job.status === 'Active'
-                              ? 'bg-blue-50 text-blue-700 border border-blue-200'
-                              : 'bg-slate-100 text-slate-600'
-                          }`}
-                        >
-                          {job.status}
-                        </span>
-                      </td>
-                      <td className="py-4 px-6 text-right space-x-2">
-                        <button
-                          type="button"
-                          onClick={() => handleToggleJobStatus(job.id, job.status)}
-                          className="px-3 py-1.5 bg-slate-100 text-slate-700 text-xs font-semibold rounded-lg hover:bg-slate-200"
-                        >
-                          {job.status === 'Active' ? 'Close' : 'Activate'}
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+        <div className="mt-auto p-6 bg-white/5 rounded-[2rem] border border-white/10">
+          <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3">Enterprise Plan</p>
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center font-black text-emerald-500">
+              {(user?.name || 'C')[0]}
             </div>
-          )}
+            <div className="overflow-hidden">
+              <p className="text-sm font-bold truncate">{user?.name || 'Recruiter'}</p>
+              <button onClick={() => logout()} className="text-[10px] font-black text-rose-500 uppercase hover:text-rose-400 transition-colors">Sign Out</button>
+            </div>
+          </div>
         </div>
-      </div>
+      </aside>
+
+      <main className="flex-1 overflow-auto p-6 md:p-12 lg:p-16">
+        <header className="flex flex-col md:flex-row md:items-center justify-between gap-8 mb-16">
+          <div className="space-y-2">
+             <div className="flex items-center gap-4">
+                <button onClick={() => setSidebarOpen(true)} className="p-3 bg-white border border-slate-200 rounded-2xl md:hidden">
+                  <Menu className="w-5 h-5" />
+                </button>
+                <h1 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tight">Hiring Intelligence.</h1>
+             </div>
+             <p className="text-slate-400 text-lg font-medium">Monitoring <span className="text-emerald-600 font-bold">Talent Pipelines</span> for your organization.</p>
+          </div>
+
+          <div className="flex items-center gap-4">
+            <Link href="/employer/post-job" className="px-8 py-4 bg-slate-900 text-white font-black rounded-2xl flex items-center gap-3 hover:bg-slate-800 transition-all shadow-xl shadow-slate-900/10 uppercase text-[10px] tracking-widest">
+              <Plus className="w-4 h-4" /> New Posting
+            </Link>
+          </div>
+        </header>
+
+        {/* Vital Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+          {[
+            { label: 'Active Roles', val: stats.activeJobs, color: 'emerald', icon: Briefcase },
+            { label: 'Candidate Fit', val: `${stats.aiMatched}%`, color: 'blue', icon: Zap },
+            { label: 'Unread Apps', val: stats.totalApplicants, color: 'indigo', icon: Users },
+          ].map(s => (
+            <div key={s.label} className="bg-white border border-slate-200 p-8 rounded-[2.5rem] shadow-sm hover:shadow-2xl transition-all group">
+              <div className={`w-12 h-12 rounded-2xl bg-${s.color}-50 text-${s.color}-600 flex items-center justify-center mb-6`}>
+                <s.icon className="w-6 h-6" />
+              </div>
+              <p className="text-4xl font-black text-slate-900 tracking-tighter">{s.val}</p>
+              <p className="text-xs font-black text-slate-400 uppercase tracking-widest mt-2">{s.label}</p>
+            </div>
+          ))}
+        </div>
+
+        {/* Analytics Section */}
+        <section className="mb-12">
+           <DashboardAnalytics />
+        </section>
+
+        {/* Talent Management Section */}
+        <div className="bg-white border border-slate-200 rounded-[3rem] overflow-hidden shadow-sm">
+           <div className="p-10 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+              <h3 className="text-2xl font-black text-slate-900 tracking-tight">Active Pipelines</h3>
+              <div className="flex items-center gap-4">
+                <div className="relative">
+                  <Search className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" />
+                  <input type="text" placeholder="Search postings..." className="pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold outline-none focus:ring-2 focus:ring-emerald-500/20" />
+                </div>
+                <button className="p-2.5 bg-white border border-slate-200 rounded-xl hover:bg-slate-50"><Filter className="w-4 h-4 text-slate-500" /></button>
+              </div>
+           </div>
+
+           {loading ? (
+             <div className="p-20 text-center flex flex-col items-center">
+                <Loader2 className="w-10 h-10 text-emerald-500 animate-spin mb-4" />
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Compiling Pipeline Data...</span>
+             </div>
+           ) : (
+             <div className="overflow-x-auto">
+                <table className="w-full text-left">
+                   <thead>
+                      <tr className="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100">
+                         <th className="px-10 py-6">Position</th>
+                         <th className="px-10 py-6">Intelligence</th>
+                         <th className="px-10 py-6">Throughput</th>
+                         <th className="px-10 py-6">Status</th>
+                         <th className="px-10 py-6 text-right">Actions</th>
+                      </tr>
+                   </thead>
+                   <tbody className="divide-y divide-slate-50">
+                      {recentJobs.map(job => (
+                        <tr key={job.id} className="group hover:bg-slate-50/50 transition-colors">
+                           <td className="px-10 py-8">
+                              <p className="font-black text-slate-900 group-hover:text-emerald-600 transition-colors">{job.title}</p>
+                              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter mt-1">{job.location} • {job.type}</p>
+                           </td>
+                           <td className="px-10 py-8">
+                              <div className="flex items-center gap-2">
+                                 <div className="px-3 py-1 bg-emerald-50 text-emerald-600 rounded-lg text-[10px] font-black uppercase tracking-tighter">
+                                    {job.aiMatchedCount || 12} Top Matches
+                                 </div>
+                              </div>
+                           </td>
+                           <td className="px-10 py-8">
+                              <p className="text-sm font-black text-slate-900">{job.applicantsCount || 45}</p>
+                              <p className="text-[10px] font-bold text-slate-400 uppercase">Candidates</p>
+                           </td>
+                           <td className="px-10 py-8">
+                              <div className="flex items-center gap-2">
+                                 <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                                 <span className="text-[10px] font-black uppercase tracking-widest text-slate-900">Active</span>
+                              </div>
+                           </td>
+                           <td className="px-10 py-8 text-right">
+                              <Link href={`/employer/applicants?jobId=${job.id}`} className="inline-flex items-center gap-2 px-5 py-2.5 bg-slate-900 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-emerald-600 transition-all shadow-lg shadow-slate-900/5">
+                                 Review <ArrowUpRight className="w-3.5 h-3.5" />
+                              </Link>
+                           </td>
+                        </tr>
+                      ))}
+                   </tbody>
+                </table>
+             </div>
+           )}
+        </div>
+      </main>
     </div>
   );
 };
+
+const SAMPLE_EMPLOYER_JOBS = [
+  { id: 'ej1', title: 'Senior Backend Architect', location: 'Remote', type: 'Full-Time', applicantsCount: 84, aiMatchedCount: 22 },
+  { id: 'ej2', title: 'Lead UX Strategist', location: 'Dubai, UAE', type: 'Full-Time', applicantsCount: 36, aiMatchedCount: 14 },
+];
 
 export default EmployerDashboard;

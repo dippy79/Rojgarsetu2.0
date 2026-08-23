@@ -1,79 +1,160 @@
-import React from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth } from '../../hooks/useAuth';
+import { apiUrl } from '../../apiConfig';
+import { Search, GraduationCap, Clock, BookOpen, Filter, ArrowRight, Loader2 } from 'lucide-react';
 
-const SampleCourses = [
-  { id: 1, title: 'Full Stack Web Architecture with React & Node', provider: 'RojgarSetu Academy', level: 'Intermediate', duration: '8 Weeks' },
-  { id: 2, title: 'Cybersecurity & OSINT Masterclass', provider: 'Security Lab', level: 'Advanced', duration: '6 Weeks' },
-  { id: 3, title: 'Government Exam General Studies Prep', provider: 'EduPortal India', level: 'Beginner', duration: '12 Weeks' },
-  { id: 4, title: 'Mobile App Development with Flutter', provider: 'DevHub', level: 'Intermediate', duration: '10 Weeks' },
-  { id: 5, title: 'Data Science & Machine Learning Bootcamp', provider: 'AI Institute', level: 'Advanced', duration: '14 Weeks' },
-  { id: 6, title: 'Cloud Infrastructure & AWS Solutions', provider: 'Cloud Academy', level: 'Intermediate', duration: '8 Weeks' },
-];
+export const CoursesPage = () => {
+  const { isAuthenticated } = useAuth();
+  const [courses, setCourses] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [filters, setFilters] = useState({
+    provider: '',
+    mode: '',
+    level: '',
+  });
 
-const CoursesPage = () => {
-  const auth = useAuth();
-  const token = localStorage.getItem('token');
-  const isLoggedIn = Boolean(token || auth?.isAuthenticated || auth?.user);
-  const total = SampleCourses.length;
+  const fetchCourses = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const queryParams = new URLSearchParams(filters);
+      const response = await fetch(apiUrl(`/api/v1/courses?${queryParams.toString()}`));
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const result = await response.json();
+      setCourses(result.data || []);
+    } catch (err) {
+      console.error(err);
+      setError("Unable to sync courses. Showing offline catalog.");
+      setCourses(SAMPLE_COURSES);
+    } finally {
+      setLoading(false);
+    }
+  }, [filters]);
+
+  useEffect(() => {
+    fetchCourses();
+  }, [fetchCourses]);
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      {!isLoggedIn && (
-        <div className="bg-slate-900 text-white text-center py-3 text-sm">
-          <span>Showing demo view — </span>
-          <Link href="/login" className="underline font-semibold">
-            Login to access all {total} courses →
-          </Link>
+    <div className="min-h-screen bg-[#FAFAFA]">
+      {/* Academy Hero */}
+      <section className="bg-white border-b border-slate-200 pt-24 pb-16">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-10">
+            <div className="space-y-6">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-50 text-purple-600 text-[10px] font-black uppercase tracking-widest">
+                <GraduationCap className="w-4 h-4" /> Rojgar Academy
+              </div>
+              <h1 className="text-4xl md:text-6xl font-black text-slate-900 tracking-tight leading-none">
+                Master the <br /> <span className="text-purple-600">New Economy.</span>
+              </h1>
+              <p className="text-slate-500 font-medium max-w-lg">Certified learning pathways designed by industry leaders to bridge the skill gap.</p>
+            </div>
+
+            <div className="flex-1 max-w-xl">
+              <div className="relative group">
+                <Search className="absolute left-5 top-5 w-5 h-5 text-slate-400 group-focus-within:text-purple-600 transition-colors" />
+                <input
+                  type="text"
+                  placeholder="Search skills (e.g. AI, Management, Coding)..."
+                  className="w-full pl-14 pr-6 py-5 bg-slate-50 border-2 border-transparent focus:border-purple-500/20 focus:bg-white rounded-[2rem] text-sm font-bold shadow-sm transition-all outline-none"
+                />
+              </div>
+            </div>
+          </div>
         </div>
-      )}
+      </section>
 
-      <div className="max-w-6xl mx-auto px-6 py-8">
-        <h1 className="text-3xl font-bold text-slate-900 mb-2">Upskilling & Professional Courses</h1>
-        <p className="text-slate-600 mb-8 text-sm">
-          Master career-critical skills with certified learning pathways.
-        </p>
+      <main className="max-w-7xl mx-auto px-6 py-16">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+          {/* Filtering Sidebar */}
+          <aside className="lg:col-span-3 space-y-8">
+            <div className="bg-white border border-slate-200 rounded-[2.5rem] p-8 shadow-sm space-y-8 sticky top-24">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-black uppercase tracking-widest text-slate-900">Filters</h3>
+                <Filter className="w-4 h-4 text-slate-400" />
+              </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {SampleCourses.map((item, index) => {
-            const cardJSX = (
-              <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm flex flex-col justify-between h-full">
-                <div>
-                  <span className="text-[10px] uppercase font-bold tracking-wider text-purple-600 bg-purple-50 px-2 py-1 rounded">
-                    {item.provider}
-                  </span>
-                  <h3 className="text-lg font-bold text-slate-800 mt-3">{item.title}</h3>
-                  <p className="text-xs text-slate-500 mt-1">🎓 Level: {item.level}</p>
-                </div>
-                <div className="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between">
-                  <span className="text-xs text-slate-400">Duration: {item.duration}</span>
-                  <button className="px-3 py-1.5 text-xs font-semibold bg-slate-900 text-white rounded-lg">
-                    Enroll Now
-                  </button>
+              <div className="space-y-4">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Learning Mode</label>
+                <div className="grid grid-cols-1 gap-2">
+                  {['Online', 'Hybrid', 'Self-Paced'].map(m => (
+                    <button key={m} className="w-full text-left px-4 py-3 rounded-xl border border-slate-100 text-xs font-bold text-slate-600 hover:border-purple-200 transition-all">
+                      {m}
+                    </button>
+                  ))}
                 </div>
               </div>
-            );
 
-            if (!isLoggedIn && index >= 3) {
-              return (
-                <div key={item.id} className="relative">
-                  <div className="blur-sm pointer-events-none">{cardJSX}</div>
-                  <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/60 backdrop-blur-sm rounded-2xl p-4 text-center z-10">
-                    <p className="text-slate-700 font-semibold text-sm mb-2">Login to see more jobs</p>
-                    <Link href="/login" className="bg-slate-900 text-white text-xs px-4 py-2 rounded-lg font-medium shadow-sm hover:bg-slate-800 transition-all">
-                      Login / Register
-                    </Link>
-                  </div>
+              <div className="space-y-4">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Expertise Level</label>
+                <div className="grid grid-cols-1 gap-2">
+                  {['Beginner', 'Intermediate', 'Expert'].map(l => (
+                    <button key={l} className="w-full text-left px-4 py-3 rounded-xl border border-slate-100 text-xs font-bold text-slate-600 hover:border-purple-200 transition-all">
+                      {l}
+                    </button>
+                  ))}
                 </div>
-              );
-            }
+              </div>
+            </div>
+          </aside>
 
-            return <div key={item.id}>{cardJSX}</div>;
-          })}
+          {/* Courses Feed */}
+          <div className="lg:col-span-9 space-y-10">
+            {loading ? (
+              <div className="flex flex-col items-center justify-center py-20">
+                <Loader2 className="w-10 h-10 text-purple-600 animate-spin mb-4" />
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Loading Academic Catalog...</span>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {courses.map((course) => (
+                  <div key={course.id} className="group bg-white border border-slate-200 rounded-[2.5rem] p-8 hover:border-purple-400 hover:shadow-2xl hover:shadow-purple-500/5 transition-all">
+                    <div className="flex items-center justify-between mb-6">
+                      <span className="px-3 py-1 bg-purple-50 text-purple-600 text-[10px] font-black uppercase tracking-widest rounded-lg border border-purple-100">
+                        {course.provider_name || 'Premium Academy'}
+                      </span>
+                      <BookOpen className="w-5 h-5 text-slate-300 group-hover:text-purple-500 transition-colors" />
+                    </div>
+
+                    <h3 className="text-2xl font-black text-slate-900 group-hover:text-purple-600 transition-colors mb-4 leading-tight">
+                      {course.name || course.title}
+                    </h3>
+
+                    <div className="flex flex-wrap gap-4 mb-8">
+                      <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                        <Clock className="w-3.5 h-3.5" /> {course.duration || '8 Weeks'}
+                      </div>
+                      <div className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                        <GraduationCap className="w-3.5 h-3.5" /> {course.level || 'Intermediate'}
+                      </div>
+                    </div>
+
+                    <div className="pt-6 border-t border-slate-100 flex items-center justify-between">
+                      <span className="text-xl font-black text-slate-900">
+                        {course.fees_amount === 0 ? 'FREE' : `₹${course.fees_amount?.toLocaleString()}`}
+                      </span>
+                      <button className="flex items-center gap-2 px-6 py-3 bg-slate-900 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-purple-600 transition-all shadow-xl shadow-slate-900/10 group">
+                        Explore Syllabus <ArrowRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
-      </div>
+      </main>
     </div>
   );
 };
+
+const SAMPLE_COURSES = [
+  { id: 1, name: 'Cloud Architecture & AWS Mastery', provider_name: 'TechScale', duration: '12 Weeks', level: 'Expert', fees_amount: 14999 },
+  { id: 2, name: 'AI Engineering with Python', provider_name: 'MindCore', duration: '8 Weeks', level: 'Intermediate', fees_amount: 0 },
+  { id: 3, name: 'Digital Governance & Public Policy', provider_name: 'National Academy', duration: '10 Weeks', level: 'Beginner', fees_amount: 4999 },
+];
 
 export default CoursesPage;

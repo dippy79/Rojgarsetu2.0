@@ -1,210 +1,133 @@
 import React, { useState, useEffect } from 'react';
 import { apiUrl } from '../apiConfig';
-// Removed global CSS import - moved to _app.js or use CSS Modules
-// import './GovtFormsDashboard.css';
-
-/**
- * GovtFormsDashboard — "Govt Forms & Exams" dashboard.
- *
- * Smart logic:
- *  - Strictly sorted by closing date (ascending: nearest first).
- *  - Priority 1 (<=3 days): Red/Pink, on top, blinking "Ending Soon" badge.
- *  - Priority 2 (<=14 days): Orange warning badge.
- *  - Priority 3 (>14 days): Green safe badge.
- *
- * Fallback: The backend `/api/v1/forms` endpoint may not exist yet, so we seed
- * the component with 5 realistic mock records. If the endpoint later returns
- * data, the mock is replaced.
- */
-
-// Priority thresholds (in days).
-const P1_DAYS = 3;   // Ending soon (1-3 days)
-const P2_DAYS = 14;  // Warning (1-2 weeks)
-
-// Realistic mock data injected ONLY if the backend endpoint is unavailable.
-const MOCK_FORMS = [
-  {
-    id: 'mock-1',
-    title: 'SSC CGL 2025 Online Application',
-    department: 'Staff Selection Commission',
-    last_date: (() => {
-      const d = new Date();
-      d.setDate(d.getDate() + 2);
-      return d.toISOString();
-    })(),
-    apply_url: 'https://ssc.gov.in',
-  },
-  {
-    id: 'mock-2',
-    title: 'RRB NTPC 2025 Application Form',
-    department: 'Railway Recruitment Board',
-    last_date: (() => {
-      const d = new Date();
-      d.setDate(d.getDate() + 6);
-      return d.toISOString();
-    })(),
-    apply_url: 'https://rrbcdg.gov.in',
-  },
-  {
-    id: 'mock-3',
-    title: 'UPSC Civil Services Prelims 2025',
-    department: 'Union Public Service Commission',
-    last_date: (() => {
-      const d = new Date();
-      d.setDate(d.getDate() + 10);
-      return d.toISOString();
-    })(),
-    apply_url: 'https://upsc.gov.in',
-  },
-  {
-    id: 'mock-4',
-    title: 'IBPS PO 2025 Registration',
-    department: 'Institute of Banking Personnel Selection',
-    last_date: (() => {
-      const d = new Date();
-      d.setDate(d.getDate() + 20);
-      return d.toISOString();
-    })(),
-    apply_url: 'https://ibps.in',
-  },
-  {
-    id: 'mock-5',
-    title: 'State PSC Assistant Engineer 2025',
-    department: 'State Public Service Commission',
-    last_date: (() => {
-      const d = new Date();
-      d.setDate(d.getDate() + 45);
-      return d.toISOString();
-    })(),
-    apply_url: 'https://psc.gov.in',
-  },
-];
-
-function daysUntil(isoDate) {
-  const target = new Date(isoDate);
-  const now = new Date();
-  const diff = target.getTime() - now.getTime();
-  return Math.ceil(diff / (1000 * 60 * 60 * 24));
-}
-
-function getPriority(days) {
-  if (days <= P1_DAYS) return 1;
-  if (days <= P2_DAYS) return 2;
-  return 3;
-}
-
-function formatDate(isoDate) {
-  const d = new Date(isoDate);
-  return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
-}
+import { FileText, Calendar, ArrowRight, ShieldAlert, Clock, CheckCircle2, Loader2, Search } from 'lucide-react';
 
 const GovtFormsDashboard = () => {
   const [forms, setForms] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [usingMock, setUsingMock] = useState(false);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    let cancelled = false;
-
     async function load() {
       try {
         setLoading(true);
-        const response = await fetch(`${apiUrl('/api/v1/forms')}`);
-        if (!response.ok) throw new Error('HTTP ' + response.status);
-
+        const response = await fetch(apiUrl('/api/v1/forms'));
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const data = await response.json();
-        const list = (data && (data.data || data.forms)) || [];
-        if (cancelled) return;
-
-        if (Array.isArray(list) && list.length > 0) {
-          setForms(list);
-          setUsingMock(false);
-        } else {
-          // Backend reachable but empty -> fall back to mock so UI never breaks.
-          setForms(MOCK_FORMS);
-          setUsingMock(true);
-        }
+        setForms(data.data || data.forms || []);
       } catch (err) {
-        // Endpoint does not exist / backend offline -> inject realistic mocks.
-        if (cancelled) return;
+        console.error(err);
+        setError("Live feed synchronization interrupted. Showing scheduled deadlines.");
         setForms(MOCK_FORMS);
-        setUsingMock(true);
-        setError('Live forms feed unavailable — showing latest expected deadlines.');
       } finally {
-        if (!cancelled) setLoading(false);
+        setLoading(false);
       }
     }
-
     load();
-    return () => {
-      cancelled = true;
-    };
   }, []);
 
-  // Strictly sort by closing date ascending (closest first).
-  const sorted = [...forms].sort((a, b) => new Date(a.last_date) - new Date(b.last_date));
+  const daysUntil = (isoDate) => {
+    const diff = new Date(isoDate).getTime() - new Date().getTime();
+    return Math.ceil(diff / (1000 * 60 * 60 * 24));
+  };
+
+  const getPriorityInfo = (days) => {
+    if (days <= 3) return { label: 'Ending Soon', color: 'text-rose-600', bg: 'bg-rose-50', icon: ShieldAlert };
+    if (days <= 14) return { label: 'Limited Time', color: 'text-amber-600', bg: 'bg-amber-50', icon: Clock };
+    return { label: 'Active', color: 'text-emerald-600', bg: 'bg-emerald-50', icon: CheckCircle2 };
+  };
+
+  const sortedForms = [...forms].sort((a, b) => new Date(a.last_date) - new Date(b.last_date));
 
   return (
-    <div className="forms-dashboard">
-      <div className="page-header">
-        <h1>📝 Govt Forms &amp; Exams</h1>
-        <p>Deadlines closing soon — sorted by nearest date so you never miss an application.</p>
-      </div>
+    <div className="min-h-screen bg-[#FBFBFB] pt-24 pb-20">
+      <div className="max-w-7xl mx-auto px-6">
+        {/* Page Header */}
+        <header className="mb-16 space-y-4">
+          <div className="flex items-center gap-3">
+            <div className="p-3 bg-slate-900 rounded-2xl shadow-xl shadow-slate-900/10">
+              <FileText className="w-6 h-6 text-white" />
+            </div>
+            <h1 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tight">Official Registrations.</h1>
+          </div>
+          <p className="text-slate-500 font-medium text-lg max-w-2xl">
+            Centralized tracking for government entrance exams, recruitment forms, and official gazette notifications.
+            Sorted by deadline proximity.
+          </p>
+        </header>
 
-      {usingMock && <div className="forms-mock-banner">{error || 'Showing sample deadlines while the live feed connects.'}</div>}
-
-      {loading ? (
-        <div className="loading">Loading forms...</div>
-      ) : (
-        <div className="forms-list">
-          {sorted.length === 0 && <div className="no-results">No forms available right now.</div>}
-
-          {sorted.map((form) => {
-            const days = daysUntil(form.last_date);
-            const priority = getPriority(days);
-            const safeDays = Math.max(days, 0);
-
-            return (
-              <div key={form.id || form.title} className={`form-card priority-${priority}`}>
-                <div className="form-card-body">
-                  <h3 className="form-title">{form.title}</h3>
-                  <p className="form-department">{form.department || 'Government'}</p>
-
-                  {priority === 1 && (
-                    <span className="badge badge-p1" role="status">
-                      ⚠️ Ending Soon
-                    </span>
-                  )}
-                  {priority === 2 && (
-                    <span className="badge badge-p2" role="status">
-                      ⏳ Closing in {safeDays} days
-                    </span>
-                  )}
-                  {priority === 3 && (
-                    <span className="badge badge-p3" role="status">
-                      ✅ Closing in {safeDays} days
-                    </span>
-                  )}
-                </div>
-
-                <div className="form-card-meta">
-                  <span className="form-date">📅 {formatDate(form.last_date)}</span>
-                  {form.apply_url ? (
-                    <a className="form-apply" href={form.apply_url} target="_blank" rel="noreferrer">
-                      Apply Now →
-                    </a>
-                  ) : (
-                    <span className="form-apply disabled">Apply Soon</span>
-                  )}
-                </div>
-              </div>
-            );
-          })}
+        {/* Dynamic Search & Utility */}
+        <div className="bg-white border border-slate-200 p-4 rounded-[2rem] shadow-sm flex flex-col md:flex-row items-center gap-4 mb-12">
+          <div className="flex-1 relative w-full group">
+            <Search className="absolute left-4 top-3.5 w-5 h-5 text-slate-400 group-focus-within:text-slate-900 transition-colors" />
+            <input type="text" placeholder="Filter by examination or board..." className="w-full pl-12 pr-4 py-3 bg-slate-50 border-none rounded-xl text-sm font-bold outline-none" />
+          </div>
+          <div className="px-6 py-3 bg-indigo-50 text-indigo-700 rounded-xl text-[10px] font-black uppercase tracking-widest">
+            {forms.length} Dynamic Forms Detected
+          </div>
         </div>
-      )}
+
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-24 space-y-6">
+            <Loader2 className="w-12 h-12 text-slate-900 animate-spin" />
+            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Polling Official APIs...</span>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {sortedForms.map((form) => {
+              const days = daysUntil(form.last_date);
+              const p = getPriorityInfo(days);
+              const StatusIcon = p.icon;
+
+              return (
+                <div key={form.id} className="group bg-white border border-slate-200 rounded-[2.5rem] p-8 hover:border-slate-900 hover:shadow-2xl transition-all flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-center justify-between mb-8">
+                      <div className={`px-4 py-1.5 ${p.bg} ${p.color} rounded-full flex items-center gap-2 text-[10px] font-black uppercase tracking-widest border border-current/10`}>
+                        <StatusIcon className="w-3.5 h-3.5" />
+                        {p.label}
+                      </div>
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">ID: {form.id?.slice(0, 8)}</span>
+                    </div>
+
+                    <h3 className="text-2xl font-black text-slate-900 group-hover:text-indigo-600 transition-colors mb-2 leading-tight">
+                      {form.title}
+                    </h3>
+                    <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-8">{form.department || 'Official Board'}</p>
+                  </div>
+
+                  <div className="space-y-6">
+                    <div className="p-5 bg-slate-50 rounded-2xl flex items-center justify-between group-hover:bg-slate-900 group-hover:text-white transition-all">
+                      <div className="flex items-center gap-3">
+                        <Calendar className="w-5 h-5 text-slate-400" />
+                        <span className="text-xs font-black uppercase tracking-widest">Closing Date</span>
+                      </div>
+                      <span className="text-sm font-black">{new Date(form.last_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                    </div>
+
+                    <a
+                      href={form.apply_url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="w-full flex items-center justify-center gap-3 py-5 bg-slate-900 text-white font-black rounded-2xl hover:bg-indigo-600 transition-all shadow-xl shadow-slate-900/10 uppercase text-xs tracking-widest"
+                    >
+                      Official Apply <ArrowRight className="w-4 h-4" />
+                    </a>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
     </div>
   );
 };
+
+const MOCK_FORMS = [
+  { id: 'mock1', title: 'SSC CGL Tier 1 Application', department: 'Staff Selection Commission', last_date: '2026-08-30', apply_url: '#' },
+  { id: 'mock2', title: 'UPSC CSE Prelims 2026', department: 'Union Public Service Commission', last_date: '2026-09-15', apply_url: '#' },
+  { id: 'mock3', title: 'RRB Non-Technical Senior Clerk', department: 'Railway Recruitment Board', last_date: '2026-08-25', apply_url: '#' },
+];
 
 export default GovtFormsDashboard;
