@@ -14,7 +14,6 @@ import (
 )
 
 const searchCompanyJobs = `-- name: SearchCompanyJobs :many
-
 SELECT 
     cj.id,
     cj.title,
@@ -27,13 +26,13 @@ SELECT
     cj.is_remote,
     cj.created_at,
     c.name as company_name,
-    ts_rank(cj.search_vector, to_tsquery('english', $1)) as rank
+    ts_rank(cj.search_vector, plainto_tsquery('english', $1)) as rank
 FROM company_jobs cj
 LEFT JOIN companies c ON cj.company_id = c.id
 WHERE 
     cj.is_active = true
     AND (
-        cj.search_vector @@ to_tsquery('english', $1)
+        cj.search_vector @@ plainto_tsquery('english', $1)
         OR cj.title ILIKE '%' || $2 || '%'
         OR cj.description ILIKE '%' || $2 || '%'
         OR cj.location ILIKE '%' || $2 || '%'
@@ -44,10 +43,10 @@ LIMIT $3 OFFSET $4
 `
 
 type SearchCompanyJobsParams struct {
-	ToTsquery string         `json:"to_tsquery"`
-	Column2   sql.NullString `json:"column_2"`
-	Limit     int32          `json:"limit"`
-	Offset    int32          `json:"offset"`
+	PlaintoTsquery string         `json:"plainto_tsquery"`
+	Column2        sql.NullString `json:"column_2"`
+	Limit          int32          `json:"limit"`
+	Offset         int32          `json:"offset"`
 }
 
 type SearchCompanyJobsRow struct {
@@ -65,10 +64,9 @@ type SearchCompanyJobsRow struct {
 	Rank        float32        `json:"rank"`
 }
 
-// Search queries using full-text search and pg_trgm
 func (q *Queries) SearchCompanyJobs(ctx context.Context, arg SearchCompanyJobsParams) ([]SearchCompanyJobsRow, error) {
 	rows, err := q.db.QueryContext(ctx, searchCompanyJobs,
-		arg.ToTsquery,
+		arg.PlaintoTsquery,
 		arg.Column2,
 		arg.Limit,
 		arg.Offset,
@@ -114,7 +112,7 @@ LEFT JOIN companies c ON cj.company_id = c.id
 WHERE 
     cj.is_active = true
     AND (
-        cj.search_vector @@ to_tsquery('english', $1)
+        cj.search_vector @@ plainto_tsquery('english', $1)
         OR cj.title ILIKE '%' || $2 || '%'
         OR cj.description ILIKE '%' || $2 || '%'
         OR cj.location ILIKE '%' || $2 || '%'
@@ -123,12 +121,12 @@ WHERE
 `
 
 type SearchCompanyJobsCountParams struct {
-	ToTsquery string         `json:"to_tsquery"`
-	Column2   sql.NullString `json:"column_2"`
+	PlaintoTsquery string         `json:"plainto_tsquery"`
+	Column2        sql.NullString `json:"column_2"`
 }
 
 func (q *Queries) SearchCompanyJobsCount(ctx context.Context, arg SearchCompanyJobsCountParams) (int64, error) {
-	row := q.db.QueryRowContext(ctx, searchCompanyJobsCount, arg.ToTsquery, arg.Column2)
+	row := q.db.QueryRowContext(ctx, searchCompanyJobsCount, arg.PlaintoTsquery, arg.Column2)
 	var count int64
 	err := row.Scan(&count)
 	return count, err
@@ -148,12 +146,12 @@ SELECT
     salary,
     exam_date,
     created_at,
-    ts_rank(search_vector, to_tsquery('english', $1)) as rank
+    ts_rank(search_vector, plainto_tsquery('english', $1)) as rank
 FROM jobs_government
 WHERE 
     is_active = true
     AND (
-        search_vector @@ to_tsquery('english', $1)
+        search_vector @@ plainto_tsquery('english', $1)
         OR title ILIKE '%' || $2 || '%'
         OR department ILIKE '%' || $2 || '%'
         OR location ILIKE '%' || $2 || '%'
@@ -164,10 +162,10 @@ LIMIT $3 OFFSET $4
 `
 
 type SearchGovJobsParams struct {
-	ToTsquery string         `json:"to_tsquery"`
-	Column2   sql.NullString `json:"column_2"`
-	Limit     int32          `json:"limit"`
-	Offset    int32          `json:"offset"`
+	PlaintoTsquery string         `json:"plainto_tsquery"`
+	Column2        sql.NullString `json:"column_2"`
+	Limit          int32          `json:"limit"`
+	Offset         int32          `json:"offset"`
 }
 
 type SearchGovJobsRow struct {
@@ -188,7 +186,7 @@ type SearchGovJobsRow struct {
 
 func (q *Queries) SearchGovJobs(ctx context.Context, arg SearchGovJobsParams) ([]SearchGovJobsRow, error) {
 	rows, err := q.db.QueryContext(ctx, searchGovJobs,
-		arg.ToTsquery,
+		arg.PlaintoTsquery,
 		arg.Column2,
 		arg.Limit,
 		arg.Offset,
@@ -234,7 +232,7 @@ FROM jobs_government
 WHERE 
     is_active = true
     AND (
-        search_vector @@ to_tsquery('english', $1)
+        search_vector @@ plainto_tsquery('english', $1)
         OR title ILIKE '%' || $2 || '%'
         OR department ILIKE '%' || $2 || '%'
         OR location ILIKE '%' || $2 || '%'
@@ -243,12 +241,12 @@ WHERE
 `
 
 type SearchGovJobsCountParams struct {
-	ToTsquery string         `json:"to_tsquery"`
-	Column2   sql.NullString `json:"column_2"`
+	PlaintoTsquery string         `json:"plainto_tsquery"`
+	Column2        sql.NullString `json:"column_2"`
 }
 
 func (q *Queries) SearchGovJobsCount(ctx context.Context, arg SearchGovJobsCountParams) (int64, error) {
-	row := q.db.QueryRowContext(ctx, searchGovJobsCount, arg.ToTsquery, arg.Column2)
+	row := q.db.QueryRowContext(ctx, searchGovJobsCount, arg.PlaintoTsquery, arg.Column2)
 	var count int64
 	err := row.Scan(&count)
 	return count, err
@@ -269,12 +267,12 @@ SELECT
     source,
     posted_at,
     created_at,
-    ts_rank(search_vector, to_tsquery('english', $1)) as rank
+    ts_rank(search_vector, plainto_tsquery('english', $1)) as rank
 FROM jobs_private
 WHERE 
     is_active = true
     AND (
-        search_vector @@ to_tsquery('english', $1)
+        search_vector @@ plainto_tsquery('english', $1)
         OR title ILIKE '%' || $2 || '%'
         OR company ILIKE '%' || $2 || '%'
         OR location ILIKE '%' || $2 || '%'
@@ -285,10 +283,10 @@ LIMIT $3 OFFSET $4
 `
 
 type SearchPrivJobsParams struct {
-	ToTsquery string         `json:"to_tsquery"`
-	Column2   sql.NullString `json:"column_2"`
-	Limit     int32          `json:"limit"`
-	Offset    int32          `json:"offset"`
+	PlaintoTsquery string         `json:"plainto_tsquery"`
+	Column2        sql.NullString `json:"column_2"`
+	Limit          int32          `json:"limit"`
+	Offset         int32          `json:"offset"`
 }
 
 type SearchPrivJobsRow struct {
@@ -310,7 +308,7 @@ type SearchPrivJobsRow struct {
 
 func (q *Queries) SearchPrivJobs(ctx context.Context, arg SearchPrivJobsParams) ([]SearchPrivJobsRow, error) {
 	rows, err := q.db.QueryContext(ctx, searchPrivJobs,
-		arg.ToTsquery,
+		arg.PlaintoTsquery,
 		arg.Column2,
 		arg.Limit,
 		arg.Offset,
@@ -357,7 +355,7 @@ FROM jobs_private
 WHERE 
     is_active = true
     AND (
-        search_vector @@ to_tsquery('english', $1)
+        search_vector @@ plainto_tsquery('english', $1)
         OR title ILIKE '%' || $2 || '%'
         OR company ILIKE '%' || $2 || '%'
         OR location ILIKE '%' || $2 || '%'
@@ -366,12 +364,139 @@ WHERE
 `
 
 type SearchPrivJobsCountParams struct {
-	ToTsquery string         `json:"to_tsquery"`
-	Column2   sql.NullString `json:"column_2"`
+	PlaintoTsquery string         `json:"plainto_tsquery"`
+	Column2        sql.NullString `json:"column_2"`
 }
 
 func (q *Queries) SearchPrivJobsCount(ctx context.Context, arg SearchPrivJobsCountParams) (int64, error) {
-	row := q.db.QueryRowContext(ctx, searchPrivJobsCount, arg.ToTsquery, arg.Column2)
+	row := q.db.QueryRowContext(ctx, searchPrivJobsCount, arg.PlaintoTsquery, arg.Column2)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const unifiedSearch = `-- name: UnifiedSearch :many
+
+SELECT 
+    'gov' as job_type,
+    id,
+    title,
+    department,
+    location,
+    apply_url,
+    last_date,
+    source,
+    eligibility,
+    vacancy_count,
+    salary,
+    exam_date,
+    created_at,
+    ts_rank(search_vector, plainto_tsquery('english', $1)) as rank
+FROM jobs_government
+WHERE 
+    is_active = true
+    AND search_vector @@ plainto_tsquery('english', $1)
+
+UNION ALL
+
+SELECT 
+    'private' as job_type,
+    id,
+    company as department,
+    location,
+    url as apply_url,
+    posted_at as last_date,
+    source,
+    description as eligibility,
+    0 as vacancy_count,
+    salary,
+    NULL as exam_date,
+    created_at,
+    ts_rank(search_vector, plainto_tsquery('english', $1)) as rank
+FROM jobs_private
+WHERE 
+    is_active = true
+    AND search_vector @@ plainto_tsquery('english', $1)
+
+ORDER BY rank DESC
+LIMIT $2 OFFSET $3
+`
+
+type UnifiedSearchParams struct {
+	PlaintoTsquery string `json:"plainto_tsquery"`
+	Limit          int32  `json:"limit"`
+	Offset         int32  `json:"offset"`
+}
+
+type UnifiedSearchRow struct {
+	JobType      string         `json:"job_type"`
+	ID           uuid.UUID      `json:"id"`
+	Title        string         `json:"title"`
+	Department   sql.NullString `json:"department"`
+	Location     sql.NullString `json:"location"`
+	ApplyUrl     sql.NullString `json:"apply_url"`
+	LastDate     sql.NullTime   `json:"last_date"`
+	Source       string         `json:"source"`
+	Eligibility  sql.NullString `json:"eligibility"`
+	VacancyCount sql.NullInt32  `json:"vacancy_count"`
+	Salary       sql.NullString `json:"salary"`
+	ExamDate     sql.NullTime   `json:"exam_date"`
+	CreatedAt    sql.NullTime   `json:"created_at"`
+	Rank         float32        `json:"rank"`
+}
+
+// Search queries using full-text search and pg_trgm
+// Unified search across government and private jobs using plainto_tsquery
+func (q *Queries) UnifiedSearch(ctx context.Context, arg UnifiedSearchParams) ([]UnifiedSearchRow, error) {
+	rows, err := q.db.QueryContext(ctx, unifiedSearch, arg.PlaintoTsquery, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []UnifiedSearchRow
+	for rows.Next() {
+		var i UnifiedSearchRow
+		if err := rows.Scan(
+			&i.JobType,
+			&i.ID,
+			&i.Title,
+			&i.Department,
+			&i.Location,
+			&i.ApplyUrl,
+			&i.LastDate,
+			&i.Source,
+			&i.Eligibility,
+			&i.VacancyCount,
+			&i.Salary,
+			&i.ExamDate,
+			&i.CreatedAt,
+			&i.Rank,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const unifiedSearchCount = `-- name: UnifiedSearchCount :one
+SELECT COUNT(*) FROM (
+    SELECT 1 FROM jobs_government
+    WHERE is_active = true AND search_vector @@ plainto_tsquery('english', $1)
+    UNION ALL
+    SELECT 1 FROM jobs_private
+    WHERE is_active = true AND search_vector @@ plainto_tsquery('english', $1)
+) as combined
+`
+
+func (q *Queries) UnifiedSearchCount(ctx context.Context, plaintoTsquery string) (int64, error) {
+	row := q.db.QueryRowContext(ctx, unifiedSearchCount, plaintoTsquery)
 	var count int64
 	err := row.Scan(&count)
 	return count, err

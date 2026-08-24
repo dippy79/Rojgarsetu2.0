@@ -119,6 +119,7 @@ CREATE TABLE jobs_government (
     exam_date TIMESTAMPTZ,
     notification_pdf_url TEXT,
     is_active BOOLEAN,
+    job_hash TEXT UNIQUE, -- MD5(title + department + last_date)
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -138,6 +139,7 @@ CREATE TABLE jobs_private (
     source TEXT NOT NULL,
     posted_at TIMESTAMPTZ,
     is_active BOOLEAN,
+    job_hash TEXT UNIQUE, -- MD5(company + title + location)
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -239,7 +241,7 @@ CREATE TABLE user_notification_logs (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     enrollment_id UUID REFERENCES user_enrollments(id) ON DELETE SET NULL,
-    notification_type TEXT NOT NULL CHECK (notification_type IN ('expiry_warning', 'expiry_final', 'enrollment_reminder', 'course_update')),
+    notification_type TEXT NOT NULL CHECK (notification_type IN ('expiry_warning', 'expiry_final', 'enrollment_reminder', 'course_update', 'application_status')),
     channel TEXT NOT NULL DEFAULT 'in_app' CHECK (channel IN ('in_app', 'email', 'push', 'sms')),
     title TEXT NOT NULL,
     message TEXT NOT NULL,
@@ -261,3 +263,53 @@ CREATE TABLE refresh_tokens (
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+-- email_queue table
+CREATE TABLE email_queue (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    to_email TEXT NOT NULL,
+    subject TEXT NOT NULL,
+    body TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'sent', 'failed')),
+    attempts INT4 NOT NULL DEFAULT 0,
+    last_attempt_at TIMESTAMPTZ,
+    sent_at TIMESTAMPTZ,
+    error_message TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- interviews table
+CREATE TABLE interviews (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    application_id UUID NOT NULL REFERENCES job_applications(id) ON DELETE CASCADE,
+    candidate_id UUID NOT NULL REFERENCES candidates(id),
+    company_id UUID NOT NULL REFERENCES companies(id),
+    scheduled_at TIMESTAMPTZ NOT NULL,
+    room_url TEXT,
+    status TEXT NOT NULL DEFAULT 'scheduled' CHECK (status IN ('scheduled', 'completed', 'cancelled')),
+    meeting_id TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- saved_jobs table (bookmark gov jobs)
+CREATE TABLE saved_jobs (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    gov_job_id UUID REFERENCES jobs_government(id) ON DELETE CASCADE,
+    priv_job_id UUID REFERENCES jobs_private(id) ON DELETE CASCADE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE(user_id, gov_job_id),
+    UNIQUE(user_id, priv_job_id)
+);
+
+-- platform_stats table
+CREATE TABLE platform_stats (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    total_jobs INT8 NOT NULL DEFAULT 0,
+    total_candidates INT8 NOT NULL DEFAULT 0,
+    total_companies INT8 NOT NULL DEFAULT 0,
+    total_placements INT8 NOT NULL DEFAULT 0,
+    total_applications INT8 NOT NULL DEFAULT 0,
+    visits_today INT8 NOT NULL DEFAULT 0,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);

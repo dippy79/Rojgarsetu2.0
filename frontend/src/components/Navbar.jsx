@@ -4,6 +4,8 @@ import { useRouter } from 'next/router';
 import { User, LogOut, LayoutDashboard, ChevronDown, Briefcase } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
+import NotificationBell from './NotificationBell';
+
 const Navbar = () => {
   const router = useRouter();
   const { user, logout, isAuthenticated } = useAuth();
@@ -74,6 +76,26 @@ const Navbar = () => {
   const dashboardPath = `/dashboard/${userRole}`;
   const profilePath = userRole === 'company' || userRole === 'employer' ? '/company/profile' : '/candidate/profile';
 
+  useEffect(() => {
+    let ws;
+    if (isLoggedIn && typeof window !== 'undefined') {
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const host = process.env.NEXT_PUBLIC_WS_HOST || 'localhost:3001';
+      ws = new WebSocket(`${protocol}//${host}/api/v1/ws`);
+
+      ws.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          if (data.type === 'notification') {
+             // Logic to show notification
+             console.log("Real-time signal received:", data);
+          }
+        } catch (e) { console.error("WS parse error:", e); }
+      };
+    }
+    return () => ws?.close();
+  }, [isLoggedIn]);
+
   return (
     <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-slate-200 h-16 flex items-center justify-between px-6 shadow-sm">
       {/* Brand Logo */}
@@ -108,6 +130,7 @@ const Navbar = () => {
 
       {/* Auth Action Section */}
       <div className="flex items-center gap-4">
+        {isLoggedIn && <NotificationBell />}
         {!isLoggedIn ? (
           /* Unauthenticated State */
           <div className="flex items-center gap-3">

@@ -110,5 +110,39 @@ func (s *ApplicationService) UpdateApplicationStatus(ctx context.Context, id str
 	if err != nil {
 		return nil, err
 	}
+
+	// Trigger Notification and Email
+	go s.triggerStatusChangeActions(context.Background(), uid, status.String)
+
 	return &result, nil
+}
+
+func (s *ApplicationService) triggerStatusChangeActions(ctx context.Context, appID uuid.UUID, status string) {
+	details, err := s.db.Queries.GetApplicationWithDetails(ctx, appID)
+	if err != nil {
+		fmt.Printf("Failed to get application details for notification: %v\n", err)
+		return
+	}
+
+	subject := fmt.Sprintf("Application Status Update: %s", details.JobTitle)
+	body := fmt.Sprintf("Hello %s,\n\nYour application status for '%s' at %s has been updated to: %s.\n\nBest regards,\nRojgarSetu Team",
+		details.CandidateName, details.JobTitle, details.CompanyName, status)
+
+	// Enqueue Email
+	_, _ = s.db.Queries.EnqueueEmail(ctx, db.EnqueueEmailParams{
+		ToEmail: details.Email,
+		Subject: subject,
+		Body:    body,
+	})
+
+	// Create In-App Notification
+	_, _ = s.db.CreateNotificationLog(
+		details.CandidateID.String(),
+		nil,
+		"application_status",
+		"in_app",
+		subject,
+		fmt.Sprintf("Your application for %s is now %s", details.JobTitle, status),
+		map[string]interface{}{"job_title": details.JobTitle, "status": status},
+	)
 }

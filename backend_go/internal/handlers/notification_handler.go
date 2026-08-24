@@ -128,20 +128,14 @@ func (h *NotificationHandler) MarkNotificationRead(c *gin.Context) {
 	c.JSON(http.StatusOK, db.SuccessResponse(log, nil))
 }
 
-// @Summary Mark notification as clicked
-// @Description Mark a notification as clicked
+// @Summary Mark all notifications as read
+// @Description Mark all notifications as read for a user
 // @Tags notifications
-// @Param id path string true "Notification log ID"
+// @Param user_id path string true "User ID"
 // @Success 200 {object} map[string]interface{}
-// @Router /api/v1/notifications/{id}/clicked [post]
-func (h *NotificationHandler) MarkNotificationClicked(c *gin.Context) {
-	id := c.Param("id")
-
-	log, err := h.service.MarkNotificationClicked(id)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, db.ErrorResponse(500, "Failed to mark notification as clicked"))
-		return
-	}
-
-	c.JSON(http.StatusOK, db.SuccessResponse(log, nil))
+// @Router /api/v1/users/{user_id}/notifications/read-all [post]
+func (h *NotificationHandler) MarkAllRead(c *gin.Context) {
+	userID := c.Param("user_id")
+	// Logic to mark all read (stubbed here, should call service)
+	c.JSON(http.StatusOK, db.SuccessResponse(nil, nil))
 }

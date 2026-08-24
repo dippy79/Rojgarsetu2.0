@@ -59,12 +59,12 @@ export const authAPI = {
     login: (data: { email: string; password: string }) => 
         api.post<ApiResponse<{ user: User; accessToken: string; refreshToken: string }>>('/api/auth/login', data),
     
-    logout: () => api.post<ApiResponse>('/api/auth/logout'),
+    logout: () => api.post<ApiResponse<any>>('/api/auth/logout'),
     
     getProfile: () => api.get<ApiResponse<UserProfile>>('/api/auth/profile'),
     
     updateProfile: (data: Partial<UserProfile>) => 
-        api.put<ApiResponse>('/api/auth/profile', data),
+        api.put<ApiResponse<any>>('/api/auth/profile', data),
     
     refreshToken: (data: { refreshToken: string }) => 
         api.post<ApiResponse<{ accessToken: string; refreshToken: string }>>('/api/auth/refresh', data)
@@ -84,14 +84,14 @@ export const jobsAPI = {
         limit?: number; 
         sortBy?: string; 
         sortOrder?: string;
-    }) => api.get<ApiResponse<Job[], Pagination>>('/api/jobs', { params }),
+    }) => api.get<ApiResponse<Job[]>>('/api/jobs', { params }),
     
     // Get single job
     getJob: (id: string) => api.get<ApiResponse<Job>>(`/api/jobs/${id}`),
     
     // Search jobs
     searchJobs: (q: string, page?: number, limit?: number) => 
-        api.get<ApiResponse<Job[], Pagination>>('/api/jobs/search', { params: { q, page, limit } }),
+        api.get<ApiResponse<Job[]>>('/api/jobs/search', { params: { q, page, limit } }),
     
     // Get featured jobs
     getFeaturedJobs: (limit = 5) => 
@@ -111,23 +111,23 @@ export const jobsAPI = {
     updateJob: (id: string, data: Partial<Job>) => api.put<ApiResponse<Job>>(`/api/jobs/${id}`, data),
     
     // Delete job (company/admin)
-    deleteJob: (id: string) => api.delete<ApiResponse>(`/api/jobs/${id}`),
+    deleteJob: (id: string) => api.delete<ApiResponse<any>>(`/api/jobs/${id}`),
     
     // Save job (candidate)
-    saveJob: (jobId: string) => api.post<ApiResponse>(`/api/jobs/${jobId}/save`),
+    saveJob: (jobId: string) => api.post<ApiResponse<any>>(`/api/jobs/${jobId}/save`),
     
     // Unsave job (candidate)
-    unsaveJob: (jobId: string) => api.delete<ApiResponse>(`/api/jobs/${jobId}/save`),
+    unsaveJob: (jobId: string) => api.delete<ApiResponse<any>>(`/api/jobs/${jobId}/save`),
     
     // Get saved jobs (candidate)
     getSavedJobs: () => api.get<ApiResponse<Job[]>>('/api/jobs/saved'),
     
     // Apply to job (candidate)
     applyToJob: (jobId: string, data: { coverLetter?: string; resumeUrl?: string }) => 
-        api.post<ApiResponse>(`/api/jobs/${jobId}/apply`, data),
+        api.post<ApiResponse<any>>(`/api/jobs/${jobId}/apply`, data),
     
     // Withdraw application (candidate)
-    withdrawApplication: (jobId: string) => api.delete<ApiResponse>(`/api/jobs/${jobId}/apply`),
+    withdrawApplication: (jobId: string) => api.delete<ApiResponse<any>>(`/api/jobs/${jobId}/apply`),
     
     // Get my applications (candidate)
     getMyApplications: () => api.get<ApiResponse<any[]>>('/api/jobs/applications')
@@ -147,14 +147,14 @@ export const coursesAPI = {
         limit?: number; 
         sortBy?: string; 
         sortOrder?: string;
-    }) => api.get<ApiResponse<Course[], Pagination>>('/api/courses', { params }),
+    }) => api.get<ApiResponse<Course[]>>('/api/courses', { params }),
     
     // Get single course
     getCourse: (id: string) => api.get<ApiResponse<Course>>(`/api/courses/${id}`),
     
     // Search courses
     searchCourses: (q: string, page?: number, limit?: number) => 
-        api.get<ApiResponse<Course[], Pagination>>('/api/courses/search', { params: { q, page, limit } }),
+        api.get<ApiResponse<Course[]>>('/api/courses/search', { params: { q, page, limit } }),
     
     // Get featured courses
     getFeaturedCourses: (limit = 5) => 
@@ -174,7 +174,7 @@ export const coursesAPI = {
     updateCourse: (id: string, data: Partial<Course>) => api.put<ApiResponse<Course>>(`/api/courses/${id}`, data),
     
     // Delete course (company/admin)
-    deleteCourse: (id: string) => api.delete<ApiResponse>(`/api/courses/${id}`)
+    deleteCourse: (id: string) => api.delete<ApiResponse<any>>(`/api/courses/${id}`)
 };
 
 // Companies API
@@ -192,7 +192,7 @@ export const companiesAPI = {
     getCompanyCourses: (id: string) => api.get<ApiResponse<Course[]>>(`/api/companies/${id}/courses`),
     
     // Update company (company admin)
-    updateCompany: (id: string, data: any) => api.put<ApiResponse>(`/api/companies/${id}`, data),
+    updateCompany: (id: string, data: any) => api.put<ApiResponse<any>>(`/api/companies/${id}`, data),
     
     // Get company applicants (company admin)
     getCompanyApplicants: (companyId: string, params?: any) => 
@@ -200,7 +200,7 @@ export const companiesAPI = {
     
     // Update applicant status (company admin)
     updateApplicantStatus: (companyId: string, applicationId: string, status: string) => 
-        api.put<ApiResponse>(`/api/companies/${companyId}/applicants/${applicationId}`, { status })
+        api.put<ApiResponse<any>>(`/api/companies/${companyId}/applicants/${applicationId}`, { status })
 };
 
 // Applications API
@@ -213,7 +213,7 @@ export const applicationsAPI = {
     
     // Update application status
     updateApplication: (id: string, status: string, notes?: string) => 
-        api.put<ApiResponse>(`/api/applications/${id}`, { status, notes })
+        api.put<ApiResponse<any>>(`/api/applications/${id}`, { status, notes })
 };
 
 // Notifications API
@@ -222,13 +222,13 @@ export const notificationsAPI = {
     getNotifications: () => api.get<ApiResponse<any[]>>('/api/notifications'),
     
     // Mark notification as read
-    markAsRead: (id: string) => api.put<ApiResponse>(`/api/notifications/${id}/read`),
+    markAsRead: (id: string) => api.put<ApiResponse<any>>(`/api/notifications/${id}/read`),
     
     // Mark all as read
-    markAllAsRead: () => api.put<ApiResponse>('/api/notifications/read-all'),
+    markAllAsRead: () => api.put<ApiResponse<any>>('/api/notifications/read-all'),
     
     // Delete notification
-    deleteNotification: (id: string) => api.delete<ApiResponse>(`/api/notifications/${id}`),
+    deleteNotification: (id: string) => api.delete<ApiResponse<any>>(`/api/notifications/${id}`),
     
     // Get unread count
     getUnreadCount: () => api.get<ApiResponse<{ count: number }>>('/api/notifications/unread-count')

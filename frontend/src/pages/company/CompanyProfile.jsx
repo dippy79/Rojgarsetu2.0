@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Building2, Globe, Mail, Phone, MapPin, BadgeCheck, Settings, Users, Link as LinkIcon, Image as ImageIcon } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import Link from 'next/link';
+import { useRouter } from 'next/router';
 
 export default function CompanyProfile() {
+  const router = useRouter();
   const [profile, setProfile] = useState({
     name: '',
     industry: '',
@@ -54,13 +56,13 @@ export default function CompanyProfile() {
       <aside className="w-64 bg-white border-r border-slate-200 p-6">
         <h2 className="text-xl font-bold text-slate-800 mb-8">RojgarSetu <span className="text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded">Recruiter</span></h2>
         <nav className="space-y-2">
-          <Link to="/dashboard/company" className="flex items-center gap-3 px-4 py-3 text-slate-600 hover:bg-slate-50 rounded-xl font-medium">
+          <Link href="/dashboard/company" className="flex items-center gap-3 px-4 py-3 text-slate-600 hover:bg-slate-50 rounded-xl font-medium">
             <Building2 className="w-5 h-5" /> Dashboard
           </Link>
-          <Link to="/company/profile" className="flex items-center gap-3 px-4 py-3 bg-indigo-50 text-indigo-600 rounded-xl font-medium">
+          <Link href="/company/profile" className="flex items-center gap-3 px-4 py-3 bg-indigo-50 text-indigo-600 rounded-xl font-medium">
             <Settings className="w-5 h-5" /> Profile Settings
           </Link>
-          <Link to="/company/applicants" className="flex items-center gap-3 px-4 py-3 text-slate-600 hover:bg-slate-50 rounded-xl font-medium">
+          <Link href="/company/applicants" className="flex items-center gap-3 px-4 py-3 text-slate-600 hover:bg-slate-50 rounded-xl font-medium">
             <Users className="w-5 h-5" /> Applicants
           </Link>
         </nav>

@@ -40,12 +40,11 @@ func clampPagination(page, limit int) (int, int, int) {
 	return page, limit, offset
 }
 
-func nullStringPtr(ns sql.NullString) *string {
-	if !ns.Valid {
-		return nil
+func NullStringPtr(s string) sql.NullString {
+	if s == "" {
+		return sql.NullString{Valid: false}
 	}
-	s := ns.String
-	return &s
+	return sql.NullString{String: s, Valid: true}
 }
 
 func stringFromNullString(ns sql.NullString) string {

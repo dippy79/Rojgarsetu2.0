@@ -1,109 +1,55 @@
 package services
 
 import (
-	"encoding/json"
-	"time"
+	"github.com/rojgarsetu/backend/internal/db"
 )
 
 type NotificationService struct {
-	// This could be extended to include database connections, etc.
+	db *db.PostgresDB
 }
 
-func NewNotificationService() *NotificationService {
-	return &NotificationService{}
+func NewNotificationService(database *db.PostgresDB) *NotificationService {
+	return &NotificationService{db: database}
 }
 
-type Notification struct {
-	Type      string                 `json:"type"`
-	Title     string                 `json:"title"`
-	Message   string                 `json:"message"`
-	Data      map[string]interface{} `json:"data,omitempty"`
-	Timestamp time.Time              `json:"timestamp"`
-	UserID    string                 `json:"user_id,omitempty"`
-}
-
-// CreateApplicationStatusNotification creates a notification for application status changes
-func (s *NotificationService) CreateApplicationStatusNotification(userID, jobTitle, status string) Notification {
-	return Notification{
-		Type:    "application_status",
-		Title:   "Application Status Update",
-		Message: "Your application status has changed",
-		Data: map[string]interface{}{
-			"job_title": jobTitle,
-			"status":    status,
-		},
-		Timestamp: time.Now(),
-		UserID:    userID,
+// CanSendNotification checks if a notification can be sent (max 2 per day)
+func (s *NotificationService) CanSendNotification(userID string, notificationType string) (bool, error) {
+	count, err := s.db.GetDailyNotificationCount(userID)
+	if err != nil {
+		return false, err
 	}
+	return count < 2, nil
 }
 
-// CreateNewJobNotification creates a notification for new job postings
-func (s *NotificationService) CreateNewJobNotification(jobTitle, jobType string) Notification {
-	return Notification{
-		Type:    "new_job",
-		Title:   "New Job Posted",
-		Message: "A new job matching your preferences has been posted",
-		Data: map[string]interface{}{
-			"job_title": jobTitle,
-			"job_type":  jobType,
-		},
-		Timestamp: time.Now(),
-	}
-}
-
-// CreateSystemNotification creates a general system notification
-func (s *NotificationService) CreateSystemNotification(title, message string) Notification {
-	return Notification{
-		Type:      "system",
-		Title:     title,
-		Message:   message,
-		Timestamp: time.Now(),
-	}
-}
-
-// ToJSON converts notification to JSON
-func (n *Notification) ToJSON() ([]byte, error) {
-	return json.Marshal(n)
-}
-
-// CanSendNotificationByType checks if a user allows receiving a specific notification type
+// Alias for compatibility
 func (s *NotificationService) CanSendNotificationByType(userID string, notificationType string) (bool, error) {
-	return true, nil
+	return s.CanSendNotification(userID, notificationType)
 }
 
-// CreateNotificationLog records notification history into log storage
 func (s *NotificationService) CreateNotificationLog(
 	userID string,
-	recipient *string,
+	enrollmentID *string,
 	notificationType string,
+	channel string,
 	title string,
-	body string,
-	status string,
-	metadata map[string]interface{},
-) (string, error) {
-	return "log_id_stub", nil
+	message string,
+	payload map[string]interface{},
+) (*db.UserNotificationLog, error) {
+	return s.db.CreateNotificationLog(userID, enrollmentID, notificationType, channel, title, message, payload)
 }
 
-func (s *NotificationService) GetUserNotificationLogs(filter interface{}, userID string, limit, offset int) ([]*Notification, int, error) {
-	return []*Notification{}, 0, nil
+func (s *NotificationService) GetUserNotificationLogs(filter db.NotificationLogFilter, userID string, page, limit int) ([]db.UserNotificationLog, int, error) {
+	return s.db.GetUserNotificationLogs(filter, userID, page, limit)
 }
 
-// GetNotificationLogByID retrieves a specific notification log by ID
-func (s *NotificationService) GetNotificationLogByID(id string) (*Notification, error) {
-	return &Notification{}, nil
+func (s *NotificationService) GetNotificationLogByID(id string) (*db.UserNotificationLog, error) {
+	return s.db.GetNotificationLogByID(id)
 }
 
-// CanSendNotification checks if a notification can be sent
-func (s *NotificationService) CanSendNotification(userID string, notificationType string) (bool, error) {
-	return true, nil
+func (s *NotificationService) MarkNotificationRead(id string) (*db.UserNotificationLog, error) {
+	return s.db.MarkNotificationRead(id)
 }
 
-// MarkNotificationRead marks a notification as read
-func (s *NotificationService) MarkNotificationRead(id string) (bool, error) {
-	return true, nil
-}
-
-// MarkNotificationClicked marks a notification as clicked
-func (s *NotificationService) MarkNotificationClicked(id string) (bool, error) {
-	return true, nil
+func (s *NotificationService) MarkNotificationClicked(id string) (*db.UserNotificationLog, error) {
+	return s.db.MarkNotificationClicked(id)
 }

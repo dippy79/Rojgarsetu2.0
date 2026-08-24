@@ -2,7 +2,9 @@ package store
 
 import (
 	"context"
+	"crypto/md5"
 	"database/sql"
+	"encoding/hex"
 	"fmt"
 	"log"
 	"strconv"
@@ -13,6 +15,14 @@ import (
 	"github.com/rojgarsetu/crawler/internal/parser"
 	"github.com/rojgarsetu/crawler/internal/shared"
 )
+
+func generateHash(parts ...string) string {
+	h := md5.New()
+	for _, p := range parts {
+		h.Write([]byte(strings.ToLower(strings.TrimSpace(p))))
+	}
+	return hex.EncodeToString(h.Sum(nil))
+}
 
 type PostgresStore struct {
 	db *sql.DB
@@ -136,24 +146,22 @@ func (s *PostgresStore) SaveGovJob(job *shared.GovJobSource) error {
 	lastDate := parseDateToTime(job.LastDate)
 	examDate := parseDateToTime(job.ExamDate)
 	region := deriveJobRegion(job.Title, job.Location)
+	jobHash := generateHash(job.Title, job.Department, fmt.Sprintf("%v", lastDate))
 
 	query := `
 	INSERT INTO jobs_government
 	(title, department, location, apply_url, last_date, source, eligibility,
-	 vacancy_count, salary, exam_date, notification_pdf_url, job_region, is_active)
+	 vacancy_count, salary, exam_date, notification_pdf_url, job_region, is_active, job_hash)
 	VALUES
-	($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,true)
-	ON CONFLICT (source, apply_url)
+	($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,true,$13)
+	ON CONFLICT (job_hash)
 	DO UPDATE SET
-	    title = EXCLUDED.title,
-	    department = EXCLUDED.department,
-	    location = EXCLUDED.location,
+	    apply_url = EXCLUDED.apply_url,
 	    eligibility = EXCLUDED.eligibility,
 	    vacancy_count = EXCLUDED.vacancy_count,
 	    salary = EXCLUDED.salary,
 	    exam_date = EXCLUDED.exam_date,
 	    notification_pdf_url = EXCLUDED.notification_pdf_url,
-	    job_region = EXCLUDED.job_region,
 	    is_active = true,
 	    updated_at = CURRENT_TIMESTAMP
 	`
@@ -171,6 +179,7 @@ func (s *PostgresStore) SaveGovJob(job *shared.GovJobSource) error {
 		examDate,
 		job.NotificationURL,
 		region,
+		jobHash,
 	)
 	if err != nil {
 		return fmt.Errorf("failed to save gov job '%s': %w", job.Title, err)
@@ -190,25 +199,22 @@ func (s *PostgresStore) SavePrivJob(job *shared.PrivJobSource) error {
 		postedAt = *job.PostedAt
 	}
 	region := deriveJobRegion(job.Title, job.Location)
+	jobHash := generateHash(job.Company, job.Title, job.Location)
 
 	query := `
 	INSERT INTO jobs_private
 	(company, title, location, url, salary, experience, job_type, skills,
-	 description, source, posted_at, job_region, is_active)
+	 description, source, posted_at, job_region, is_active, job_hash)
 	VALUES
-	($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,true)
-	ON CONFLICT (source, url)
+	($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,true,$13)
+	ON CONFLICT (job_hash)
 	DO UPDATE SET
-	    company = EXCLUDED.company,
-	    title = EXCLUDED.title,
-	    location = EXCLUDED.location,
+	    url = EXCLUDED.url,
 	    salary = EXCLUDED.salary,
 	    experience = EXCLUDED.experience,
 	    job_type = EXCLUDED.job_type,
 	    skills = EXCLUDED.skills,
 	    description = EXCLUDED.description,
-	    posted_at = EXCLUDED.posted_at,
-	    job_region = EXCLUDED.job_region,
 	    is_active = true,
 	    updated_at = CURRENT_TIMESTAMP
 	`
@@ -226,6 +232,7 @@ func (s *PostgresStore) SavePrivJob(job *shared.PrivJobSource) error {
 		job.Source,
 		postedAt,
 		region,
+		jobHash,
 	)
 	if err != nil {
 		return fmt.Errorf("failed to save priv job '%s': %w", job.Title, err)

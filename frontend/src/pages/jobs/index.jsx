@@ -1,2 +1,2 @@
-import JobSearch from '../../src/pages/candidate/JobSearch'
+import JobSearch from '../candidate/JobSearch'
 export default JobSearch

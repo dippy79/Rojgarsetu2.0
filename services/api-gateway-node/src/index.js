@@ -55,6 +55,7 @@ app.use('/auth/login', loginLimiter);
 app.use('/api/', generalLimiter);
 
 // Apply specific limiters for job application endpoints
+app.use('/api/v1/*/apply', applyLimiter);
 app.use('/api/v1/gov-jobs', applyLimiter);
 app.use('/api/v1/priv-jobs', applyLimiter);
 

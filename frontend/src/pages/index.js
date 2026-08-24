@@ -2,6 +2,8 @@ import React from 'react';
 import Link from 'next/link';
 import { Briefcase, ShieldCheck, GraduationCap, PlayCircle, FileText, Sparkles } from 'lucide-react';
 
+import PublicCounter from '../components/PublicCounter';
+
 export default function Home() {
   return (
     <div className="min-h-screen bg-slate-50 font-sans">
@@ -33,6 +35,11 @@ export default function Home() {
             </Link>
           </div>
         </div>
+      </section>
+
+      {/* Platform Stats Counter */}
+      <section className="max-w-7xl mx-auto px-6 mb-20">
+         <PublicCounter />
       </section>
 
       {/* Categories Grid */}

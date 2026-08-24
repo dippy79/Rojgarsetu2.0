@@ -1,8 +1,10 @@
 import os
 import logging
+import json
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from typing import List, Optional
+import google.generativeai as genai
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -15,16 +17,56 @@ app = FastAPI(
 )
 
 # Database connection URL from environment
-DATABASE_URL = os.getenv(
+DATABASE_URL = os.Getenv(
     "DATABASE_URL",
     "postgresql://postgres:postgres@postgres:5432/rojgarsetu"
 )
 
+# Configure Gemini
+genai.configure(api_key=os.getenv("GEMINI_API_KEY", ""))
 
 class RecommendationRequest(BaseModel):
     user_skills: List[str] = []
+    experience_years: Optional[int] = 0
     preferred_locations: Optional[List[str]] = []
+    expected_salary: Optional[int] = 0
 
+class ResumeParseRequest(BaseModel):
+    text: str
+
+@app.post("/parse-resume")
+def parse_resume(payload: ResumeParseRequest):
+    if not os.getenv("GEMINI_API_KEY"):
+        return {"error": "Gemini API key not configured"}
+
+    try:
+        model = genai.GenerativeModel("gemini-2.0-flash")
+        prompt = f"""
+        Extract professional information from the following resume text.
+        Return ONLY a JSON object with this exact structure:
+        {{
+            "name": "Full Name",
+            "email": "email@example.com",
+            "skills": ["skill1", "skill2"],
+            "experience": ["job1", "job2"],
+            "education": ["degree1", "degree2"]
+        }}
+
+        Resume text:
+        {payload.text}
+        """
+        response = model.generate_content(prompt)
+        text = response.text.strip()
+        # Handle cases where model might wrap JSON in markdown blocks
+        if "```json" in text:
+            text = text.split("```json")[1].split("```")[0].strip()
+        elif "```" in text:
+            text = text.split("```")[1].split("```")[0].strip()
+
+        return json.loads(text)
+    except Exception as e:
+        logger.error(f"Resume parse failed: {e}")
+        return {"error": "parse_failed", "details": str(e)}
 
 class JobRecord(BaseModel):
     id: str

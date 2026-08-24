@@ -82,6 +82,55 @@ func (q *Queries) CreateJobApplication(ctx context.Context, arg CreateJobApplica
 	return i, err
 }
 
+const getApplicationWithDetails = `-- name: GetApplicationWithDetails :one
+SELECT ja.id, ja.job_id, ja.candidate_id, ja.status, ja.cover_letter, ja.resume_url, ja.match_score, ja.notes, ja.applied_at, ja.updated_at, u.email, u.name as candidate_name, cj.title as job_title, co.name as company_name
+FROM job_applications ja
+JOIN candidates c ON ja.candidate_id = c.id
+JOIN users u ON c.user_id = u.id
+JOIN company_jobs cj ON ja.job_id = cj.id
+JOIN companies co ON cj.company_id = co.id
+WHERE ja.id = $1
+`
+
+type GetApplicationWithDetailsRow struct {
+	ID            uuid.UUID       `json:"id"`
+	JobID         uuid.UUID       `json:"job_id"`
+	CandidateID   uuid.UUID       `json:"candidate_id"`
+	Status        sql.NullString  `json:"status"`
+	CoverLetter   sql.NullString  `json:"cover_letter"`
+	ResumeUrl     sql.NullString  `json:"resume_url"`
+	MatchScore    sql.NullFloat64 `json:"match_score"`
+	Notes         sql.NullString  `json:"notes"`
+	AppliedAt     sql.NullTime    `json:"applied_at"`
+	UpdatedAt     sql.NullTime    `json:"updated_at"`
+	Email         string          `json:"email"`
+	CandidateName string          `json:"candidate_name"`
+	JobTitle      string          `json:"job_title"`
+	CompanyName   string          `json:"company_name"`
+}
+
+func (q *Queries) GetApplicationWithDetails(ctx context.Context, id uuid.UUID) (GetApplicationWithDetailsRow, error) {
+	row := q.db.QueryRowContext(ctx, getApplicationWithDetails, id)
+	var i GetApplicationWithDetailsRow
+	err := row.Scan(
+		&i.ID,
+		&i.JobID,
+		&i.CandidateID,
+		&i.Status,
+		&i.CoverLetter,
+		&i.ResumeUrl,
+		&i.MatchScore,
+		&i.Notes,
+		&i.AppliedAt,
+		&i.UpdatedAt,
+		&i.Email,
+		&i.CandidateName,
+		&i.JobTitle,
+		&i.CompanyName,
+	)
+	return i, err
+}
+
 const getJobApplicationByID = `-- name: GetJobApplicationByID :one
 SELECT id, job_id, candidate_id, status, cover_letter, resume_url, match_score, notes, applied_at, updated_at FROM job_applications WHERE id = $1
 `

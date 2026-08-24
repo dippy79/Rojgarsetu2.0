@@ -1,25 +1,15 @@
 import dynamic from 'next/dynamic'
-import { useRouter } from 'next/router'
-import { useEffect } from 'react'
+import ProtectedRoute from '../../components/ProtectedRoute'
 
-const EmployerDashboard = dynamic(
-  () => import('../employer/EmployerDashboard'),
+const CompanyDashboard = dynamic(
+  () => import('../company/CompanyDashboard'),
   { ssr: false }
 )
 
 export default function CompanyDashboardPage() {
-  const router = useRouter()
-
-  useEffect(() => {
-    const token = localStorage.getItem('token') || localStorage.getItem('rojgar_token')
-    const role = localStorage.getItem('userRole') || localStorage.getItem('role')
-
-    if (!token) {
-      router.push('/login')
-    } else if (role !== 'company' && role !== 'employer') {
-      router.push('/unauthorized')
-    }
-  }, [router])
-
-  return <EmployerDashboard />
+  return (
+    <ProtectedRoute allowedRoles={['company', 'admin', 'employer']}>
+      <CompanyDashboard />
+    </ProtectedRoute>
+  )
 }

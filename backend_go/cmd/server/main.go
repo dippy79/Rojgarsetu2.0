@@ -28,6 +28,7 @@ import (
 	"github.com/rojgarsetu/backend/internal/handlers"
 	"github.com/rojgarsetu/backend/internal/middleware"
 	"github.com/rojgarsetu/backend/internal/services"
+	"github.com/rojgarsetu/backend/internal/workers"
 	"github.com/rs/zerolog"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
@@ -259,7 +260,8 @@ func run(cfg *config.Config) error {
 				courseService := services.NewCourseService(database)
 				videoService := services.NewVideoService(database)
 				searchService := services.NewSearchService(database)
-				notificationService := services.NewNotificationService()
+				notificationService := services.NewNotificationService(database)
+				interviewService := services.NewInterviewService(database)
 
 				// Initialize new feature repo and handlers
 				featureRepo := db.NewFeatureRepository(sdb)
@@ -274,6 +276,15 @@ func run(cfg *config.Config) error {
 				crawlerHandler := handlers.NewCrawlerHandler(sdb)
 				legalHandler := handlers.NewLegalHandler(sdb)
 				wsHandler := handlers.NewWSHandler(notificationService)
+				interviewHandler := handlers.NewInterviewHandler(interviewService)
+				statsHandler := handlers.NewStatsHandler(database)
+
+				// Start workers
+				emailWorker := workers.NewEmailWorker(database)
+				go emailWorker.Start(ctx)
+
+				// Setup router with Analytics
+				router.Use(middleware.AnalyticsMiddleware(redisClient, database))
 
 				// Register DB-dependent routes
 				api := router.Group("/api/v1")
@@ -327,6 +338,13 @@ func run(cfg *config.Config) error {
 
 					// WebSocket endpoint for real-time notifications
 					api.GET("/ws", wsHandler.HandleWebSocket)
+
+					// Interview Endpoints
+					api.POST("/interviews", interviewHandler.ScheduleInterview)
+					api.GET("/interviews/:id", interviewHandler.GetInterviewByID)
+
+					// Public Stats
+					router.GET("/api/v1/stats", statsHandler.GetPlatformStats)
 				}
 				logger.Info().Msg("API routes registered")
 

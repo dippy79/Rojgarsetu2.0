@@ -106,6 +106,32 @@ type Course struct {
 	UpdatedAt       sql.NullTime   `json:"updated_at"`
 }
 
+type EmailQueue struct {
+	ID            uuid.UUID      `json:"id"`
+	ToEmail       string         `json:"to_email"`
+	Subject       string         `json:"subject"`
+	Body          string         `json:"body"`
+	Status        string         `json:"status"`
+	Attempts      int32          `json:"attempts"`
+	LastAttemptAt sql.NullTime   `json:"last_attempt_at"`
+	SentAt        sql.NullTime   `json:"sent_at"`
+	ErrorMessage  sql.NullString `json:"error_message"`
+	CreatedAt     time.Time      `json:"created_at"`
+}
+
+type Interview struct {
+	ID            uuid.UUID      `json:"id"`
+	ApplicationID uuid.UUID      `json:"application_id"`
+	CandidateID   uuid.UUID      `json:"candidate_id"`
+	CompanyID     uuid.UUID      `json:"company_id"`
+	ScheduledAt   time.Time      `json:"scheduled_at"`
+	RoomUrl       sql.NullString `json:"room_url"`
+	Status        string         `json:"status"`
+	MeetingID     sql.NullString `json:"meeting_id"`
+	CreatedAt     time.Time      `json:"created_at"`
+	UpdatedAt     time.Time      `json:"updated_at"`
+}
+
 type JobApplication struct {
 	ID          uuid.UUID       `json:"id"`
 	JobID       uuid.UUID       `json:"job_id"`
@@ -184,6 +210,17 @@ type JobsPrivate struct {
 	UpdatedAt   sql.NullTime   `json:"updated_at"`
 }
 
+type PlatformStat struct {
+	ID                uuid.UUID `json:"id"`
+	TotalJobs         int64     `json:"total_jobs"`
+	TotalCandidates   int64     `json:"total_candidates"`
+	TotalCompanies    int64     `json:"total_companies"`
+	TotalPlacements   int64     `json:"total_placements"`
+	TotalApplications int64     `json:"total_applications"`
+	VisitsToday       int64     `json:"visits_today"`
+	UpdatedAt         time.Time `json:"updated_at"`
+}
+
 type RefreshToken struct {
 	ID        uuid.UUID      `json:"id"`
 	UserID    uuid.UUID      `json:"user_id"`
@@ -192,6 +229,14 @@ type RefreshToken struct {
 	ExpiresAt time.Time      `json:"expires_at"`
 	Revoked   bool           `json:"revoked"`
 	CreatedAt time.Time      `json:"created_at"`
+}
+
+type SavedJob struct {
+	ID        uuid.UUID     `json:"id"`
+	UserID    uuid.UUID     `json:"user_id"`
+	GovJobID  uuid.NullUUID `json:"gov_job_id"`
+	PrivJobID uuid.NullUUID `json:"priv_job_id"`
+	CreatedAt time.Time     `json:"created_at"`
 }
 
 type User struct {

@@ -5,7 +5,7 @@ import { useAuth } from '../../hooks/useAuth';
 import DashboardAnalytics from '../../components/DashboardAnalytics';
 import {
   LayoutDashboard, User, FileText, Bookmark, Sparkles, LogOut, Menu, X,
-  Briefcase, TrendingUp, Award, Calendar, Bell, Search, ArrowUpRight
+  Briefcase, TrendingUp, Award, Calendar, Bell, Search, ArrowUpRight, Loader2, AlertCircle
 } from 'lucide-react';
 
 export const CandidateDashboard = () => {
@@ -26,12 +26,6 @@ export const CandidateDashboard = () => {
 
   const API_BASE = process.env.REACT_APP_BACKEND_URL || 'http://localhost:3001';
 
-  const handleAuthError = useCallback(() => {
-    localStorage.removeItem('rojgar_token');
-    alert('Session expired. Please login again.');
-    router.push('/login');
-  }, [router]);
-
   const fetchData = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -49,14 +43,21 @@ export const CandidateDashboard = () => {
         fetch(`${API_BASE}/api/v1/stats`),
       ]);
 
-      if (profileRes.status === 'fulfilled' && profileRes.value.ok) {
-        const pData = await profileRes.value.json();
-        setCandidateProfile(pData?.candidate ?? pData);
+      if (profileRes.status === 'fulfilled') {
+        if (profileRes.value.status === 401) {
+           logout();
+           router.push('/login');
+           return;
+        }
+        if (profileRes.value.ok) {
+          const pData = await profileRes.value.json();
+          setCandidateProfile(pData?.candidate ?? pData?.data ?? pData);
+        }
       }
 
       if (appsRes.status === 'fulfilled' && appsRes.value.ok) {
         const aData = await appsRes.value.json();
-        setRecentApps(aData?.applications ?? aData ?? []);
+        setRecentApps(aData?.applications ?? aData?.data ?? aData ?? []);
       }
 
       if (statsRes.status === 'fulfilled' && statsRes.value.ok) {
@@ -64,27 +65,22 @@ export const CandidateDashboard = () => {
         setPlatformStats(prev => ({ ...prev, ...sData }));
       }
     } catch (err) {
-      setError('Connection latency detected. Some widgets may show cached data.');
+      setError('System synchronization delayed. Displaying locally cached intelligence.');
     } finally {
       setLoading(false);
     }
-  }, [API_BASE]);
+  }, [API_BASE, logout, router]);
 
   useEffect(() => {
     fetchData();
   }, [fetchData]);
 
-  const handleLogout = () => {
-    logout();
-    router.push('/login');
-  };
-
   const calculateCompletion = (profile) => {
-    if (!profile) return 65; // Demo fallback
+    if (!profile) return 65;
     let score = 0;
     if (profile?.full_name || profile?.name) score += 20;
     if (profile?.skills?.length > 0) score += 20;
-    if (profile?.experience?.length > 0) score += 20;
+    if (profile?.experience?.length > 0 || profile?.experience_years) score += 20;
     if (profile?.education?.length > 0) score += 20;
     if (profile?.resume_url) score += 20;
     return score || 65;
@@ -99,11 +95,24 @@ export const CandidateDashboard = () => {
     return name.slice(0, 2).toUpperCase();
   };
 
+  const MetricCardSkeleton = () => (
+    <div className="bg-white border border-slate-200/60 rounded-[2.5rem] p-8 shadow-sm animate-pulse">
+       <div className="w-12 h-12 bg-slate-100 rounded-2xl mb-6"></div>
+       <div className="h-8 bg-slate-100 rounded-lg w-16 mb-2"></div>
+       <div className="h-3 bg-slate-50 rounded-lg w-24"></div>
+    </div>
+  );
+
   return (
     <div className="flex min-h-screen bg-[#FBFBFB] font-sans">
+      {/* Mobile Sidebar Overlay */}
+      {sidebarOpen && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] md:hidden transition-opacity duration-500" onClick={() => setSidebarOpen(false)}></div>
+      )}
+
       {/* Sidebar - International Premium Style */}
       <aside className={`
-        fixed inset-y-0 left-0 z-50 w-72 bg-slate-900 text-white transform transition-transform duration-500 ease-[cubic-bezier(0.2,0,0,1)]
+        fixed inset-y-0 left-0 z-[70] w-72 bg-slate-950 text-white transform transition-transform duration-500 ease-[cubic-bezier(0.2,0,0,1)]
         md:translate-x-0 md:static md:h-screen sticky top-0
         ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
         flex flex-col p-8 shadow-[20px_0_60px_-15px_rgba(0,0,0,0.3)]
@@ -158,7 +167,7 @@ export const CandidateDashboard = () => {
           })}
         </nav>
 
-        <button onClick={handleLogout} className="flex items-center gap-4 w-full px-6 py-4 text-sm font-bold text-rose-400 hover:bg-rose-500/10 rounded-2xl transition-all mt-auto border border-rose-500/10">
+        <button onClick={() => { logout(); router.push('/login'); }} className="flex items-center gap-4 w-full px-6 py-4 text-sm font-bold text-rose-400 hover:bg-rose-500/10 rounded-2xl transition-all mt-auto border border-rose-500/10">
           <LogOut className="w-5 h-5" />
           Logout
         </button>
@@ -166,9 +175,19 @@ export const CandidateDashboard = () => {
 
       {/* Main Content */}
       <main className="flex-1 overflow-auto p-6 md:p-12 lg:p-16">
+        {error && (
+          <div className="mb-10 p-5 bg-rose-50 border border-rose-100 rounded-3xl flex flex-col md:flex-row items-center justify-between gap-4 text-rose-700">
+             <div className="flex items-center gap-4">
+                <AlertCircle className="w-6 h-6 shrink-0" />
+                <p className="text-sm font-bold">{error}</p>
+             </div>
+             <button onClick={fetchData} className="px-6 py-2.5 bg-rose-600 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-rose-700 transition-all shadow-lg shadow-rose-600/20">Sync Now</button>
+          </div>
+        )}
+
         <header className="flex flex-col md:flex-row md:items-center justify-between gap-8 mb-16">
           <div className="space-y-2">
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-4">
               <button onClick={() => setSidebarOpen(true)} className="p-3 bg-white border border-slate-200 rounded-2xl md:hidden shadow-sm">
                 <Menu className="w-5 h-5" />
               </button>
@@ -193,27 +212,35 @@ export const CandidateDashboard = () => {
 
         {/* Top Metrics Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
-          {[
-            { label: 'Applied', val: '14', color: 'blue', icon: FileText },
-            { label: 'Interviews', val: '04', color: 'violet', icon: Calendar },
-            { label: 'AI Score', val: '86%', color: 'emerald', icon: Award },
-            { label: 'Offers', val: '01', color: 'amber', icon: TrendingUp },
-          ].map((m) => (
-            <div key={m.label} className="bg-white border border-slate-200/60 rounded-[2.5rem] p-8 shadow-sm group hover:scale-[1.02] transition-all hover:shadow-2xl hover:shadow-slate-200/50 cursor-pointer">
-              <div className={`w-12 h-12 rounded-2xl bg-${m.color}-50 text-${m.color}-600 flex items-center justify-center mb-6`}>
-                <m.icon className="w-6 h-6" />
-              </div>
-              <div className="flex items-baseline gap-2">
-                <span className="text-4xl font-black text-slate-900 tracking-tighter font-mono">{m.val}</span>
-              </div>
-              <p className="text-xs font-black text-slate-400 uppercase tracking-widest mt-2">{m.label}</p>
-            </div>
-          ))}
+          {loading ? [1,2,3,4].map(i => <MetricCardSkeleton key={i} />) : (
+            <>
+              {[
+                { label: 'Applied', val: recentApps?.length || 14, color: 'blue', icon: FileText },
+                { label: 'Interviews', val: '04', color: 'violet', icon: Calendar },
+                { label: 'AI Score', val: `${profileCompletion}%`, color: 'emerald', icon: Award },
+                { label: 'Offers', val: '01', color: 'amber', icon: TrendingUp },
+              ].map((m) => (
+                <div key={m.label} className="bg-white border border-slate-200/60 rounded-[2.5rem] p-8 shadow-sm group hover:scale-[1.02] transition-all hover:shadow-2xl hover:shadow-slate-200/50 cursor-pointer">
+                  <div className={`w-12 h-12 rounded-2xl bg-${m.color}-50 text-${m.color}-600 flex items-center justify-center mb-6`}>
+                    <m.icon className="w-6 h-6" />
+                  </div>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-4xl font-black text-slate-900 tracking-tighter font-mono">{m.val}</span>
+                  </div>
+                  <p className="text-xs font-black text-slate-400 uppercase tracking-widest mt-2">{m.label}</p>
+                </div>
+              ))}
+            </>
+          )}
         </div>
 
         {/* Analytics Section */}
         <section className="mb-12">
-          <DashboardAnalytics skillMatch={profileCompletion} />
+          {loading ? (
+            <div className="h-96 w-full bg-white border border-slate-200 rounded-[3rem] animate-pulse"></div>
+          ) : (
+            <DashboardAnalytics skillMatch={profileCompletion} />
+          )}
         </section>
 
         {/* Bento Section: Applications & AI Matches */}
@@ -226,25 +253,38 @@ export const CandidateDashboard = () => {
             </div>
 
             <div className="space-y-4 flex-1">
-              {(recentApps.length > 0 ? recentApps : SAMPLE_APPS).map((app, i) => (
+              {loading ? [1,2,3].map(i => (
+                <div key={i} className="h-24 w-full bg-slate-50 border border-slate-100 rounded-[1.5rem] animate-pulse"></div>
+              )) : (recentApps.length > 0 ? recentApps : SAMPLE_APPS).map((app, i) => (
                 <div key={i} className="flex items-center justify-between p-6 rounded-[1.5rem] bg-slate-50/50 border border-slate-100 hover:bg-white hover:border-blue-200 hover:shadow-xl hover:shadow-blue-500/5 transition-all group cursor-pointer">
                   <div className="flex items-center gap-5">
                     <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center border border-slate-200 font-black text-slate-300 group-hover:text-blue-500 transition-colors">
-                      {(app.company_name || app.company || 'C')[0]}
+                      {(app?.company_name || app?.company || 'C')[0]}
                     </div>
                     <div>
-                      <h4 className="font-black text-slate-900 text-sm">{app.job_title || 'Lead Architect'}</h4>
-                      <p className="text-[11px] text-slate-400 font-bold uppercase tracking-widest">{app.company_name || 'InnovateGlobal'}</p>
+                      <h4 className="font-black text-slate-900 text-sm">{app?.job_title || 'Lead Architect'}</h4>
+                      <p className="text-[11px] text-slate-400 font-bold uppercase tracking-widest">{app?.company_name || 'InnovateGlobal'}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-6">
                     <span className="px-3 py-1 bg-white border border-slate-200 rounded-lg text-[10px] font-black uppercase text-slate-500 tracking-tighter">
-                      {app.status || 'Active'}
+                      {app?.status || 'Active'}
                     </span>
                     <ArrowUpRight className="w-5 h-5 text-slate-300 group-hover:text-blue-500 group-hover:translate-x-1 group-hover:-translate-y-1 transition-all" />
                   </div>
                 </div>
               ))}
+
+              {!loading && recentApps.length === 0 && (
+                <div className="flex flex-col items-center justify-center py-10 space-y-4">
+                   <div className="text-4xl">🔍</div>
+                   <div className="text-center">
+                      <p className="text-slate-900 font-black">No Applications Yet</p>
+                      <p className="text-slate-400 text-xs font-medium">Start applying to jobs to track them here.</p>
+                   </div>
+                   <Link href="/gov-jobs" className="px-8 py-3 bg-slate-900 text-white font-black rounded-2xl text-[10px] uppercase tracking-widest hover:bg-blue-600 transition-all">Browse Jobs →</Link>
+                </div>
+              )}
             </div>
           </div>
 

@@ -85,14 +85,25 @@ const JobCard = ({ job, type = 'government' }) => {
           >
             Review Details
           </Link>
-          <a
-            href={isGov ? job.apply_url : job.url}
-            target="_blank"
-            rel="noreferrer"
-            className="w-full block text-center py-3.5 bg-white border border-slate-200 text-slate-900 font-black rounded-xl hover:bg-slate-50 hover:border-slate-300 transition-all text-[10px] uppercase tracking-widest"
-          >
-            Direct Apply <ArrowUpRight className="inline-block w-3 h-3 ml-1 mb-0.5" />
-          </a>
+
+          <div className="flex gap-2">
+            <a
+              href={isGov ? job.apply_url : job.url}
+              target="_blank"
+              rel="noreferrer"
+              className="flex-1 block text-center py-3.5 bg-white border border-slate-200 text-slate-900 font-black rounded-xl hover:bg-slate-50 hover:border-slate-300 transition-all text-[10px] uppercase tracking-widest"
+            >
+              Direct Apply
+            </a>
+            {isGov && (
+              <button
+                title="Track Results"
+                className="px-4 bg-indigo-50 border border-indigo-100 text-indigo-600 rounded-xl hover:bg-indigo-600 hover:text-white transition-all shadow-sm group/track"
+              >
+                <Bookmark className="w-4 h-4 group-hover/track:fill-current" />
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>
