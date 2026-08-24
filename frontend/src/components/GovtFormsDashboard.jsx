@@ -17,8 +17,7 @@ const GovtFormsDashboard = () => {
         setForms(data.data || data.forms || []);
       } catch (err) {
         console.error(err);
-        setError("Live feed synchronization interrupted. Showing scheduled deadlines.");
-        setForms(MOCK_FORMS);
+        setError("Live feed synchronization interrupted. Please try again later.");
       } finally {
         setLoading(false);
       }
@@ -123,11 +122,5 @@ const GovtFormsDashboard = () => {
     </div>
   );
 };
-
-const MOCK_FORMS = [
-  { id: 'mock1', title: 'SSC CGL Tier 1 Application', department: 'Staff Selection Commission', last_date: '2026-08-30', apply_url: '#' },
-  { id: 'mock2', title: 'UPSC CSE Prelims 2026', department: 'Union Public Service Commission', last_date: '2026-09-15', apply_url: '#' },
-  { id: 'mock3', title: 'RRB Non-Technical Senior Clerk', department: 'Railway Recruitment Board', last_date: '2026-08-25', apply_url: '#' },
-];
 
 export default GovtFormsDashboard;

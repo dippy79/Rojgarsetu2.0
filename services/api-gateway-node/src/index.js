@@ -10,16 +10,18 @@ app.use(express.urlencoded({ limit: '1mb', extended: true }));
 const cors = require('cors');
 app.use(cors({
   origin: function(origin, callback) {
-    const allowed = [
-      'http://localhost:3000',
-      'http://localhost:3001',
-      'http://localhost:3002',
-      'http://localhost:80',
-      'http://localhost',
-      'http://127.0.0.1:3000',
-      'http://127.0.0.1:3001',
-      'http://127.0.0.1:3002'
-    ];
+    const allowed = process.env.ALLOWED_ORIGINS
+      ? process.env.ALLOWED_ORIGINS.split(',')
+      : [
+          'http://localhost:3000',
+          'http://localhost:3001',
+          'http://localhost:3002',
+          'http://localhost:80',
+          'http://localhost',
+          'http://127.0.0.1:3000',
+          'http://127.0.0.1:3001',
+          'http://127.0.0.1:3002'
+        ];
     if (!origin || allowed.includes(origin)) {
       callback(null, true);
     } else {

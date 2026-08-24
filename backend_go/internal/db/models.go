@@ -119,6 +119,16 @@ type EmailQueue struct {
 	CreatedAt     time.Time      `json:"created_at"`
 }
 
+type FileUpload struct {
+	ID           uuid.UUID     `json:"id"`
+	UserID       uuid.UUID     `json:"user_id"`
+	FileType     string        `json:"file_type"`
+	FileUrl      string        `json:"file_url"`
+	OriginalName string        `json:"original_name"`
+	FileSize     sql.NullInt64 `json:"file_size"`
+	CreatedAt    sql.NullTime  `json:"created_at"`
+}
+
 type Interview struct {
 	ID            uuid.UUID      `json:"id"`
 	ApplicationID uuid.UUID      `json:"application_id"`
@@ -188,6 +198,7 @@ type JobsGovernment struct {
 	ExamDate           sql.NullTime   `json:"exam_date"`
 	NotificationPdfUrl sql.NullString `json:"notification_pdf_url"`
 	IsActive           sql.NullBool   `json:"is_active"`
+	JobHash            sql.NullString `json:"job_hash"`
 	CreatedAt          sql.NullTime   `json:"created_at"`
 	UpdatedAt          sql.NullTime   `json:"updated_at"`
 }
@@ -206,6 +217,7 @@ type JobsPrivate struct {
 	Source      string         `json:"source"`
 	PostedAt    sql.NullTime   `json:"posted_at"`
 	IsActive    sql.NullBool   `json:"is_active"`
+	JobHash     sql.NullString `json:"job_hash"`
 	CreatedAt   sql.NullTime   `json:"created_at"`
 	UpdatedAt   sql.NullTime   `json:"updated_at"`
 }

@@ -11,6 +11,7 @@ export const JobSearch = () => {
   const router = useRouter();
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [filters, setFilters] = useState({
     location: '',
     jobType: [],
@@ -21,6 +22,7 @@ export const JobSearch = () => {
 
   const fetchJobs = useCallback(async () => {
     setLoading(true);
+    setError(null);
     const token = localStorage.getItem('rojgar_token') || localStorage.getItem('token');
 
     try {
@@ -41,10 +43,13 @@ export const JobSearch = () => {
         const data = await res.json();
         setJobs(data?.jobs ?? data ?? []);
       } else {
-        setJobs(SAMPLE_JOBS);
+        setError("AI Discovery Engine connection error.");
+        setJobs([]);
       }
     } catch (err) {
-      setJobs(SAMPLE_JOBS);
+      console.error(err);
+      setError("AI Discovery Engine offline. Please try again later.");
+      setJobs([]);
     } finally {
       setLoading(false);
     }
@@ -128,11 +133,5 @@ export const JobSearch = () => {
     </div>
   );
 };
-
-const SAMPLE_JOBS = [
-  { id: 's1', title: 'Senior Software Architect', company: 'TechFlow Global', location: 'London / Remote', salary: '£90k - 120k', type: 'Full-Time', tags: ['High Fit', 'Cloud'] },
-  { id: 's2', title: 'Executive Officer 2026', dept: 'Staff Selection Commission', location: 'New Delhi', last_date: '2026-08-30', type: 'government', tags: ['Central Govt'] },
-  { id: 's3', title: 'Product Design Lead', company: 'CreativePulse', location: 'Dubai, UAE', salary: 'AED 30k+', type: 'Full-Time', tags: ['Design', 'Relocation'] },
-];
 
 export default JobSearch;

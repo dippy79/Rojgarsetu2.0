@@ -26,8 +26,7 @@ export const CoursesPage = () => {
       setCourses(result.data || []);
     } catch (err) {
       console.error(err);
-      setError("Unable to sync courses. Showing offline catalog.");
-      setCourses(SAMPLE_COURSES);
+      setError("Unable to sync courses. Please try again later.");
     } finally {
       setLoading(false);
     }
@@ -150,11 +149,5 @@ export const CoursesPage = () => {
     </div>
   );
 };
-
-const SAMPLE_COURSES = [
-  { id: 1, name: 'Cloud Architecture & AWS Mastery', provider_name: 'TechScale', duration: '12 Weeks', level: 'Expert', fees_amount: 14999 },
-  { id: 2, name: 'AI Engineering with Python', provider_name: 'MindCore', duration: '8 Weeks', level: 'Intermediate', fees_amount: 0 },
-  { id: 3, name: 'Digital Governance & Public Policy', provider_name: 'National Academy', duration: '10 Weeks', level: 'Beginner', fees_amount: 4999 },
-];
 
 export default CoursesPage;

@@ -262,6 +262,7 @@ func run(cfg *config.Config) error {
 				searchService := services.NewSearchService(database)
 				notificationService := services.NewNotificationService(database)
 				interviewService := services.NewInterviewService(database)
+				uploadService := services.NewUploadService(database)
 
 				// Initialize new feature repo and handlers
 				featureRepo := db.NewFeatureRepository(sdb)
@@ -278,6 +279,7 @@ func run(cfg *config.Config) error {
 				wsHandler := handlers.NewWSHandler(notificationService)
 				interviewHandler := handlers.NewInterviewHandler(interviewService)
 				statsHandler := handlers.NewStatsHandler(database)
+				uploadHandler := handlers.NewUploadHandler(uploadService)
 
 				// Start workers
 				emailWorker := workers.NewEmailWorker(database)
@@ -345,6 +347,9 @@ func run(cfg *config.Config) error {
 
 					// Public Stats
 					router.GET("/api/v1/stats", statsHandler.GetPlatformStats)
+
+					// Upload Endpoints
+					api.POST("/upload", uploadHandler.UploadFile)
 				}
 				logger.Info().Msg("API routes registered")
 

@@ -24,8 +24,7 @@ export const VideosPage = () => {
       setVideos(result.data || []);
     } catch (err) {
       console.error(err);
-      setError("Video feed sync failed. Showing featured tutorials.");
-      setVideos(SAMPLE_VIDEOS);
+      setError("Video feed sync failed. Please try again later.");
     } finally {
       setLoading(false);
     }
@@ -136,11 +135,5 @@ export const VideosPage = () => {
     </div>
   );
 };
-
-const SAMPLE_VIDEOS = [
-  { id: 1, title: 'Mastering Technical Interviews in 2026', channel_name: 'Tech Insights', duration: '45:00', views: '24k' },
-  { id: 2, title: 'System Design: Scalable Architecture', channel_name: 'Cloud Experts', duration: '32:15', views: '18k' },
-  { id: 3, title: 'UPSC 2026: Prelims Strategy', channel_name: 'Civil Service Mentor', duration: '58:00', views: '45k' },
-];
 
 export default VideosPage;

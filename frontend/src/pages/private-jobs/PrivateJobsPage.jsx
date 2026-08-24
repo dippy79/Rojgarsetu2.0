@@ -42,8 +42,7 @@ export const PrivateJobsPage = () => {
       setJobs(result.data || []);
     } catch (err) {
       console.error("Fetch error:", err);
-      setError("AI-aggregator offline. Displaying premium archive.");
-      setJobs(SAMPLE_PRIVATE_JOBS);
+      setError("AI-aggregator offline. Please try again later.");
     } finally {
       setLoading(false);
     }
@@ -134,10 +133,5 @@ export const PrivateJobsPage = () => {
     </div>
   );
 };
-
-const SAMPLE_PRIVATE_JOBS = [
-  { id: 'p1', title: 'Senior AI Engineer', company: 'TechFlow Global', location: 'Dubai, UAE / Remote', salary: '$120k - $160k', type: 'Full-Time', is_verified: true, tags: ['AI', 'Next.js'] },
-  { id: 'p2', title: 'Product Strategist', company: 'NexusScale', location: 'London, UK', salary: '£80k+', type: 'Contract', is_verified: true, tags: ['UX', 'Growth'] },
-];
 
 export default PrivateJobsPage;

@@ -135,7 +135,7 @@ func (h *NotificationHandler) MarkNotificationRead(c *gin.Context) {
 // @Success 200 {object} map[string]interface{}
 // @Router /api/v1/users/{user_id}/notifications/read-all [post]
 func (h *NotificationHandler) MarkAllRead(c *gin.Context) {
-	userID := c.Param("user_id")
+	// userID := c.Param("user_id")
 	// Logic to mark all read (stubbed here, should call service)
 	c.JSON(http.StatusOK, db.SuccessResponse(nil, nil))
 }

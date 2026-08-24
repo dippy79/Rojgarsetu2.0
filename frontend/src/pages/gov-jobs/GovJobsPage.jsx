@@ -45,8 +45,7 @@ export const GovJobsPage = () => {
       setPagination(result.pagination);
     } catch (err) {
       console.error("Fetch error:", err);
-      setError("Failed to sync with live government registries. Showing local archive.");
-      setJobs(SAMPLE_GOV_JOBS);
+      setError("Failed to sync with live government registries. Please try again later.");
     } finally {
       setLoading(false);
     }
@@ -150,10 +149,5 @@ export const GovJobsPage = () => {
     </div>
   );
 };
-
-const SAMPLE_GOV_JOBS = [
-  { id: 'g1', title: 'Executive Officer (Group B)', dept: 'Staff Selection Commission', location: 'New Delhi', last_date: '2026-08-30', type: 'Full-Time', is_verified: true },
-  { id: 'g2', title: 'Civil Services (IAS/IPS) 2026', dept: 'UPSC', location: 'All India', last_date: '2026-09-15', type: 'Full-Time', is_verified: true },
-];
 
 export default GovJobsPage;

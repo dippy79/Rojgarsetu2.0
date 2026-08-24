@@ -255,7 +255,7 @@ export const CandidateDashboard = () => {
             <div className="space-y-4 flex-1">
               {loading ? [1,2,3].map(i => (
                 <div key={i} className="h-24 w-full bg-slate-50 border border-slate-100 rounded-[1.5rem] animate-pulse"></div>
-              )) : (recentApps.length > 0 ? recentApps : SAMPLE_APPS).map((app, i) => (
+              )) : (recentApps || []).map((app, i) => (
                 <div key={i} className="flex items-center justify-between p-6 rounded-[1.5rem] bg-slate-50/50 border border-slate-100 hover:bg-white hover:border-blue-200 hover:shadow-xl hover:shadow-blue-500/5 transition-all group cursor-pointer">
                   <div className="flex items-center gap-5">
                     <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center border border-slate-200 font-black text-slate-300 group-hover:text-blue-500 transition-colors">
@@ -275,7 +275,7 @@ export const CandidateDashboard = () => {
                 </div>
               ))}
 
-              {!loading && recentApps.length === 0 && (
+              {!loading && (recentApps || []).length === 0 && (
                 <div className="flex flex-col items-center justify-center py-10 space-y-4">
                    <div className="text-4xl">🔍</div>
                    <div className="text-center">
@@ -329,11 +329,5 @@ export const CandidateDashboard = () => {
     </div>
   );
 };
-
-const SAMPLE_APPS = [
-  { job_title: 'Product Engineering Lead', company_name: 'TechFlow Solutions', status: 'Shortlisted' },
-  { job_title: 'Senior Backend Developer', company_name: 'NexusScale', status: 'Reviewing' },
-  { job_title: 'Head of Growth', company_name: 'FinStream', status: 'Applied' },
-];
 
 export default CandidateDashboard;

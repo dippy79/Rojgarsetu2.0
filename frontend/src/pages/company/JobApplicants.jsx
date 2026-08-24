@@ -11,10 +11,12 @@ export default function JobApplicants() {
   const { user } = useAuth();
   const [applications, setApplications] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [searchTerm, setSearchQuery] = useState('');
 
   const fetchApplications = useCallback(async () => {
     setLoading(true);
+    setError(null);
     const token = localStorage.getItem('rojgar_token') || localStorage.getItem('token');
     try {
       const res = await fetch('http://localhost:3001/api/v1/company/applications', {
@@ -24,11 +26,13 @@ export default function JobApplicants() {
         const data = await res.json();
         setApplications(Array.isArray(data) ? data : data.data || []);
       } else {
-        // Fallback to sample for demo
-        setApplications(SAMPLE_APPLICANTS);
+        setError("Recruitment node connection error.");
+        setApplications([]);
       }
     } catch (err) {
-      setApplications(SAMPLE_APPLICANTS);
+      console.error(err);
+      setError("Recruitment node sync failed. Please try again later.");
+      setApplications([]);
     } finally {
       setLoading(false);
     }
@@ -183,9 +187,3 @@ const getStatusColor = (col) => {
     default: return 'bg-slate-500';
   }
 };
-
-const SAMPLE_APPLICANTS = [
-  { id: 'a1', candidate_name: 'Aditya Sharma', job_title: 'Full Stack Engineer', status: 'Applied', star_rating: 4, skills: ['Node.js', 'React', 'AWS'], applied_date: '2026-08-22' },
-  { id: 'a2', candidate_name: 'Priya Verma', job_title: 'UX Architect', status: 'Shortlisted', star_rating: 5, skills: ['Figma', 'Strategy', 'Design System'], applied_date: '2026-08-21' },
-  { id: 'a3', candidate_name: 'Vikram Singh', job_title: 'Backend Lead', status: 'Interview', star_rating: 3, skills: ['Python', 'PostgreSQL', 'Redis'], applied_date: '2026-08-20' },
-];

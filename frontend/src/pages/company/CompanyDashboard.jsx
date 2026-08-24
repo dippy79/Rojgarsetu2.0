@@ -9,19 +9,41 @@ export default function CompanyDashboard() {
   const { user, logout } = useAuth();
   const [stats, setStats] = useState({ activeJobs: 0, totalApplicants: 0, interviewsThisWeek: 0, hired: 0 });
   const [recentApplicants, setRecentApplicants] = useState([]);
+  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    setError(null);
     const token = localStorage.getItem('rojgar_token') || localStorage.getItem('token');
     const headers = { Authorization: `Bearer ${token}` };
 
-    Promise.all([
-      fetch('http://localhost:3001/api/v1/companies/me', { headers }).then(r => r.ok ? r.json() : {}),
-      fetch('http://localhost:3001/api/v1/companies/me/jobs', { headers }).then(r => r.ok ? r.json() : [])
-    ]).then(([compData, jobsData]) => {
-      if (compData.stats) setStats(compData.stats);
-      if (Array.isArray(jobsData)) setRecentApplicants(jobsData.slice(0, 5));
-    }).catch(err => console.error("Error fetching company stats:", err));
+    try {
+      const [compRes, jobsRes] = await Promise.all([
+        fetch('http://localhost:3001/api/v1/companies/me', { headers }),
+        fetch('http://localhost:3001/api/v1/companies/me/jobs', { headers })
+      ]);
+
+      if (compRes.ok) {
+        const compData = await compRes.json();
+        if (compData.stats) setStats(compData.stats);
+      }
+
+      if (jobsRes.ok) {
+        const jobsData = await jobsRes.json();
+        if (Array.isArray(jobsData)) setRecentApplicants(jobsData.slice(0, 5));
+      }
+    } catch (err) {
+      console.error(err);
+      setError("Hiring Node connection error. Some intelligence may be delayed.");
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   const navItems = [
     { label: 'Dashboard', path: '/dashboard/company', icon: LayoutDashboard },

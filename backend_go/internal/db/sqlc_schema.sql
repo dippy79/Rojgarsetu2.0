@@ -313,3 +313,14 @@ CREATE TABLE platform_stats (
     visits_today INT8 NOT NULL DEFAULT 0,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+-- file_uploads table
+CREATE TABLE file_uploads (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    file_type TEXT NOT NULL, -- 'resume', 'avatar', 'document'
+    file_url TEXT NOT NULL,
+    original_name TEXT NOT NULL,
+    file_size INT8,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
