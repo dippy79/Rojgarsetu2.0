@@ -2,7 +2,7 @@
   "pages\\candidate\\ai-matches.jsx -> ./AIJobMatches": {
     "id": 8449,
     "files": [
-      "static/chunks/8449.8d5f259cd89b0ced.js"
+      "static/chunks/8449.b3b4bab20b71d6a6.js"
     ]
   },
   "pages\\candidate\\applications.jsx -> ./MyApplications": {
@@ -34,7 +34,7 @@
     "files": [
       "static/chunks/5335-71fa589650ec5e51.js",
       "static/chunks/1189-dcb0827cce601b8f.js",
-      "static/chunks/1227.66e92f149800eaa9.js"
+      "static/chunks/1227.611d3ba22732c013.js"
     ]
   },
   "pages\\dashboard\\candidate.jsx -> ../candidate/CandidateDashboard": {
@@ -48,7 +48,7 @@
   "pages\\dashboard\\company.jsx -> ../company/CompanyDashboard": {
     "id": 7563,
     "files": [
-      "static/chunks/7563.e54c7f2750e2521d.js"
+      "static/chunks/7563.33b5cb5132de8f71.js"
     ]
   },
   "pages\\interview\\[id].jsx -> ../VideoCallPage": {

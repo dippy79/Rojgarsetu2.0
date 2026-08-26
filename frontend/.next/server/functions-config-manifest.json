@@ -1,1 +1,1 @@
-{"version":1,"functions":{"/candidate/MyApplications":{},"/candidate/CandidateDashboard":{},"/candidate/JobSearch":{},"/candidate/CandidateProfile":{},"/gov-jobs/GovJobsPage":{},"/private-jobs/PrivateJobsPage":{},"/courses/CoursesPage":{},"/videos/VideosPage":{}}}
+{"version":1,"functions":{"/candidate/CandidateDashboard":{},"/candidate/JobSearch":{},"/candidate/CandidateProfile":{},"/candidate/MyApplications":{},"/gov-jobs/GovJobsPage":{},"/courses/CoursesPage":{},"/videos/VideosPage":{},"/private-jobs/PrivateJobsPage":{}}}

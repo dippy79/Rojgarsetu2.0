@@ -61,8 +61,8 @@ func (h *LegalHandler) PostTakedown(c *gin.Context) {
 
 // GET /api/v1/crawler/forms (proxy to crawler service)
 func (h *LegalHandler) GetForms(c *gin.Context) {
-	// Query forms from database
-	rows, err := h.db.Query("SELECT id, title, conducting_body, form_type, official_website, is_taken_down FROM gov_forms_info ORDER BY created_at DESC LIMIT 50")
+	// Query forms from government_forms table
+	rows, err := h.db.Query("SELECT id, title, department, category, official_apply_url FROM government_forms ORDER BY created_at DESC LIMIT 50")
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch forms: " + err.Error()})
 		return
@@ -71,19 +71,17 @@ func (h *LegalHandler) GetForms(c *gin.Context) {
 
 	var forms []gin.H
 	for rows.Next() {
-		var id int
-		var title, conductingBody, formType, officialWebsite string
-		var isTakenDown bool
-		if err := rows.Scan(&id, &title, &conductingBody, &formType, &officialWebsite, &isTakenDown); err != nil {
+		var id string
+		var title, department, category, officialApplyUrl string
+		if err := rows.Scan(&id, &title, &department, &category, &officialApplyUrl); err != nil {
 			continue
 		}
 		forms = append(forms, gin.H{
 			"id":               id,
 			"title":            title,
-			"conducting_body":  conductingBody,
-			"form_type":        formType,
-			"official_website": officialWebsite,
-			"is_taken_down":    isTakenDown,
+			"conducting_body":  department,
+			"form_type":        category,
+			"official_website": officialApplyUrl,
 		})
 	}
 

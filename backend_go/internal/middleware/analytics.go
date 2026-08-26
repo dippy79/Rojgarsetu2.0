@@ -38,12 +38,6 @@ func AnalyticsMiddleware(redisClient *redis.Client, database *db.PostgresDB) gin
 		}
 
 		c.Next()
-
-		// Placement count (if status changed to selected)
-		if strings.Contains(path, "/status") && method == "PATCH" && c.Writer.Status() == 200 {
-			// Logic to check if status was set to 'selected'
-			// This might require reading response body or checking context
-		}
 	}
 }
 
@@ -61,7 +55,7 @@ func flushAnalytics(ctx context.Context, redisClient *redis.Client, database *db
 		return
 	}
 
-	_, err = database.Queries.UpdatePlatformStats(ctx, db.UpdatePlatformStatsParams{
+	_, _ = database.Queries.UpdatePlatformStats(ctx, db.UpdatePlatformStatsParams{
 		TotalJobs:         stats.TotalJobs,
 		TotalCandidates:   stats.TotalCandidates,
 		TotalCompanies:    stats.TotalCompanies,
@@ -69,9 +63,4 @@ func flushAnalytics(ctx context.Context, redisClient *redis.Client, database *db
 		TotalApplications: stats.TotalApplications + apps,
 		VisitsToday:       visits,
 	})
-
-	if err == nil {
-		// Reset daily counters after flush if it's a new day
-		// For simplicity, we just keep incrementing and reset manually if needed
-	}
 }

@@ -55,6 +55,7 @@ services:
       REDIS_URL: redis://redis:6379
       JWT_SECRET: ${JWT_SECRET:-rojgarsetu2-shared-jwt-secret-please-change-2025}
       RATE_LIMIT: "100"
+      CORS_ORIGINS: "http://localhost:3000,http://localhost:3001,http://localhost:8080,http://127.0.0.1:3000"
     depends_on:
       postgres:
         condition: service_healthy
@@ -185,6 +186,7 @@ services:
       BACKEND_SERVICE_URL: http://backend:8083
       AI_ENGINE_URL: http://ai-engine:8000
       CRAWLER_SERVICE_URL: http://crawler:8080
+      ALLOWED_ORIGINS: "http://localhost:3000,http://localhost:3001,http://localhost:8080,http://127.0.0.1:3000"
     depends_on:
       backend:
         condition: service_healthy
@@ -208,8 +210,8 @@ services:
     ports:
       - "8080:80"
     environment:
-      REACT_APP_BACKEND_URL: http://localhost:8083
-      REACT_APP_API_URL: http://localhost:8083
+      REACT_APP_BACKEND_URL: http://localhost:3001
+      REACT_APP_API_URL: http://localhost:3001
     depends_on:
       api-gateway:
         condition: service_healthy

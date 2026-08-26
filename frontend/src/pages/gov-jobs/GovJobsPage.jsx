@@ -46,6 +46,7 @@ export const GovJobsPage = () => {
     } catch (err) {
       console.error("Fetch error:", err);
       setError("Failed to sync with live government registries. Please try again later.");
+      setJobs([]);
     } finally {
       setLoading(false);
     }

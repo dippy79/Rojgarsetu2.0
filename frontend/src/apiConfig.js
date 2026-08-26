@@ -19,7 +19,6 @@ const NORMALIZED_DEFAULTS = [
   'http://localhost:8083',
   'http://localhost:8080',
   'https://api.rojgarsetu.in',
-  'http://localhost:3001',
 ];
 
 function normalizeBase(base) {
@@ -61,7 +60,7 @@ export function getApiBaseUrl() {
   if (typeof window !== 'undefined') {
     return process.env.REACT_APP_BACKEND_URL
       ? normalizeBase(process.env.REACT_APP_BACKEND_URL)
-      : 'http://localhost:8083';
+      : 'http://localhost:3001';
   }
 
   // Non-browser fallback

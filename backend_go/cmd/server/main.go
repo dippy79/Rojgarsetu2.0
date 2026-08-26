@@ -10,7 +10,7 @@ import (
 	"os/signal"
 	"strconv"
 	"strings"
-	"sync"
+	"sync/atomic"
 	"syscall"
 	"time"
 
@@ -42,6 +42,63 @@ var (
 	redisURL    string
 	redisClient *redis.Client
 )
+
+// AppHandlers holds references to all route handlers
+type AppHandlers struct {
+	GovJobHandler    *handlers.GovJobHandler
+	PrivJobHandler   *handlers.PrivJobHandler
+	CourseHandler    *handlers.CourseHandler
+	VideoHandler     *handlers.VideoHandler
+	SearchHandler    *handlers.SearchHandler
+	FeatureHandler   *handlers.FeatureHandler
+	CrawlerHandler   *handlers.CrawlerHandler
+	LegalHandler     *handlers.LegalHandler
+	WSHandler        *handlers.WSHandler
+	InterviewHandler *handlers.InterviewHandler
+	StatsHandler     *handlers.StatsHandler
+	UploadHandler    *handlers.UploadHandler
+}
+
+// Global atomic variables for thread-safe state management
+var (
+	dbReady     atomic.Bool
+	appHandlers atomic.Pointer[AppHandlers]
+)
+
+// dbReadinessMiddleware blocks route execution with 503 until DB connects
+func dbReadinessMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		// Always allow health checks and metrics to pass through
+		if c.Request.URL.Path == "/health" || c.Request.URL.Path == "/metrics" {
+			c.Next()
+			return
+		}
+
+		// If DB is not ready, return 503 Service Unavailable
+		if !dbReady.Load() || appHandlers.Load() == nil {
+			c.Header("Retry-After", "3")
+			c.JSON(http.StatusServiceUnavailable, gin.H{
+				"error":   "Database connection initializing",
+				"message": "Service warming up, please retry shortly",
+			})
+			c.Abort()
+			return
+		}
+		c.Next()
+	}
+}
+
+// safeHandler wraps handler execution to prevent nil pointer panics
+func safeHandler(fn func(h *AppHandlers, c *gin.Context)) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		h := appHandlers.Load()
+		if h == nil {
+			c.JSON(http.StatusServiceUnavailable, gin.H{"error": "Handlers unavailable"})
+			return
+		}
+		fn(h, c)
+	}
+}
 
 func main() {
 	// Initialize logger
@@ -139,10 +196,8 @@ func run(cfg *config.Config) error {
 		cancel()
 	}()
 
-	// Track DB readiness with thread-safe flag
+	// Track DB connection state
 	var (
-		mu               sync.RWMutex
-		dbReady          bool
 		database         *db.PostgresDB
 		sqlDB            *sql.DB
 		crawlerScheduler *crawler.Scheduler
@@ -156,12 +211,40 @@ func run(cfg *config.Config) error {
 	router.Use(gin.Recovery())
 	router.Use(gin.Logger())
 
-	// Security middleware first
+	// -------------------------------------------------------------
+	// 1. CORS MIDDLEWARE (SABSE UPAR RAKHA HAI)
+	// -------------------------------------------------------------
+	origins := os.Getenv("CORS_ORIGINS")
+	if origins == "" {
+		origins = "http://localhost:8080,http://localhost:3000,http://localhost:3001,http://127.0.0.1:3000,http://127.0.0.1:8080"
+	}
+
+	corsMiddleware := cors.New(cors.Config{
+		AllowOrigins:     strings.Split(origins, ","),
+		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization", "X-Requested-With"},
+		ExposeHeaders:    []string{"Content-Length"},
+		AllowCredentials: true,
+		MaxAge:           12 * time.Hour,
+	})
+	router.Use(corsMiddleware)
+
+	// Direct 204 response for all OPTIONS preflight requests
+	router.OPTIONS("/*path", func(c *gin.Context) {
+		c.Status(http.StatusNoContent)
+	})
+
+	// -------------------------------------------------------------
+	// 2. DB READINESS MIDDLEWARE (Protects routes from DB race conditions)
+	// -------------------------------------------------------------
+	router.Use(dbReadinessMiddleware())
+
+	// -------------------------------------------------------------
+	// 3. SECURITY & RATE LIMITING MIDDLEWARES (CORS KE BAAD)
+	// -------------------------------------------------------------
 	router.Use(middleware.SecurityHeaders())
 	router.Use(middleware.BodyLimit())
 	router.Use(middleware.SanitizeInput())
-
-	// Rate limiting
 	router.Use(middleware.RateLimitMiddleware(cfg.RateLimit))
 
 	// Cache invalidation for write operations (if Redis is available)
@@ -169,21 +252,6 @@ func run(cfg *config.Config) error {
 		router.Use(middleware.CacheInvalidationMiddleware(redisClient))
 	}
 
-	// CORS Configuration (Dynamic via Environment Variables)
-	origins := os.Getenv("CORS_ORIGINS")
-	if origins == "" {
-		origins = "http://localhost:3000,http://localhost:3001,http://127.0.0.1:3000"
-	}
-
-	corsMiddleware := cors.New(cors.Config{
-		AllowOrigins:     strings.Split(origins, ","),
-		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
-		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization"},
-		ExposeHeaders:    []string{"Content-Length"},
-		AllowCredentials: true,
-		MaxAge:           12 * time.Hour,
-	})
-	router.Use(corsMiddleware)
 	router.Use(middleware.PrometheusMiddleware())
 
 	// Metrics endpoint
@@ -192,29 +260,110 @@ func run(cfg *config.Config) error {
 	// Swagger documentation
 	router.GET("/docs/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
-	// Health check - responds immediately with 200 even before DB is ready
-	// Handles both GET and HEAD (the latter is used by Docker wget --spider healthcheck)
+	// Health check endpoint
 	healthHandler := func(c *gin.Context) {
-		mu.RLock()
-		ready := dbReady
-		mu.RUnlock()
-		status := "healthy"
-		if !ready {
-			status = "starting"
+		status := "UP"
+		if !dbReady.Load() {
+			status = "INITIALIZING_DB"
 		}
 		c.JSON(http.StatusOK, gin.H{
 			"status":    status,
 			"service":   "backend-api",
 			"version":   version,
-			"db_ready":  ready,
+			"db_ready":  dbReady.Load(),
 			"timestamp": time.Now().Format(time.RFC3339),
 		})
 	}
 	router.GET("/health", healthHandler)
 	router.HEAD("/health", healthHandler)
 
-	// Attempt database connection in background, then register DB routes
+	// -------------------------------------------------------------
+	// 4. SYNCHRONOUS ROUTE REGISTRATION (Routes exist immediately on startup)
+	// -------------------------------------------------------------
+	api := router.Group("/api/v1")
+	{
+		// Apply caching with different TTLs based on endpoint
+		if redisClient != nil {
+			// 5 minute cache for jobs
+			api.GET("/gov-jobs", middleware.CacheMiddleware(redisClient, 5*time.Minute),
+				safeHandler(func(h *AppHandlers, c *gin.Context) { h.GovJobHandler.GetGovJobs(c) }))
+			api.GET("/private-jobs", middleware.CacheMiddleware(redisClient, 5*time.Minute),
+				safeHandler(func(h *AppHandlers, c *gin.Context) { h.PrivJobHandler.GetPrivJobs(c) }))
+			api.GET("/priv-jobs", middleware.CacheMiddleware(redisClient, 5*time.Minute),
+				safeHandler(func(h *AppHandlers, c *gin.Context) { h.PrivJobHandler.GetPrivJobs(c) }))
+
+			// 10 minute cache for courses and videos
+			api.GET("/courses", middleware.CacheMiddleware(redisClient, 10*time.Minute),
+				safeHandler(func(h *AppHandlers, c *gin.Context) { h.CourseHandler.GetCourses(c) }))
+			api.GET("/courses/providers", middleware.CacheMiddleware(redisClient, 10*time.Minute),
+				safeHandler(func(h *AppHandlers, c *gin.Context) { h.CourseHandler.GetCourseProviders(c) }))
+			api.GET("/videos", middleware.CacheMiddleware(redisClient, 10*time.Minute),
+				safeHandler(func(h *AppHandlers, c *gin.Context) { h.VideoHandler.GetVideos(c) }))
+			api.GET("/videos/channels", middleware.CacheMiddleware(redisClient, 10*time.Minute),
+				safeHandler(func(h *AppHandlers, c *gin.Context) { h.VideoHandler.GetVideoChannels(c) }))
+			api.GET("/videos/categories", middleware.CacheMiddleware(redisClient, 10*time.Minute),
+				safeHandler(func(h *AppHandlers, c *gin.Context) { h.VideoHandler.GetVideoCategories(c) }))
+
+			// 1 minute cache for stats
+			api.GET("/crawler/stats", middleware.CacheMiddleware(redisClient, 1*time.Minute),
+				safeHandler(func(h *AppHandlers, c *gin.Context) { h.CrawlerHandler.GetStats(c) }))
+			api.GET("/forms", middleware.CacheMiddleware(redisClient, 10*time.Minute),
+				safeHandler(func(h *AppHandlers, c *gin.Context) { h.LegalHandler.GetForms(c) }))
+		} else {
+			// No caching if Redis is unavailable
+			api.GET("/gov-jobs", safeHandler(func(h *AppHandlers, c *gin.Context) { h.GovJobHandler.GetGovJobs(c) }))
+			api.GET("/private-jobs", safeHandler(func(h *AppHandlers, c *gin.Context) { h.PrivJobHandler.GetPrivJobs(c) }))
+			api.GET("/priv-jobs", safeHandler(func(h *AppHandlers, c *gin.Context) { h.PrivJobHandler.GetPrivJobs(c) }))
+			api.GET("/courses", safeHandler(func(h *AppHandlers, c *gin.Context) { h.CourseHandler.GetCourses(c) }))
+			api.GET("/courses/providers", safeHandler(func(h *AppHandlers, c *gin.Context) { h.CourseHandler.GetCourseProviders(c) }))
+			api.GET("/videos", safeHandler(func(h *AppHandlers, c *gin.Context) { h.VideoHandler.GetVideos(c) }))
+			api.GET("/videos/channels", safeHandler(func(h *AppHandlers, c *gin.Context) { h.VideoHandler.GetVideoChannels(c) }))
+			api.GET("/videos/categories", safeHandler(func(h *AppHandlers, c *gin.Context) { h.VideoHandler.GetVideoCategories(c) }))
+			api.GET("/crawler/stats", safeHandler(func(h *AppHandlers, c *gin.Context) { h.CrawlerHandler.GetStats(c) }))
+		}
+
+		// Uncached endpoints
+		api.GET("/gov-jobs/:id", safeHandler(func(h *AppHandlers, c *gin.Context) { h.GovJobHandler.GetGovJobByID(c) }))
+		api.GET("/private-jobs/:id", safeHandler(func(h *AppHandlers, c *gin.Context) { h.PrivJobHandler.GetPrivJobByID(c) }))
+		api.GET("/priv-jobs/:id", safeHandler(func(h *AppHandlers, c *gin.Context) { h.PrivJobHandler.GetPrivJobByID(c) }))
+		api.GET("/courses/:id", safeHandler(func(h *AppHandlers, c *gin.Context) { h.CourseHandler.GetCourseByID(c) }))
+		api.GET("/videos/:id", safeHandler(func(h *AppHandlers, c *gin.Context) { h.VideoHandler.GetVideoByID(c) }))
+		api.POST("/search", safeHandler(func(h *AppHandlers, c *gin.Context) { h.SearchHandler.Search(c) }))
+		api.GET("/search", safeHandler(func(h *AppHandlers, c *gin.Context) { h.SearchHandler.SearchGET(c) }))
+
+		// Public Stats Endpoint
+		api.GET("/stats", safeHandler(func(h *AppHandlers, c *gin.Context) { h.StatsHandler.GetPlatformStats(c) }))
+
+		// Crawler Endpoints
+		api.POST("/crawler/crawl", safeHandler(func(h *AppHandlers, c *gin.Context) { h.CrawlerHandler.TriggerCrawl(c) }))
+		api.GET("/crawler/health", safeHandler(func(h *AppHandlers, c *gin.Context) { h.CrawlerHandler.GetHealth(c) }))
+
+		// Legal Endpoints
+		api.GET("/legal/disclaimer", safeHandler(func(h *AppHandlers, c *gin.Context) { h.LegalHandler.GetDisclaimer(c) }))
+		api.POST("/legal/takedown", safeHandler(func(h *AppHandlers, c *gin.Context) { h.LegalHandler.PostTakedown(c) }))
+		api.GET("/crawler/forms", safeHandler(func(h *AppHandlers, c *gin.Context) { h.LegalHandler.GetForms(c) }))
+		api.GET("/forms", safeHandler(func(h *AppHandlers, c *gin.Context) { h.LegalHandler.GetForms(c) }))
+
+		// New Feature Endpoints
+		api.POST("/company/reviews", safeHandler(func(h *AppHandlers, c *gin.Context) { h.FeatureHandler.CreateReviewHandler(c) }))
+		api.POST("/jobs/report", safeHandler(func(h *AppHandlers, c *gin.Context) { h.FeatureHandler.ReportJobHandler(c) }))
+		api.POST("/candidate/ratings", safeHandler(func(h *AppHandlers, c *gin.Context) { h.FeatureHandler.InternalRatingHandler(c) }))
+
+		// WebSocket endpoint for real-time notifications
+		api.GET("/ws", safeHandler(func(h *AppHandlers, c *gin.Context) { h.WSHandler.HandleWebSocket(c) }))
+
+		// Interview Endpoints
+		api.POST("/interviews", safeHandler(func(h *AppHandlers, c *gin.Context) { h.InterviewHandler.ScheduleInterview(c) }))
+		api.GET("/interviews/:id", safeHandler(func(h *AppHandlers, c *gin.Context) { h.InterviewHandler.GetInterviewByID(c) }))
+
+		// Upload Endpoints
+		api.POST("/upload", safeHandler(func(h *AppHandlers, c *gin.Context) { h.UploadHandler.UploadFile(c) }))
+	}
+
+	// ASYNCHRONOUS DB CONNECTION & ATOMIC HANDLER SWAPPING
 	go func() {
+		logger.Info().Msg("[INIT] Connecting to Database in background...")
+
 		maxRetries := 30
 		for i := 0; i < maxRetries; i++ {
 			select {
@@ -247,11 +396,8 @@ func run(cfg *config.Config) error {
 			err = sdb.PingContext(pingCtx)
 			pingCancel()
 			if err == nil {
-				mu.Lock()
 				sqlDB = sdb
 				database = db.NewPostgresDB(sdb)
-				dbReady = true
-				mu.Unlock()
 				logger.Info().Msg("Database connected")
 
 				// Initialize services
@@ -264,96 +410,41 @@ func run(cfg *config.Config) error {
 				interviewService := services.NewInterviewService(database)
 				uploadService := services.NewUploadService(database)
 
-				// Initialize new feature repo and handlers
+				// Initialize new feature repo
 				featureRepo := db.NewFeatureRepository(sdb)
 
-				// Initialize handlers
-				govJobHandler := handlers.NewGovJobHandler(govJobService)
-				privJobHandler := handlers.NewPrivJobHandler(privJobService)
-				courseHandler := handlers.NewCourseHandler(courseService)
-				videoHandler := handlers.NewVideoHandler(videoService)
-				searchHandler := handlers.NewSearchHandler(searchService)
-				featureHandler := handlers.NewFeatureHandler(featureRepo)
-				crawlerHandler := handlers.NewCrawlerHandler(sdb)
-				legalHandler := handlers.NewLegalHandler(sdb)
-				wsHandler := handlers.NewWSHandler(notificationService)
-				interviewHandler := handlers.NewInterviewHandler(interviewService)
-				statsHandler := handlers.NewStatsHandler(database)
-				uploadHandler := handlers.NewUploadHandler(uploadService)
+				logger.Info().Msg("[INIT] Database connected. Initializing route handlers...")
+
+				// Atomically store initialized handlers
+				initialized := &AppHandlers{
+					GovJobHandler:    handlers.NewGovJobHandler(govJobService),
+					PrivJobHandler:   handlers.NewPrivJobHandler(privJobService),
+					CourseHandler:    handlers.NewCourseHandler(courseService),
+					VideoHandler:     handlers.NewVideoHandler(videoService),
+					SearchHandler:    handlers.NewSearchHandler(searchService),
+					FeatureHandler:   handlers.NewFeatureHandler(featureRepo),
+					CrawlerHandler:   handlers.NewCrawlerHandler(sdb),
+					LegalHandler:     handlers.NewLegalHandler(sdb),
+					WSHandler:        handlers.NewWSHandler(notificationService),
+					InterviewHandler: handlers.NewInterviewHandler(interviewService),
+					StatsHandler:     handlers.NewStatsHandler(database),
+					UploadHandler:    handlers.NewUploadHandler(uploadService),
+				}
+
+				// Atomically swap the pointer and mark DB as ready
+				appHandlers.Store(initialized)
+				dbReady.Store(true)
+
+				// Setup router with Analytics after DB ready
+				router.Use(middleware.AnalyticsMiddleware(redisClient, database))
+
+				logger.Info().Msg("[SUCCESS] All handlers initialized. Backend is fully operational.")
 
 				// Start workers
 				emailWorker := workers.NewEmailWorker(database)
 				go emailWorker.Start(ctx)
 
-				// Setup router with Analytics
-				router.Use(middleware.AnalyticsMiddleware(redisClient, database))
-
-				// Register DB-dependent routes
-				api := router.Group("/api/v1")
-				{
-					// Apply caching with different TTLs based on endpoint
-					if redisClient != nil {
-						// 5 minute cache for jobs
-						api.GET("/gov-jobs", middleware.CacheMiddleware(redisClient, 5*time.Minute), govJobHandler.GetGovJobs)
-						api.GET("/private-jobs", middleware.CacheMiddleware(redisClient, 5*time.Minute), privJobHandler.GetPrivJobs)
-
-						// 10 minute cache for courses and videos
-						api.GET("/courses", middleware.CacheMiddleware(redisClient, 10*time.Minute), courseHandler.GetCourses)
-						api.GET("/courses/providers", middleware.CacheMiddleware(redisClient, 10*time.Minute), courseHandler.GetCourseProviders)
-						api.GET("/videos", middleware.CacheMiddleware(redisClient, 10*time.Minute), videoHandler.GetVideos)
-						api.GET("/videos/channels", middleware.CacheMiddleware(redisClient, 10*time.Minute), videoHandler.GetVideoChannels)
-						api.GET("/videos/categories", middleware.CacheMiddleware(redisClient, 10*time.Minute), videoHandler.GetVideoCategories)
-
-						// 1 minute cache for stats
-						api.GET("/crawler/stats", middleware.CacheMiddleware(redisClient, 1*time.Minute), crawlerHandler.GetStats)
-					} else {
-						// No caching if Redis is unavailable
-						api.GET("/gov-jobs", govJobHandler.GetGovJobs)
-						api.GET("/private-jobs", privJobHandler.GetPrivJobs)
-						api.GET("/courses", courseHandler.GetCourses)
-						api.GET("/courses/providers", courseHandler.GetCourseProviders)
-						api.GET("/videos", videoHandler.GetVideos)
-						api.GET("/videos/channels", videoHandler.GetVideoChannels)
-						api.GET("/videos/categories", videoHandler.GetVideoCategories)
-						api.GET("/crawler/stats", crawlerHandler.GetStats)
-					}
-
-					// Uncached endpoints
-					api.GET("/gov-jobs/:id", govJobHandler.GetGovJobByID)
-					api.GET("/private-jobs/:id", privJobHandler.GetPrivJobByID)
-					api.GET("/courses/:id", courseHandler.GetCourseByID)
-					api.GET("/videos/:id", videoHandler.GetVideoByID)
-					api.POST("/search", searchHandler.Search)
-					api.GET("/search", searchHandler.SearchGET)
-
-					// Crawler Endpoints
-					api.POST("/crawler/crawl", crawlerHandler.TriggerCrawl)
-					api.GET("/crawler/health", crawlerHandler.GetHealth)
-					// Legal Endpoints
-					api.GET("/legal/disclaimer", legalHandler.GetDisclaimer)
-					api.POST("/legal/takedown", legalHandler.PostTakedown)
-					api.GET("/crawler/forms", legalHandler.GetForms)
-					// New Feature Endpoints
-					api.POST("/company/reviews", featureHandler.CreateReviewHandler)
-					api.POST("/jobs/report", featureHandler.ReportJobHandler)
-					api.POST("/candidate/ratings", featureHandler.InternalRatingHandler)
-
-					// WebSocket endpoint for real-time notifications
-					api.GET("/ws", wsHandler.HandleWebSocket)
-
-					// Interview Endpoints
-					api.POST("/interviews", interviewHandler.ScheduleInterview)
-					api.GET("/interviews/:id", interviewHandler.GetInterviewByID)
-
-					// Public Stats
-					router.GET("/api/v1/stats", statsHandler.GetPlatformStats)
-
-					// Upload Endpoints
-					api.POST("/upload", uploadHandler.UploadFile)
-				}
-				logger.Info().Msg("API routes registered")
-
-				// Start Crawler Scheduler (Runs every 6 hours in background)
+				// Start Crawler Scheduler
 				crawlerScheduler = crawler.NewScheduler(sdb, 6*time.Hour)
 				crawlerScheduler.Start()
 				logger.Info().Msg("Crawler scheduler started with 6-hour interval")
@@ -366,7 +457,7 @@ func run(cfg *config.Config) error {
 		logger.Error().Msg("Failed to connect to database after all retries")
 	}()
 
-	// Start HTTP server (independent of DB readiness)
+	// Start HTTP server
 	srv := &http.Server{
 		Addr:         fmt.Sprintf(":%d", serverPort),
 		Handler:      router,
@@ -405,12 +496,10 @@ func run(cfg *config.Config) error {
 	logger.Info().Msg("Shutting down server...")
 
 	// Stop crawler scheduler if running
-	mu.RLock()
 	if crawlerScheduler != nil {
 		logger.Info().Msg("Stopping crawler scheduler...")
 		crawlerScheduler.Stop()
 	}
-	mu.RUnlock()
 
 	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer shutdownCancel()
@@ -420,11 +509,9 @@ func run(cfg *config.Config) error {
 	}
 
 	// Close DB if connected
-	mu.RLock()
 	if sqlDB != nil {
 		sqlDB.Close()
 	}
-	mu.RUnlock()
 
 	// Close Redis connection if connected
 	if redisClient != nil {

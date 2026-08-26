@@ -16,11 +16,13 @@ app.use(cors({
           'http://localhost:3000',
           'http://localhost:3001',
           'http://localhost:3002',
+          'http://localhost:8080',
           'http://localhost:80',
           'http://localhost',
           'http://127.0.0.1:3000',
           'http://127.0.0.1:3001',
-          'http://127.0.0.1:3002'
+          'http://127.0.0.1:3002',
+          'http://127.0.0.1:8080'
         ];
     if (!origin || allowed.includes(origin)) {
       callback(null, true);
@@ -145,7 +147,6 @@ app.use('/api/jobs/recommendations/me', createProxyMiddleware({
 
 app.use('/api', createProxyMiddleware({
   target: BACKEND_TARGET,
-  pathRewrite: { '^/api': '' },
   ...proxyOptions,
   filter: (pathname) => !pathname.startsWith('/api/jobs/recommendations/me'),
 }));

@@ -17,7 +17,7 @@ app = FastAPI(
 )
 
 # Database connection URL from environment
-DATABASE_URL = os.Getenv(
+DATABASE_URL = os.getenv(
     "DATABASE_URL",
     "postgresql://postgres:postgres@postgres:5432/rojgarsetu"
 )
