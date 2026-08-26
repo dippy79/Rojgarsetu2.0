@@ -146,7 +146,8 @@ func (s *PostgresStore) SaveGovJob(job *shared.GovJobSource) error {
 	lastDate := parseDateToTime(job.LastDate)
 	examDate := parseDateToTime(job.ExamDate)
 	region := deriveJobRegion(job.Title, job.Location)
-	jobHash := generateHash(job.Title, job.Department, fmt.Sprintf("%v", lastDate))
+	// Use title + department + apply_url for a truly unique government job hash
+	jobHash := generateHash(job.Title, job.Department, job.ApplyURL)
 
 	query := `
 	INSERT INTO jobs_government
@@ -156,12 +157,17 @@ func (s *PostgresStore) SaveGovJob(job *shared.GovJobSource) error {
 	($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,true,$13)
 	ON CONFLICT (job_hash)
 	DO UPDATE SET
+	    title = EXCLUDED.title,
+	    department = EXCLUDED.department,
+	    location = EXCLUDED.location,
 	    apply_url = EXCLUDED.apply_url,
+	    last_date = EXCLUDED.last_date,
 	    eligibility = EXCLUDED.eligibility,
 	    vacancy_count = EXCLUDED.vacancy_count,
 	    salary = EXCLUDED.salary,
 	    exam_date = EXCLUDED.exam_date,
 	    notification_pdf_url = EXCLUDED.notification_pdf_url,
+	    job_region = EXCLUDED.job_region,
 	    is_active = true,
 	    updated_at = CURRENT_TIMESTAMP
 	`
@@ -182,6 +188,7 @@ func (s *PostgresStore) SaveGovJob(job *shared.GovJobSource) error {
 		jobHash,
 	)
 	if err != nil {
+		log.Printf("ERROR: failed to save gov job '%s' (hash: %s): %v", job.Title, jobHash, err)
 		return fmt.Errorf("failed to save gov job '%s': %w", job.Title, err)
 	}
 	return nil
@@ -199,7 +206,8 @@ func (s *PostgresStore) SavePrivJob(job *shared.PrivJobSource) error {
 		postedAt = *job.PostedAt
 	}
 	region := deriveJobRegion(job.Title, job.Location)
-	jobHash := generateHash(job.Company, job.Title, job.Location)
+	// Use company + title + url for private job uniqueness
+	jobHash := generateHash(job.Company, job.Title, job.URL)
 
 	query := `
 	INSERT INTO jobs_private
@@ -209,12 +217,17 @@ func (s *PostgresStore) SavePrivJob(job *shared.PrivJobSource) error {
 	($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,true,$13)
 	ON CONFLICT (job_hash)
 	DO UPDATE SET
+	    company = EXCLUDED.company,
+	    title = EXCLUDED.title,
+	    location = EXCLUDED.location,
 	    url = EXCLUDED.url,
 	    salary = EXCLUDED.salary,
 	    experience = EXCLUDED.experience,
 	    job_type = EXCLUDED.job_type,
 	    skills = EXCLUDED.skills,
 	    description = EXCLUDED.description,
+	    posted_at = EXCLUDED.posted_at,
+	    job_region = EXCLUDED.job_region,
 	    is_active = true,
 	    updated_at = CURRENT_TIMESTAMP
 	`
@@ -235,6 +248,7 @@ func (s *PostgresStore) SavePrivJob(job *shared.PrivJobSource) error {
 		jobHash,
 	)
 	if err != nil {
+		log.Printf("ERROR: failed to save priv job '%s' (hash: %s): %v", job.Title, jobHash, err)
 		return fmt.Errorf("failed to save priv job '%s': %w", job.Title, err)
 	}
 	return nil

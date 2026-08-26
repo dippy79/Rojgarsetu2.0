@@ -106,6 +106,55 @@ type Course struct {
 	UpdatedAt       sql.NullTime   `json:"updated_at"`
 }
 
+type CrawledJob struct {
+	ID                      int64                 `json:"id"`
+	SourceID                sql.NullInt32         `json:"source_id"`
+	ExternalJobID           string                `json:"external_job_id"`
+	JobHash                 string                `json:"job_hash"`
+	Title                   string                `json:"title"`
+	Organization            string                `json:"organization"`
+	JobType                 sql.NullString        `json:"job_type"`
+	CategoryID              uuid.NullUUID         `json:"category_id"`
+	TradeID                 uuid.NullUUID         `json:"trade_id"`
+	QualificationRequired   sql.NullString        `json:"qualification_required"`
+	TotalVacancies          sql.NullInt32         `json:"total_vacancies"`
+	SalaryRange             sql.NullString        `json:"salary_range"`
+	JobLocation             sql.NullString        `json:"job_location"`
+	OfficialNotificationUrl sql.NullString        `json:"official_notification_url"`
+	ApplyUrl                string                `json:"apply_url"`
+	PublishedAt             sql.NullTime          `json:"published_at"`
+	ApplicationDeadline     sql.NullTime          `json:"application_deadline"`
+	Status                  sql.NullString        `json:"status"`
+	RawPayload              pqtype.NullRawMessage `json:"raw_payload"`
+	CreatedAt               sql.NullTime          `json:"created_at"`
+	UpdatedAt               sql.NullTime          `json:"updated_at"`
+}
+
+type CrawlerLog struct {
+	ID              int64          `json:"id"`
+	Source          string         `json:"source"`
+	Status          string         `json:"status"`
+	JobsFound       sql.NullInt32  `json:"jobs_found"`
+	JobsSaved       sql.NullInt32  `json:"jobs_saved"`
+	DuplicatesFound sql.NullInt32  `json:"duplicates_found"`
+	ErrorsCount     sql.NullInt32  `json:"errors_count"`
+	Errors          sql.NullString `json:"errors"`
+	ExecutionTimeMs sql.NullInt32  `json:"execution_time_ms"`
+	StartedAt       sql.NullTime   `json:"started_at"`
+	CompletedAt     sql.NullTime   `json:"completed_at"`
+	CreatedAt       sql.NullTime   `json:"created_at"`
+}
+
+type CrawlerSource struct {
+	ID            int32        `json:"id"`
+	Name          string       `json:"name"`
+	SourceType    string       `json:"source_type"`
+	BaseUrl       string       `json:"base_url"`
+	IsActive      sql.NullBool `json:"is_active"`
+	LastCrawledAt sql.NullTime `json:"last_crawled_at"`
+	CreatedAt     sql.NullTime `json:"created_at"`
+}
+
 type EmailQueue struct {
 	ID            uuid.UUID      `json:"id"`
 	ToEmail       string         `json:"to_email"`

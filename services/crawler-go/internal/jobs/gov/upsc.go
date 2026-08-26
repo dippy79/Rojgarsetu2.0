@@ -167,9 +167,12 @@ func (s *UPSCSource) fetchFromWebsite(ctx context.Context) ([]shared.GovJobSourc
 func (s *UPSCSource) parseHTMLJobs(html, baseURL string) []shared.GovJobSource {
 	var jobs []shared.GovJobSource
 
+	// More specific patterns to match actual examination notices and notifications
+	// and exclude general header/sidebar links.
 	patterns := []string{
-		`<a[^>]*href="(/[^"]*examination[^"]*)"[^>]*>([^<]*)</a>`,
-		`<a[^>]*href="(/[^"]*notification[^"]*)"[^>]*>([^<]*)</a>`,
+		`<a[^>]*href="(/[^"]*exam-notice/[^"]*)"[^>]*>([^<]*)</a>`,
+		`<a[^>]*href="(/[^"]*recruitment-advertisement/[^"]*)"[^>]*>([^<]*)</a>`,
+		`<a[^>]*href="(/[^"]*notification[^"]*\.pdf)"[^>]*>([^<]*)</a>`,
 	}
 
 	for _, pattern := range patterns {
@@ -179,7 +182,7 @@ func (s *UPSCSource) parseHTMLJobs(html, baseURL string) []shared.GovJobSource {
 				title := strings.TrimSpace(match[2])
 				link := match[1]
 
-				if isUPSCRelevant(title) {
+				if title != "" && !isUPSCHeaderLink(title) {
 					job := shared.GovJobSource{
 						Source:    "upsc",
 						Title:     title,
@@ -195,6 +198,18 @@ func (s *UPSCSource) parseHTMLJobs(html, baseURL string) []shared.GovJobSource {
 	}
 
 	return jobs
+}
+
+// isUPSCHeaderLink checks if a title looks like a general navigation link
+func isUPSCHeaderLink(title string) bool {
+	t := strings.ToLower(title)
+	headers := []string{"examinations-notifications", "active examinations", "forthcoming examinations", "whats-new", "read more"}
+	for _, h := range headers {
+		if t == h || strings.Contains(t, h) && len(t) < 30 {
+			return true
+		}
+	}
+	return false
 }
 
 // Name returns the source name

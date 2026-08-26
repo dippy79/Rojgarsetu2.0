@@ -84,37 +84,15 @@ app.use((req, res, next) => {
 
 const PORT = process.env.PORT || 3002;
 
-// Dynamic target URLs from env with local fallbacks
-const BACKEND_SERVICE_URL = process.env.BACKEND_SERVICE_URL || 'http://localhost:8080';
-const CRAWLER_SERVICE_URL = process.env.CRAWLER_SERVICE_URL || 'http://localhost:8081';
-
-// Proxy rules for Go Backend
-app.use('/api/v1', createProxyMiddleware({
-  target: BACKEND_SERVICE_URL,
-  changeOrigin: true,
-  pathRewrite: { '^/api/v1': '/api/v1' },
-}));
-
-// Proxy rules for Crawler Service
-app.use('/api/crawler', createProxyMiddleware({
-  target: CRAWLER_SERVICE_URL,
-  changeOrigin: true,
-}));
+// Consolidated Target Configuration
+const BACKEND_TARGET = process.env.BACKEND_SERVICE_URL || 'http://backend:8083';
+const AUTH_TARGET = process.env.AUTH_SERVICE_URL || process.env.AUTH_URL || 'http://auth-service:8081';
+const AI_TARGET = process.env.AI_ENGINE_URL || process.env.AI_URL || 'http://ai-engine:8000';
+const CRAWLER_TARGET = process.env.CRAWLER_SERVICE_URL || 'http://crawler:8080';
 
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'UP', gateway: 'API Gateway Online' });
 });
-
-// Proxy helper for JSON request bodies
-function fixRequestBody(proxyReq, req) {
-  if (!req.body || Object.keys(req.body).length === 0) {
-    return null;
-  }
-  const bodyData = JSON.stringify(req.body);
-  proxyReq.setHeader('Content-Type', 'application/json');
-  proxyReq.setHeader('Content-Length', Buffer.byteLength(bodyData));
-  return bodyData;
-}
 
 // Proxy options with retry
 const proxyOptions = {
@@ -134,27 +112,26 @@ const proxyOptions = {
   },
 };
 
-const BACKEND_TARGET = process.env.BACKEND_SERVICE_URL || 'http://backend:8083';
+// Route Definitions
+app.use('/api/v1', createProxyMiddleware({
+  target: BACKEND_TARGET,
+  ...proxyOptions,
+}));
 
-const AI_TARGET = process.env.AI_ENGINE_URL || process.env.AI_URL || 'http://ai-engine:8000';
+app.use('/api/crawler', createProxyMiddleware({
+  target: CRAWLER_TARGET,
+  ...proxyOptions,
+}));
 
 app.use('/api/jobs/recommendations/me', createProxyMiddleware({
   target: AI_TARGET,
-  changeOrigin: true,
   pathRewrite: { '^/api/jobs/recommendations/me': '/recommend/jobs' },
   ...proxyOptions,
 }));
 
-app.use('/api', createProxyMiddleware({
-  target: BACKEND_TARGET,
-  ...proxyOptions,
-  filter: (pathname) => !pathname.startsWith('/api/jobs/recommendations/me'),
-}));
-
-const AUTH_TARGET = process.env.AUTH_SERVICE_URL || process.env.AUTH_URL || 'http://auth-service:8081';
 app.use('/auth', createProxyMiddleware({ target: AUTH_TARGET, pathRewrite: { '^/auth': '' }, ...proxyOptions }));
-
 app.use('/ai', createProxyMiddleware({ target: AI_TARGET, pathRewrite: { '^/ai': '' }, ...proxyOptions }));
+app.use('/api', createProxyMiddleware({ target: BACKEND_TARGET, pathRewrite: { '^/api': '' }, ...proxyOptions }));
 
 app.use((_req, res) => res.status(404).json({ error: 'Route not found' }));
 app.use((err, _req, res, _next) => { 

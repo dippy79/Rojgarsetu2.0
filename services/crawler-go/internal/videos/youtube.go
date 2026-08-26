@@ -80,7 +80,8 @@ func (s *YouTubeSource) Fetch(ctx context.Context) ([]shared.YouTubeVideoSource,
 		if err != nil {
 			continue
 		}
-		req.Header.Set("User-Agent", "RojgarSetu/2.0")
+		req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
+		req.Header.Set("Accept", "application/xml, text/xml, */*")
 
 		resp, err := s.client.Do(req)
 		if err != nil {
@@ -101,15 +102,21 @@ func (s *YouTubeSource) Fetch(ctx context.Context) ([]shared.YouTubeVideoSource,
 			continue
 		}
 
-		doc, err := shared.ParseRSSXML(string(body))
+		doc, err := shared.ParseAtomXML(string(body))
 		if err != nil {
-			log.Warn().Err(err).Str("channel", channel.Name).Msg("Failed to parse YouTube RSS")
+			log.Warn().Err(err).Str("channel", channel.Name).Msg("Failed to parse YouTube Atom feed")
+			// Log raw body for debugging if parsing fails
+			if len(body) > 500 {
+				log.Debug().Str("bodyPrefix", string(body[:500])).Msg("Raw Atom body prefix")
+			} else {
+				log.Debug().Str("body", string(body)).Msg("Raw Atom body")
+			}
 			continue
 		}
 
 		count := 0
-		for _, item := range doc.Channel.Items {
-			video := s.itemToVideo(item, channel)
+		for _, entry := range doc.Entries {
+			video := s.entryToVideo(entry, channel)
 			if video == nil {
 				continue
 			}
@@ -128,28 +135,34 @@ func (s *YouTubeSource) Fetch(ctx context.Context) ([]shared.YouTubeVideoSource,
 	return allVideos, nil
 }
 
-// itemToVideo maps an RSS item into a shared.YouTubeVideoSource.
-func (s *YouTubeSource) itemToVideo(item shared.RSSItem, channel OfficialChannel) *shared.YouTubeVideoSource {
-	link := strings.TrimSpace(item.Link)
-	videoID := shared.ExtractYouTubeVideoID(link)
+// entryToVideo maps an Atom entry into a shared.YouTubeVideoSource.
+func (s *YouTubeSource) entryToVideo(entry shared.AtomEntry, channel OfficialChannel) *shared.YouTubeVideoSource {
+	videoID := entry.VideoID
+	if videoID == "" {
+		videoID = shared.ExtractYouTubeVideoID(entry.Link.Href)
+	}
 	if videoID == "" {
 		return nil
 	}
 
-	published := parsePubDate(item.PubDate)
+	published := parsePubDate(entry.Published)
 
 	video := &shared.YouTubeVideoSource{
 		Source:      "youtube",
 		Channel:     channel.Name,
 		ChannelID:   channel.ChannelID,
-		Title:       shared.CleanString(item.Title),
-		URL:         link,
+		Title:       shared.CleanString(entry.Title),
+		URL:         "https://www.youtube.com/watch?v=" + videoID,
 		VideoID:     videoID,
-		Description: shared.CleanString(item.Description),
-		Thumbnail:   "https://img.youtube.com/vi/" + videoID + "/hqdefault.jpg",
+		Description: shared.CleanString(entry.Description),
+		Thumbnail:   entry.Thumbnail.URL,
 		Category:    channel.Category,
 		PublishedAt: published,
 		CreatedAt:   time.Now(),
+	}
+
+	if video.Thumbnail == "" {
+		video.Thumbnail = "https://img.youtube.com/vi/" + videoID + "/hqdefault.jpg"
 	}
 
 	if shared.IsValidVideo(video) {

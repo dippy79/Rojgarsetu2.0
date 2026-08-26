@@ -98,10 +98,34 @@ type YouTubeVideoSource struct {
 // RSS STRUCTURES
 // ============================================
 
-// RSSDocument represents an RSS feed
+// RSSDocument represents an RSS 2.0 feed or an Atom feed (partially)
 type RSSDocument struct {
 	XMLName xml.Name   `xml:"rss"`
 	Channel RSSChannel `xml:"channel"`
+}
+
+// AtomDocument represents an Atom feed (used by YouTube)
+type AtomDocument struct {
+	XMLName xml.Name    `xml:"feed"`
+	Title   string      `xml:"title"`
+	Entries []AtomEntry `xml:"entry"`
+}
+
+type AtomEntry struct {
+	VideoID     string    `xml:"videoId"`
+	Title       string    `xml:"title"`
+	Link        AtomLink  `xml:"link"`
+	Description string    `xml:"group>description"`
+	Published   string    `xml:"published"`
+	Thumbnail   AtomThumb `xml:"group>thumbnail"`
+}
+
+type AtomLink struct {
+	Href string `xml:"href,attr"`
+}
+
+type AtomThumb struct {
+	URL string `xml:"url,attr"`
 }
 
 // RSSChannel represents an RSS channel
@@ -130,6 +154,16 @@ type RSSItem struct {
 // ParseRSSXML parses RSS XML content
 func ParseRSSXML(xmlContent string) (*RSSDocument, error) {
 	var doc RSSDocument
+	err := xml.Unmarshal([]byte(xmlContent), &doc)
+	if err != nil {
+		return nil, err
+	}
+	return &doc, nil
+}
+
+// ParseAtomXML parses Atom XML content (YouTube format)
+func ParseAtomXML(xmlContent string) (*AtomDocument, error) {
+	var doc AtomDocument
 	err := xml.Unmarshal([]byte(xmlContent), &doc)
 	if err != nil {
 		return nil, err

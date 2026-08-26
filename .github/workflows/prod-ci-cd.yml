@@ -15,44 +15,46 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Go test backend
+      - name: Setup Go
         uses: actions/setup-go@v5
         with:
           go-version: ${{ env.GO_VERSION }}
+
+      - name: Go test backend
         working-directory: rojgarsetu2/backend_go
         run: |
           go mod tidy
           go test ./... -v -cover
 
       - name: Go test integration
-        uses: actions/setup-go@v5
-        with:
-          go-version: ${{ env.GO_VERSION }}
         working-directory: rojgarsetu2/backend_go
         run: |
           go mod tidy
           go test ./tests/... -v -cover
 
       - name: Go test crawler
-        uses: actions/setup-go@v5
-        with:
-          go-version: ${{ env.GO_VERSION }}
         working-directory: rojgarsetu2/services/crawler-go
         run: |
           go mod tidy
           go test ./...
 
-      - name: Node test frontend
+      - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-        working-directory: rojgarsetu2/frontend
-        run: npm ci && npm test
 
-      - name: Python test AI engine
+      - name: Node test frontend
+        working-directory: rojgarsetu2/frontend
+        run: |
+          npm ci
+          npm test
+
+      - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Python test AI engine
         working-directory: rojgarsetu2/services/ai-engine-python
         run: |
           pip install -r requirements.txt

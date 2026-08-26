@@ -314,6 +314,58 @@ CREATE TABLE platform_stats (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+-- crawler_sources table
+CREATE TABLE crawler_sources (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL UNIQUE,
+    source_type VARCHAR(50) NOT NULL,
+    base_url TEXT NOT NULL,
+    is_active BOOLEAN DEFAULT true,
+    last_crawled_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- crawled_jobs table
+CREATE TABLE crawled_jobs (
+    id BIGSERIAL PRIMARY KEY,
+    source_id INT REFERENCES crawler_sources(id) ON DELETE SET NULL,
+    external_job_id VARCHAR(255) NOT NULL,
+    job_hash VARCHAR(64) UNIQUE NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    organization VARCHAR(255) NOT NULL,
+    job_type VARCHAR(50) DEFAULT 'GOVT',
+    category_id UUID REFERENCES job_categories(id) ON DELETE SET NULL,
+    trade_id UUID REFERENCES job_trades(id) ON DELETE SET NULL,
+    qualification_required VARCHAR(255),
+    total_vacancies INT DEFAULT 1,
+    salary_range VARCHAR(100),
+    job_location VARCHAR(255),
+    official_notification_url TEXT,
+    apply_url TEXT NOT NULL,
+    published_at TIMESTAMPTZ,
+    application_deadline TIMESTAMPTZ,
+    status VARCHAR(50) DEFAULT 'ACTIVE',
+    raw_payload JSONB,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- crawler_logs table
+CREATE TABLE crawler_logs (
+    id BIGSERIAL PRIMARY KEY,
+    source VARCHAR(100) NOT NULL,
+    status VARCHAR(50) NOT NULL,
+    jobs_found INT DEFAULT 0,
+    jobs_saved INT DEFAULT 0,
+    duplicates_found INT DEFAULT 0,
+    errors_count INT DEFAULT 0,
+    errors TEXT,
+    execution_time_ms INT DEFAULT 0,
+    started_at TIMESTAMPTZ DEFAULT NOW(),
+    completed_at TIMESTAMPTZ DEFAULT NOW(),
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- file_uploads table
 CREATE TABLE file_uploads (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
