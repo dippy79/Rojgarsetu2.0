@@ -320,6 +320,7 @@ func run(cfg *config.Config) error {
 			api.GET("/videos/channels", safeHandler(func(h *AppHandlers, c *gin.Context) { h.VideoHandler.GetVideoChannels(c) }))
 			api.GET("/videos/categories", safeHandler(func(h *AppHandlers, c *gin.Context) { h.VideoHandler.GetVideoCategories(c) }))
 			api.GET("/crawler/stats", safeHandler(func(h *AppHandlers, c *gin.Context) { h.CrawlerHandler.GetStats(c) }))
+			api.GET("/forms", safeHandler(func(h *AppHandlers, c *gin.Context) { h.LegalHandler.GetForms(c) }))
 		}
 
 		// Uncached endpoints
@@ -342,7 +343,6 @@ func run(cfg *config.Config) error {
 		api.GET("/legal/disclaimer", safeHandler(func(h *AppHandlers, c *gin.Context) { h.LegalHandler.GetDisclaimer(c) }))
 		api.POST("/legal/takedown", safeHandler(func(h *AppHandlers, c *gin.Context) { h.LegalHandler.PostTakedown(c) }))
 		api.GET("/crawler/forms", safeHandler(func(h *AppHandlers, c *gin.Context) { h.LegalHandler.GetForms(c) }))
-		api.GET("/forms", safeHandler(func(h *AppHandlers, c *gin.Context) { h.LegalHandler.GetForms(c) }))
 
 		// New Feature Endpoints
 		api.POST("/company/reviews", safeHandler(func(h *AppHandlers, c *gin.Context) { h.FeatureHandler.CreateReviewHandler(c) }))

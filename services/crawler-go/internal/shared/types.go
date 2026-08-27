@@ -13,7 +13,7 @@ import (
 // DATA STRUCTURES
 // ============================================
 
-// GovJobSource represents a government job from various sources
+// GovJobSource represents a government job for DB storage
 type GovJobSource struct {
 	Source           string         `json:"source"`
 	Title            string         `json:"title"`
@@ -26,7 +26,9 @@ type GovJobSource struct {
 	Salary           string         `json:"salary"`
 	ExamDate         *string        `json:"exam_date,omitempty"`
 	NotificationURL  string         `json:"notification_url,omitempty"`
-	JobRegion        string         `json:"job_region,omitempty"`
+	Category         string         `json:"category"`   // CENTRAL | STATE
+	StateName        string         `json:"state_name"` // ALL_INDIA, Bihar, etc.
+	HashChecksum     string         `json:"hash_checksum"`
 	IsVerified       bool           `json:"is_verified"`
 	VerificationMeta map[string]any `json:"verification_meta,omitempty"`
 	ScamScore        float64        `json:"scam_score"`
@@ -34,7 +36,7 @@ type GovJobSource struct {
 	CreatedAt        time.Time      `json:"created_at"`
 }
 
-// PrivJobSource represents a private job from various sources
+// PrivJobSource represents a private job for DB storage
 type PrivJobSource struct {
 	Source           string         `json:"source"`
 	Company          string         `json:"company"`
@@ -47,7 +49,7 @@ type PrivJobSource struct {
 	Skills           []string       `json:"skills"`
 	Description      string         `json:"description"`
 	PostedAt         *time.Time     `json:"posted_at,omitempty"`
-	JobRegion        string         `json:"job_region,omitempty"`
+	HashChecksum     string         `json:"hash_checksum"`
 	IsVerified       bool           `json:"is_verified"`
 	VerificationMeta map[string]any `json:"verification_meta,omitempty"`
 	ScamScore        float64        `json:"scam_score"`
@@ -55,7 +57,7 @@ type PrivJobSource struct {
 	CreatedAt        time.Time      `json:"created_at"`
 }
 
-// CourseSource represents a course from various providers
+// CourseSource represents a course for DB storage
 type CourseSource struct {
 	Source          string    `json:"source"`
 	Provider        string    `json:"provider"`
@@ -76,22 +78,33 @@ type CourseSource struct {
 	CreatedAt       time.Time `json:"created_at"`
 }
 
-// YouTubeVideoSource represents a YouTube video from official channels
+// YouTubeVideoSource represents a YouTube video for DB storage
 type YouTubeVideoSource struct {
-	Source      string     `json:"source"`
-	Channel     string     `json:"channel"`
-	ChannelID   string     `json:"channel_id"`
-	Title       string     `json:"title"`
-	URL         string     `json:"url"`
-	Thumbnail   string     `json:"thumbnail"`
-	Description string     `json:"description"`
-	VideoID     string     `json:"video_id"`
-	PublishedAt *time.Time `json:"published_at,omitempty"`
-	Duration    string     `json:"duration"`
-	ViewCount   *int64     `json:"view_count,omitempty"`
-	LikeCount   *int64     `json:"like_count,omitempty"`
-	Category    string     `json:"category"`
-	CreatedAt   time.Time  `json:"created_at"`
+	Source       string     `json:"source"`
+	Channel      string     `json:"channel"`
+	ChannelID    string     `json:"channel_id"`
+	Title        string     `json:"title"`
+	URL          string     `json:"url"`
+	Thumbnail    string     `json:"thumbnail"`
+	Description  string     `json:"description"`
+	VideoID      string     `json:"video_id"`
+	PublishedAt  *time.Time `json:"published_at,omitempty"`
+	Duration     string     `json:"duration"`
+	ViewCount    *int64     `json:"view_count,omitempty"`
+	LikeCount    *int64     `json:"like_count,omitempty"`
+	Category     string     `json:"category"`
+	HashChecksum string     `json:"hash_checksum"`
+	CreatedAt    time.Time  `json:"created_at"`
+}
+
+// GovFormSource represents a government form/admit card/result
+type GovFormSource struct {
+	Title          string `json:"title"`
+	ConductingBody string `json:"conducting_body"`
+	FormType       string `json:"form_type"` // ADMIT_CARD | RESULT | APPLICATION_FORM | NOTIFICATION
+	OfficialWebsite string `json:"official_website"`
+	Category       string `json:"category"` // CENTRAL | STATE
+	HashChecksum   string `json:"hash_checksum"`
 }
 
 // ============================================
@@ -113,7 +126,7 @@ type AtomDocument struct {
 
 type AtomEntry struct {
 	VideoID     string    `xml:"videoId"`
-	Title       string    `xml:"title"`
+	Title       string    `json:"title"`
 	Link        AtomLink  `xml:"link"`
 	Description string    `xml:"group>description"`
 	Published   string    `xml:"published"`
@@ -231,70 +244,12 @@ func ParseDateString(dateStr string) *string {
 	return &dateStr
 }
 
-// IsValidJob checks if job has minimum required fields
-func IsValidJob(job *GovJobSource) bool {
-	if job == nil {
-		return false
-	}
-	if job.Title == "" || len(job.Title) < 3 {
-		return false
-	}
-	if job.Source == "" {
-		return false
-	}
-	// Skip if title looks like an error or junk
-	skipPatterns := []string{"error", "not found", "404", "maintenance"}
-	for _, pattern := range skipPatterns {
-		if strings.Contains(strings.ToLower(job.Title), pattern) {
-			return false
-		}
-	}
-	return true
-}
-
-// IsValidPrivJob checks if private job has minimum required fields
-func IsValidPrivJob(job *PrivJobSource) bool {
-	if job == nil {
-		return false
-	}
-	if job.Title == "" || len(job.Title) < 3 {
-		return false
-	}
-	if job.Company == "" {
-		return false
-	}
-	if job.Source == "" {
-		return false
-	}
-	return true
-}
-
-// IsValidCourse checks if course has minimum required fields
-func IsValidCourse(course *CourseSource) bool {
-	if course == nil {
-		return false
-	}
-	if course.Title == "" || len(course.Title) < 3 {
-		return false
-	}
-	if course.Provider == "" {
-		return false
-	}
-	if course.URL == "" {
-		return false
-	}
-	return true
-}
-
 // IsValidVideo checks if video has minimum required fields
 func IsValidVideo(video *YouTubeVideoSource) bool {
 	if video == nil {
 		return false
 	}
 	if video.Title == "" || len(video.Title) < 3 {
-		return false
-	}
-	if video.Channel == "" {
 		return false
 	}
 	if video.VideoID == "" {
@@ -422,6 +377,61 @@ func NormalizeCourseLevel(level string) string {
 	}
 
 	return level
+}
+
+// IsValidCourse checks if course has minimum required fields
+func IsValidCourse(course *CourseSource) bool {
+	if course == nil {
+		return false
+	}
+	if course.Title == "" || len(course.Title) < 3 {
+		return false
+	}
+	if course.Provider == "" {
+		return false
+	}
+	if course.URL == "" {
+		return false
+	}
+	return true
+}
+
+// IsValidPrivJob checks if private job has minimum required fields
+func IsValidPrivJob(job *PrivJobSource) bool {
+	if job == nil {
+		return false
+	}
+	if job.Title == "" || len(job.Title) < 3 {
+		return false
+	}
+	if job.Company == "" {
+		return false
+	}
+	if job.Source == "" {
+		return false
+	}
+	return true
+}
+
+// IsValidJob checks if job has minimum required fields
+func IsValidJob(job *GovJobSource) bool {
+	if job == nil {
+		return false
+	}
+	if job.Title == "" || len(job.Title) < 3 {
+		return false
+	}
+	if job.Source == "" {
+		return false
+	}
+	// Skip if title looks like an error or junk
+	skipPatterns := []string{"error", "not found", "404", "maintenance"}
+	for _, pattern := range skipPatterns {
+		if strings.Contains(strings.ToLower(job.Title), pattern) {
+			return false
+		}
+	}
+	return true
 }
 
 // ============================================

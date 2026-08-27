@@ -2,11 +2,13 @@ definitions:
   handlers.CreateEnrollmentRequest:
     properties:
       expires_at:
+        format: date-time
         type: string
       metadata:
         additionalProperties: true
         type: object
       trade_id:
+        format: uuid
         type: string
     required:
     - expires_at
@@ -36,13 +38,16 @@ definitions:
   handlers.UpdateEnrollmentRequest:
     properties:
       completed_at:
+        format: date-time
         type: string
       expires_at:
+        format: date-time
         type: string
       metadata:
         additionalProperties: true
         type: object
       progress_pct:
+        format: int32
         type: integer
       status:
         type: string

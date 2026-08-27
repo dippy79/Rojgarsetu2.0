@@ -93,7 +93,7 @@ func (e *Engine) Run() CrawlResult {
 			sourceStat := SourceStat{}
 
 			// Get source name by type assertion
-			switch src.(type) {
+			switch s := src.(type) {
 			case *sources.UPSCScraper:
 				sourceName = "UPSC"
 			case *sources.SSCScraper:
@@ -102,34 +102,11 @@ func (e *Engine) Run() CrawlResult {
 				sourceName = "Railway"
 			case *sources.NCSScraper:
 				sourceName = "NCS"
-			case *sources.AdzunaScraper:
-				sourceName = "Adzuna"
-			case *sources.JoobleScraper:
-				sourceName = "Jooble"
-			case *sources.GreenhouseSource:
-				sourceName = "Greenhouse"
-			case *sources.LeverSource:
-				sourceName = "Lever"
-			case *sources.AshbySource:
-				sourceName = "Ashby"
-			case *sources.SmartRecruitersSource:
-				sourceName = "SmartRecruiters"
-			case *sources.WorkableSource:
-				sourceName = "Workable"
-			case *sources.RemoteOKSource:
-				sourceName = "RemoteOK"
-			case *sources.WeWorkRemotelySource:
-				sourceName = "WeWorkRemotely"
-			case *sources.IbpsSbiSource:
-				sourceName = "IBPS/SBI"
-			case *sources.StatePSCSource:
-				sourceName = "State PSCs"
-			case *sources.DefenceSource:
-				sourceName = "Defense"
-			case *sources.PSUSource:
-				sourceName = "PSU"
+			case *sources.NaukriScraper:
+				sourceName = "Naukri"
 			default:
 				sourceName = "Unknown"
+				_ = s // use it
 			}
 
 			sourceStat.Name = sourceName
@@ -163,16 +140,6 @@ func (e *Engine) Run() CrawlResult {
 				if err := e.insertCrawledJob(jobs[i]); err != nil {
 					log.Printf("[ERROR] Failed to insert job from %s: %v", sourceName, err)
 					continue
-				}
-
-				// Also insert into jobs_government if it's a govt job
-				if jobs[i].SourceAttribution == "Source: UPSC Official Portal (upsc.gov.in)" ||
-					jobs[i].SourceAttribution == "Source: SSC Official Portal (ssc.gov.in)" ||
-					jobs[i].SourceAttribution == "Source: Railway RRB Official Portal (rrbapply.gov.in)" ||
-					jobs[i].SourceAttribution == "Source: NCS Portal (ncs.gov.in)" {
-					if err := e.insertGovernmentJob(jobs[i]); err != nil {
-						log.Printf("[ERROR] Failed to insert govt job from %s: %v", sourceName, err)
-					}
 				}
 
 				sourceStat.Added++
@@ -223,25 +190,11 @@ func (e *Engine) insertCrawledJob(job sources.Job) error {
 	return err
 }
 
-// insertGovernmentJob inserts a job into jobs_government table
-func (e *Engine) insertGovernmentJob(job sources.Job) error {
-	query := `
-		INSERT INTO jobs_government (title, department, location, qualification, salary, 
-			apply_link, last_date, source, is_active)
-		VALUES ($1, $2, $3, $4, $5, $6, NOW() + INTERVAL '30 days', $7, true)
-		ON CONFLICT DO NOTHING
-	`
-
-	_, err := e.db.Exec(query, job.Title, job.CompanyOrDept, job.Location,
-		job.QualificationReq, job.SalaryOrPayScale, job.ApplyURL, job.SourceAttribution)
-	return err
-}
-
 // insertCrawlerLog inserts a crawl log entry
 func (e *Engine) insertCrawlerLog(result CrawlResult) error {
 	query := `
-		INSERT INTO crawler_logs (source_id, jobs_found, jobs_added, duplicates_found, status, error_message)
-		VALUES (NULL, $1, $2, $3, 'COMPLETED', NULL)
+		INSERT INTO crawler_logs (jobs_found, jobs_added, duplicates_found, status, error_message)
+		VALUES ($1, $2, $3, 'COMPLETED', NULL)
 	`
 
 	_, err := e.db.Exec(query, result.Found, result.Added, result.Duplicates)
@@ -254,23 +207,17 @@ func (e *Engine) insertCrawlerLog(result CrawlResult) error {
 
 // extractSourceName extracts source name from attribution string
 func (e *Engine) extractSourceName(attribution string) string {
-	if attribution == "Source: UPSC Official Portal (upsc.gov.in)" {
+	if strings.Contains(attribution, "UPSC") {
 		return "UPSC"
 	}
-	if attribution == "Source: SSC Official Portal (ssc.gov.in)" {
+	if strings.Contains(attribution, "SSC") {
 		return "SSC"
 	}
-	if attribution == "Source: Railway RRB Official Portal (rrbapply.gov.in)" {
+	if strings.Contains(attribution, "Railway") {
 		return "Railway RRB"
 	}
-	if attribution == "Source: NCS Portal (ncs.gov.in)" {
+	if strings.Contains(attribution, "NCS") {
 		return "NCS Portal"
-	}
-	if attribution == "Source: Adzuna API" {
-		return "Adzuna API"
-	}
-	if attribution == "Source: Jooble API" {
-		return "Jooble API"
 	}
 	return "Unknown"
 }

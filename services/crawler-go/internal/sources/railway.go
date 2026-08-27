@@ -1,37 +1,38 @@
 package sources
 
 import (
-	"log"
+	"context"
+	"github.com/rojgarsetu/crawler/internal/browser"
 )
 
-// RailwayScraper scrapes Railway RRB official portal
 type RailwayScraper struct {
-	client interface{} // interface{} to avoid import cycle
+	BaseSource
+	engine *HeuristicGovEngine
 }
 
-// NewRailwayScraper creates a new Railway scraper
-func NewRailwayScraper(client interface{}) *RailwayScraper {
-	return &RailwayScraper{client: client}
+func NewRailwayScraper(pool *browser.Pool) *RailwayScraper {
+	return &RailwayScraper{
+		BaseSource: BaseSource{NameStr: "railway"},
+		engine:     NewHeuristicGovEngine(pool),
+	}
 }
 
-// FetchJobs fetches jobs from Railway RRB
 func (s *RailwayScraper) FetchJobs() ([]Job, error) {
-	log.Println("[Railway] Fetching jobs (stub implementation)")
+	govJobs, _ := s.engine.ScrapePortal(context.Background(), "https://rrbapply.gov.in", "Railway RRB", "CENTRAL", "ALL_INDIA")
 
 	var jobs []Job
-	// Stub job for testing
-	job := Job{
-		Title:             "Railway Group D Recruitment 2025",
-		CompanyOrDept:     "Railway Recruitment Board",
-		Location:          "All India",
-		QualificationReq:  "10th Pass",
-		SalaryOrPayScale:  "As per 7th Pay Commission",
-		ApplyURL:          "https://www.rrbapply.gov.in/group-d-recruitment",
-		SourceAttribution: "Source: Railway RRB Official Portal (rrbapply.gov.in)",
-		HashChecksum:      "", // Will be set by engine
+	for _, gj := range govJobs {
+		jobs = append(jobs, Job{
+			Title:             gj.Title,
+			CompanyOrDept:     gj.Department,
+			ApplyURL:          gj.ApplyURL,
+			SourceAttribution: "Source: Railway RRB Official Portal (rrbapply.gov.in)",
+			HashChecksum:      gj.HashChecksum,
+		})
 	}
-	jobs = append(jobs, job)
-
-	log.Printf("[Railway] Found %d job listings", len(jobs))
 	return jobs, nil
+}
+
+func (s *RailwayScraper) Name() string {
+	return s.NameStr
 }

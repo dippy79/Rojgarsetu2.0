@@ -3,159 +3,95 @@ package browser
 import (
 	"context"
 	"fmt"
-	"os"
-	"os/exec"
-	"time"
+	"sync"
 
-	"github.com/chromedp/chromedp"
+	"github.com/mxschmitt/playwright-go"
 	"github.com/rs/zerolog/log"
 )
 
-// GetChromeExecPath returns the Chrome/Chromium binary path dynamically.
-// Detection order: CHROME_BIN env var → system PATH lookup → fallback default.
-func GetChromeExecPath() string {
-	// 1. Check if user set CHROME_BIN explicitly
-	if customPath := os.Getenv("CHROME_BIN"); customPath != "" {
-		return customPath
-	}
-
-	// 2. Try looking up standard executables in system PATH
-	for _, binary := range []string{"google-chrome-stable", "google-chrome", "chromium-browser", "chromium", "chrome"} {
-		if path, err := exec.LookPath(binary); err == nil {
-			return path
-		}
-	}
-
-	// 3. Fallback default for containerized Linux environments
-	return "/usr/bin/chromium-browser"
-}
-
-// Pool manages a pool of browser contexts
+// Pool manages a pool of browser contexts using Playwright
 type Pool struct {
-	size     int
-	allocCtx context.Context
+	pw      *playwright.Playwright
+	browser playwright.Browser
+	mu      sync.Mutex
 }
 
-// NewPool creates a new browser pool
+// NewPool creates a new Playwright-based browser pool
 func NewPool(size int) (*Pool, error) {
-
-	// Get Chrome binary path dynamically
-	chromeBin := GetChromeExecPath()
-
-	log.Info().Str("chromeBin", chromeBin).Msg("Initializing browser pool with Chrome binary")
-
-	// Create allocator context with all options
-	allocCtx, cancel := chromedp.NewExecAllocator(
-		context.Background(),
-		chromedp.ExecPath(chromeBin),
-		chromedp.Headless,
-		chromedp.NoSandbox,
-		chromedp.DisableGPU,
-		chromedp.Flag("disable-dev-shm-usage", true),
-		chromedp.Flag("disable-gpu", true),
-		chromedp.Flag("disable-extensions", true),
-		chromedp.Flag("disable-plugins", true),
-		chromedp.Flag("disable-images", false),
-		chromedp.Flag("disable-web-security", true),
-		chromedp.Flag("allow-running-insecure-content", true),
-		chromedp.Flag("disable-setuid-sandbox", true),
-		chromedp.UserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"),
-	)
-	// Don't cancel - we want to reuse this context
-	_ = cancel
-
-	pool := &Pool{
-		size:     size,
-		allocCtx: allocCtx,
-	}
-
-	log.Info().Msg("Browser pool initialized successfully")
-	return pool, nil
-}
-
-// Run executes a function with a browser context
-func (p *Pool) Run(parentCtx context.Context, fn func(context.Context) error) error {
-	// Create browser context from allocator context
-	browserCtx, cancel := chromedp.NewContext(p.allocCtx)
-	if browserCtx == nil {
-		log.Error().Msg("Failed to create browser context - context is nil")
-		return fmt.Errorf("failed to create browser context: context is nil")
-	}
-	defer cancel()
-
-	log.Debug().Msg("Browser context created")
-
-	// Create a timeout context from the browser context
-	// This maintains the CDP executor in the context
-	ctx, cancelTimeout := context.WithTimeout(browserCtx, 60*time.Second)
-	defer cancelTimeout()
-
-	// If parent has deadline, merge it
-	if parentCtx != nil {
-		if deadline, ok := parentCtx.Deadline(); ok {
-			remaining := time.Until(deadline)
-			if remaining < 60*time.Second {
-				ctx, cancelTimeout = context.WithTimeout(browserCtx, remaining)
-				defer cancelTimeout()
-			}
-		}
-	}
-
-	return fn(ctx)
-}
-
-// TestNavigate tests if Chrome can navigate to a URL
-func (p *Pool) TestNavigate() error {
-	log.Info().Msg("Testing browser navigation to example.com")
-
-	// Create a browser context properly
-	browserCtx, cancel := chromedp.NewContext(p.allocCtx)
-	if browserCtx == nil {
-		log.Error().Msg("Failed to create browser context - context is nil")
-		return fmt.Errorf("failed to create browser context: context is nil")
-	}
-	defer cancel()
-
-	ctx, cancelTimeout := context.WithTimeout(browserCtx, 30*time.Second)
-	defer cancelTimeout()
-
-	var title string
-	err := chromedp.Run(ctx,
-		chromedp.Navigate("https://example.com"),
-		chromedp.Title(&title),
-	)
+	err := playwright.Install()
 	if err != nil {
-		log.Error().Err(err).Msg("Test navigation failed")
-		return err
+		return nil, fmt.Errorf("could not install playwright: %w", err)
 	}
 
-	log.Info().Str("title", title).Msg("Browser test successful: Example Domain")
-	return nil
-}
-
-// RunBrowserTest runs the browser test and logs results
-func (p *Pool) RunBrowserTest() error {
-	log.Info().Msg("=== Browser Test Starting ===")
-	log.Info().Msg("Browser initialized")
-
-	// Get Chrome binary path dynamically
-	chromeBin := GetChromeExecPath()
-	log.Info().Str("Chrome binary path detected", chromeBin).Msg("Chrome binary path detected")
-
-	// Run navigation test
-	log.Info().Msg("Navigation successful")
-	if err := p.TestNavigate(); err != nil {
-		log.Error().Err(err).Msg("Browser test FAILED")
-		return err
+	pw, err := playwright.Run()
+	if err != nil {
+		return nil, fmt.Errorf("could not start playwright: %w", err)
 	}
 
-	log.Info().Msg("Page title extracted")
-	log.Info().Msg("=== Browser Test PASSED ===")
-	return nil
+	browser, err := pw.Chromium.Launch(playwright.BrowserTypeLaunchOptions{
+		Headless: playwright.Bool(true),
+		Args: []string{
+			"--no-sandbox",
+			"--disable-setuid-sandbox",
+			"--disable-dev-shm-usage",
+			"--disable-gpu",
+		},
+	})
+	if err != nil {
+		pw.Stop()
+		return nil, fmt.Errorf("could not launch browser: %w", err)
+	}
+
+	log.Info().Msg("Playwright browser pool initialized successfully")
+	return &Pool{
+		pw:      pw,
+		browser: browser,
+	}, nil
 }
 
-// Close closes the browser pool
+// Run executes a function with a fresh Playwright page
+func (p *Pool) Run(ctx context.Context, fn func(playwright.Page) error) error {
+	p.mu.Lock()
+	// Create a new context for each run to isolate cookies/cache
+	browserContext, err := p.browser.NewContext(playwright.BrowserNewContextOptions{
+		UserAgent: playwright.String("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"),
+	})
+	p.mu.Unlock()
+
+	if err != nil {
+		return fmt.Errorf("could not create browser context: %w", err)
+	}
+	defer browserContext.Close()
+
+	page, err := browserContext.NewPage()
+	if err != nil {
+		return fmt.Errorf("could not create page: %w", err)
+	}
+	defer page.Close()
+
+	// Handle panic within the scraper logic
+	var runErr error
+	func() {
+		defer func() {
+			if r := recover(); r != nil {
+				log.Error().Interface("panic", r).Msg("Recovered from panic in browser runner")
+				runErr = fmt.Errorf("scraper panic: %v", r)
+			}
+		}()
+		runErr = fn(page)
+	}()
+
+	return runErr
+}
+
+// Close shuts down the playwright instance
 func (p *Pool) Close() error {
 	log.Info().Msg("Closing browser pool")
+	if p.browser != nil {
+		p.browser.Close()
+	}
+	if p.pw != nil {
+		return p.pw.Stop()
+	}
 	return nil
 }

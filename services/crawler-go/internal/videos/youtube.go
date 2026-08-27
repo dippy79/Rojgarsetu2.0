@@ -2,9 +2,13 @@
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
+	"os"
 	"strings"
 	"time"
 
@@ -12,195 +16,177 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-// YouTubeSource fetches videos from official YouTube channels using their
-// native XML RSS feeds (no API key required).
-//
-// Strategy (Task Group C — native XML RSS):
-//   - YouTube exposes a public XML RSS feed per channel (or per uploads playlist)
-//     that requires no API key:  https://www.youtube.com/feeds/videos.xml?channel_id=UC...
-//   - We fetch each official channel's feed, parse it with shared.ParseRSSXML,
-//     and map each <item> to a shared.YouTubeVideoSource.
-//   - The feed's <yt:videoId>, <media:title>, <media:description>,
-//     <media:thumbnail>, <media:community> (viewCount) and <published> fields
-//     give us everything we need without burning YouTube Data API quota.
-//   - Includes PIB India and DD News official channels (Task Group C addition).
 type YouTubeSource struct {
 	shared.BaseSource
 	client *http.Client
 }
 
-// OfficialChannel contains official YouTube channel information.
-type OfficialChannel struct {
-	Name      string
-	ChannelID string
-	Category  string
+type YouTubeSearchResponse struct {
+	Items []struct {
+		Id struct {
+			VideoId string `json:"videoId"`
+		} `json:"id"`
+		Snippet struct {
+			Title        string `json:"title"`
+			Description  string `json:"description"`
+			ChannelTitle string `json:"channelTitle"`
+			PublishedAt  string `json:"publishedAt"`
+			Thumbnails   struct {
+				Medium struct {
+					Url string `json:"url"`
+				} `json:"medium"`
+			} `json:"thumbnails"`
+		} `json:"snippet"`
+	} `json:"items"`
 }
 
-// OfficialChannels lists the official channels we crawl. These are real
-// 24-char "UC..." channel IDs (Task Group C includes PIB India + DD News).
-var OfficialChannels = []OfficialChannel{
-	{Name: "PIB India", ChannelID: "UCmlqJ8RGOn0OBNifO5m2nMQ", Category: "Government"},
-	{Name: "DD News", ChannelID: "UCk0x7oJv0t0rzOGZ4r0lg-g", Category: "Government"},
-	{Name: "Government of India", ChannelID: "UCwX6rVkOq0MAgMlIwoNGRhA", Category: "Government"},
-	{Name: "MyGov", ChannelID: "UCBVGrDriD0r0aSsG5gqK9Uw", Category: "Government"},
-	{Name: "National Career Service", ChannelID: "UCqY8nqFq3r3u6h3tKjTjTpg", Category: "Jobs"},
-	{Name: "Naukri", ChannelID: "UCt5dCq6T6l1sL3uFqBZvz-A", Category: "Jobs"},
-	{Name: "LinkedIn", ChannelID: "UCx4QBcj5VnYlqn5yZXVdYJA", Category: "Jobs"},
-	{Name: "Skill India", ChannelID: "UCgT9C8nK6D5r3e4x5h8j3Zw", Category: "Skills"},
-	{Name: "Study IQ", ChannelID: "UC2_AR66V3aYlL3xO1yT4J4A", Category: "Education"},
+var channelIDs = []string{
+	"UCBwmMxybNva6P_5VmxjzwqA", // UPSC Official
+	"UCqYPhGiB9tkShZorfgcL2lA", // SSC Official
+	"UC4JX40jDee_tINbkjycV4Sg", // NCS Portal
+	"UCL0O2iG0C8XQ6H26o1j7Oaw", // PIB India
+	"UC2R2P7Ea4B-7F9aY5FvW_cw", // DD News
+	"UCxONzEa1z_6R1E_P0f353qg", // Study IQ Education
+	"UCQ-R8O1T7K4O57Q8L12xRnw", // MyGov India
 }
 
-// NewYouTubeSource creates a new YouTube source using native XML RSS feeds.
+var searchQueries = []string{
+	"Government Job Notification India",
+	"UPSC SSC RRB Latest Vacancy Update",
+	"State PSC Job Bharti 2026",
+	"Sarkari Online Form Fillup Process",
+}
+
 func NewYouTubeSource() *YouTubeSource {
 	return &YouTubeSource{
 		BaseSource: shared.BaseSource{NameStr: "youtube", BaseURL: "https://www.youtube.com"},
-		client: &http.Client{
-			Timeout: 30 * time.Second,
-		},
+		client: &http.Client{Timeout: 30 * time.Second},
 	}
 }
 
-// Fetch retrieves videos from the official channels' XML RSS feeds.
 func (s *YouTubeSource) Fetch(ctx context.Context) ([]shared.YouTubeVideoSource, error) {
-	log.Info().Int("channels", len(OfficialChannels)).Msg("Starting crawl for source: YouTube (native XML RSS)")
+	apiKey := os.Getenv("YOUTUBE_API_KEY")
 
-	var allVideos []shared.YouTubeVideoSource
+	if apiKey != "" {
+		videos, err := s.fetchAPI(ctx, apiKey)
+		if err == nil && len(videos) > 0 {
+			return videos, nil
+		}
+		log.Warn().Err(err).Msg("YouTube API failure/quota reached, falling back to RSS")
+	}
+
+	return s.fetchRSS(ctx)
+}
+
+func (s *YouTubeSource) fetchAPI(ctx context.Context, key string) ([]shared.YouTubeVideoSource, error) {
+	var results []shared.YouTubeVideoSource
 	seen := make(map[string]bool)
 
-	for _, channel := range OfficialChannels {
-		if !isValidYouTubeChannelID(channel.ChannelID) {
-			log.Warn().Str("channel", channel.Name).Str("channelID", channel.ChannelID).
-				Msg("Skipping channel with invalid/placeholder channel ID")
-			continue
-		}
+	for _, q := range searchQueries {
+		endpoint := fmt.Sprintf(
+			"https://www.googleapis.com/youtube/v3/search?part=snippet&q=%s&type=video&regionCode=IN&relevanceLanguage=hi&maxResults=25&order=date&key=%s",
+			url.QueryEscape(q), key)
 
-		feedURL := fmt.Sprintf("https://www.youtube.com/feeds/videos.xml?channel_id=%s", channel.ChannelID)
-
-		req, err := http.NewRequestWithContext(ctx, "GET", feedURL, nil)
+		resp, err := s.client.Get(endpoint)
 		if err != nil {
 			continue
 		}
-		req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
-		req.Header.Set("Accept", "application/xml, text/xml, */*")
-
-		resp, err := s.client.Do(req)
-		if err != nil {
-			log.Warn().Err(err).Str("channel", channel.Name).Msg("YouTube RSS request error")
-			continue
+		if resp.StatusCode == 403 {
+			resp.Body.Close()
+			return nil, fmt.Errorf("youtube quota exceeded")
 		}
 
-		body, readErr := io.ReadAll(resp.Body)
+		body, _ := io.ReadAll(resp.Body)
 		resp.Body.Close()
 
-		if resp.StatusCode != http.StatusOK {
-			log.Warn().Int("status", resp.StatusCode).Str("channel", channel.Name).
-				Msg("YouTube RSS responded non-200")
+		var data YouTubeSearchResponse
+		json.Unmarshal(body, &data)
+
+		for _, item := range data.Items {
+			if seen[item.Id.VideoId] {
+				continue
+			}
+			seen[item.Id.VideoId] = true
+
+			pubTime, _ := time.Parse(time.RFC3339, item.Snippet.PublishedAt)
+			vURL := "https://youtube.com/watch?v=" + item.Id.VideoId
+
+			v := shared.YouTubeVideoSource{
+				Source:       "youtube",
+				Channel:      item.Snippet.ChannelTitle,
+				Title:        item.Snippet.Title,
+				URL:          vURL,
+				VideoID:      item.Id.VideoId,
+				Description:  item.Snippet.Description,
+				Thumbnail:    item.Snippet.Thumbnails.Medium.Url,
+				Category:     "Education",
+				PublishedAt:  &pubTime,
+				HashChecksum: s.generateHash(item.Snippet.Title + vURL),
+				CreatedAt:    time.Now(),
+			}
+			results = append(results, v)
+		}
+	}
+	return results, nil
+}
+
+func (s *YouTubeSource) fetchRSS(ctx context.Context) ([]shared.YouTubeVideoSource, error) {
+	var results []shared.YouTubeVideoSource
+	seen := make(map[string]bool)
+
+	for _, cid := range channelIDs {
+		feedURL := fmt.Sprintf("https://www.youtube.com/feeds/videos.xml?channel_id=%s", cid)
+		resp, err := s.client.Get(feedURL)
+		if err != nil || resp.StatusCode != 200 {
+			if resp != nil {
+				resp.Body.Close()
+			}
 			continue
 		}
-		if readErr != nil {
-			log.Warn().Err(readErr).Str("channel", channel.Name).Msg("Failed to read YouTube RSS body")
-			continue
-		}
+
+		body, _ := io.ReadAll(resp.Body)
+		resp.Body.Close()
 
 		doc, err := shared.ParseAtomXML(string(body))
 		if err != nil {
-			log.Warn().Err(err).Str("channel", channel.Name).Msg("Failed to parse YouTube Atom feed")
-			// Log raw body for debugging if parsing fails
-			if len(body) > 500 {
-				log.Debug().Str("bodyPrefix", string(body[:500])).Msg("Raw Atom body prefix")
-			} else {
-				log.Debug().Str("body", string(body)).Msg("Raw Atom body")
-			}
 			continue
 		}
 
-		count := 0
 		for _, entry := range doc.Entries {
-			video := s.entryToVideo(entry, channel)
-			if video == nil {
+			if seen[entry.VideoID] {
 				continue
 			}
-			if seen[video.VideoID] {
-				continue
+			seen[entry.VideoID] = true
+
+			vURL := "https://youtube.com/watch?v=" + entry.VideoID
+			pubTime, _ := time.Parse(time.RFC3339, entry.Published)
+
+			v := shared.YouTubeVideoSource{
+				Source:       "youtube",
+				Channel:      "Official Channel",
+				ChannelID:    cid,
+				Title:        entry.Title,
+				URL:          vURL,
+				VideoID:      entry.VideoID,
+				Description:  entry.Description,
+				Thumbnail:    entry.Thumbnail.URL,
+				Category:     "Government",
+				PublishedAt:  &pubTime,
+				HashChecksum: s.generateHash(entry.Title + vURL),
+				CreatedAt:    time.Now(),
 			}
-			seen[video.VideoID] = true
-			allVideos = append(allVideos, *video)
-			count++
-		}
-
-		log.Info().Int("videos", count).Str("channel", channel.Name).Msg("YouTube RSS fetch successful")
-	}
-
-	log.Info().Int("totalVideos", len(allVideos)).Msg("YouTube fetch completed")
-	return allVideos, nil
-}
-
-// entryToVideo maps an Atom entry into a shared.YouTubeVideoSource.
-func (s *YouTubeSource) entryToVideo(entry shared.AtomEntry, channel OfficialChannel) *shared.YouTubeVideoSource {
-	videoID := entry.VideoID
-	if videoID == "" {
-		videoID = shared.ExtractYouTubeVideoID(entry.Link.Href)
-	}
-	if videoID == "" {
-		return nil
-	}
-
-	published := parsePubDate(entry.Published)
-
-	video := &shared.YouTubeVideoSource{
-		Source:      "youtube",
-		Channel:     channel.Name,
-		ChannelID:   channel.ChannelID,
-		Title:       shared.CleanString(entry.Title),
-		URL:         "https://www.youtube.com/watch?v=" + videoID,
-		VideoID:     videoID,
-		Description: shared.CleanString(entry.Description),
-		Thumbnail:   entry.Thumbnail.URL,
-		Category:    channel.Category,
-		PublishedAt: published,
-		CreatedAt:   time.Now(),
-	}
-
-	if video.Thumbnail == "" {
-		video.Thumbnail = "https://img.youtube.com/vi/" + videoID + "/hqdefault.jpg"
-	}
-
-	if shared.IsValidVideo(video) {
-		return video
-	}
-	return nil
-}
-
-// isValidYouTubeChannelID reports whether a channel ID looks like a real
-// YouTube channel ID (24 chars, starts with "UC").
-func isValidYouTubeChannelID(id string) bool {
-	id = strings.TrimSpace(id)
-	return len(id) == 24 && strings.HasPrefix(id, "UC")
-}
-
-// parsePubDate parses an RSS pubDate string into a *time.Time.
-func parsePubDate(pubDate string) *time.Time {
-	pubDate = strings.TrimSpace(pubDate)
-	if pubDate == "" {
-		return nil
-	}
-	layouts := []string{
-		time.RFC1123Z,
-		time.RFC1123,
-		time.RFC822Z,
-		time.RFC822,
-		time.RFC3339,
-		"2006-01-02T15:04:05-07:00",
-	}
-	for _, layout := range layouts {
-		if t, err := time.Parse(layout, pubDate); err == nil {
-			return &t
+			results = append(results, v)
 		}
 	}
-	return nil
+	return results, nil
 }
 
-// Name returns the source name.
+func (s *YouTubeSource) generateHash(input string) string {
+	h := sha256.New()
+	h.Write([]byte(strings.ToLower(input)))
+	return fmt.Sprintf("%x", h.Sum(nil))
+}
+
 func (s *YouTubeSource) Name() string {
 	return s.NameStr
 }

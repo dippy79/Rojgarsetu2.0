@@ -384,6 +384,37 @@ func (s *PostgresStore) SaveVideo(video *shared.YouTubeVideoSource) error {
 	return nil
 }
 
+// SaveGovForm upserts a government form/admit card/result into gov_forms_info.
+// Idempotent on hash_checksum.
+func (s *PostgresStore) SaveGovForm(form *shared.GovFormSource) error {
+	if form == nil {
+		return fmt.Errorf("form is nil")
+	}
+
+	query := `
+	INSERT INTO gov_forms_info
+	(title, conducting_body, form_type, official_website, hash_checksum, is_taken_down)
+	VALUES
+	($1,$2,$3,$4,$5,false)
+	ON CONFLICT (hash_checksum)
+	DO UPDATE SET
+	    official_website = EXCLUDED.official_website,
+	    created_at = CURRENT_TIMESTAMP
+	`
+	_, err := s.db.Exec(
+		query,
+		form.Title,
+		form.ConductingBody,
+		form.FormType,
+		form.OfficialWebsite,
+		form.HashChecksum,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to save gov form '%s': %w", form.Title, err)
+	}
+	return nil
+}
+
 // deriveJobRegion classifies a job into a geographic region based on its
 // title and location. Returns one of:
 //

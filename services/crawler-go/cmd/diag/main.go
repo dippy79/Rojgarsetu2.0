@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/rojgarsetu/crawler/internal/browser"
 	"github.com/rojgarsetu/crawler/internal/jobs/gov"
 	"github.com/rojgarsetu/crawler/internal/jobs/priv"
 	"github.com/rojgarsetu/crawler/internal/shared"
@@ -14,13 +15,20 @@ func main() {
 	fmt.Println("=== RojgarSetu 2.0 Crawler Diagnostic (Dry-Run) ===")
 	ctx := context.Background()
 
-	sources := []shared.GovJobFetcher{
-		gov.NewUPSCSource(),
-		gov.NewRRBSource(),
-		gov.NewSSCSource(),
+	pool, err := browser.NewPool(1)
+	if err != nil {
+		fmt.Printf("[-] Failed to init browser pool: %v\n", err)
+		return
+	}
+	defer pool.Close()
+
+	govSources := []shared.GovJobFetcher{
+		gov.NewUPSCSource(pool),
+		gov.NewRRBSource(pool),
+		gov.NewSSCSource(pool),
 	}
 
-	for _, s := range sources {
+	for _, s := range govSources {
 		fmt.Printf("[DIAG] Testing %s...\n", s.Name())
 		start := time.Now()
 		items, err := s.Fetch(ctx)

@@ -13,6 +13,7 @@ import (
 	"github.com/rojgarsetu/crawler/internal/legal"
 	"github.com/rojgarsetu/crawler/internal/proxy"
 	"github.com/rojgarsetu/crawler/internal/shared"
+	"github.com/rojgarsetu/crawler/internal/sources"
 	"github.com/rojgarsetu/crawler/internal/store"
 	"github.com/rojgarsetu/crawler/internal/videos"
 )
@@ -37,17 +38,6 @@ type SourceResult struct {
 	Error   string `json:"error,omitempty"`
 }
 
-// RunAll instantiates every source, calls Fetch with a per-source timeout,
-// routes each result type to the correct store save function, and returns a
-// summary. It continues to the next source if one fails.
-//
-// Wires exactly 21 active sources (matches the container baseline):
-//   - Gov (5): upsc, rrb, ssc, ncs, employment_news
-//   - Priv (6): indeed, linkedin, google_jobs, company_pages, greenhouse, lever
-//   - Legacy (1): naukri  (converted to PrivJobSource)
-//   - Course (8): nptel, swayam, nsdc, coursera, udemy, geeksforgeeks,
-//     tutorialspoint, w3schools
-//   - Video (1): youtube  (native XML RSS)
 func RunAll(
 	ctx context.Context,
 	st *store.PostgresStore,
@@ -59,17 +49,20 @@ func RunAll(
 
 	// ---- GovJobFetcher sources (→ jobs_government) ----
 	govSources := []shared.GovJobFetcher{
-		gov.NewUPSCSource(),
-		gov.NewRRBSource(),
-		gov.NewSSCSource(),
-		gov.NewNCSSource(),
-		gov.NewEmploymentNewsSource(),
+		gov.NewUPSCSource(browserPool),
+		gov.NewRRBSource(browserPool),
+		gov.NewSSCSource(browserPool),
+		gov.NewNCSSource(browserPool),
 	}
 	for _, s := range govSources {
 		summary.SourcesRun++
-		summary.SourceResults = append(summary.SourceResults,
-			runGovSource(ctx, st, s))
+		summary.SourceResults = append(summary.SourceResults, runGovSource(ctx, st, s))
 	}
+
+	// ---- State Jobs (New) ----
+	stateJobs := sources.NewStateJobsSource(browserPool)
+	summary.SourcesRun++
+	summary.SourceResults = append(summary.SourceResults, runGovSource(ctx, st, stateJobs))
 
 	// ---- PrivJobFetcher sources (→ jobs_private) ----
 	privSources := []shared.PrivJobFetcher{
@@ -85,14 +78,12 @@ func RunAll(
 	}
 	for _, s := range privSources {
 		summary.SourcesRun++
-		summary.SourceResults = append(summary.SourceResults,
-			runPrivSource(ctx, st, s))
+		summary.SourceResults = append(summary.SourceResults, runPrivSource(ctx, st, s))
 	}
 
 	// ---- Naukri (old JobSource interface → convert to PrivJobSource) ----
 	summary.SourcesRun++
-	summary.SourceResults = append(summary.SourceResults,
-		runNaukri(ctx, st, browserPool, proxyRotator))
+	summary.SourceResults = append(summary.SourceResults, runNaukri(ctx, st, browserPool, proxyRotator))
 
 	// ---- CourseFetcher sources (→ courses) ----
 	courseSources := []shared.CourseFetcher{
@@ -107,8 +98,7 @@ func RunAll(
 	}
 	for _, s := range courseSources {
 		summary.SourcesRun++
-		summary.SourceResults = append(summary.SourceResults,
-			runCourseSource(ctx, st, s))
+		summary.SourceResults = append(summary.SourceResults, runCourseSource(ctx, st, s))
 	}
 
 	// ---- VideoFetcher sources (→ youtube_videos) ----
@@ -117,9 +107,13 @@ func RunAll(
 	}
 	for _, s := range videoSources {
 		summary.SourcesRun++
-		summary.SourceResults = append(summary.SourceResults,
-			runVideoSource(ctx, st, s))
+		summary.SourceResults = append(summary.SourceResults, runVideoSource(ctx, st, s))
 	}
+
+	// ---- Forms Scraper (New) ----
+	formsScraper := sources.NewGovFormsSource(browserPool)
+	summary.SourcesRun++
+	summary.SourceResults = append(summary.SourceResults, runFormsSource(ctx, st, formsScraper))
 
 	// ---- Aggregate totals ----
 	for _, r := range summary.SourceResults {
@@ -146,10 +140,8 @@ func RunAll(
 	return summary
 }
 
-// ── per-type runners ──────────────────────────────────────────────────────────
-
 func runGovSource(ctx context.Context, st *store.PostgresStore, s shared.GovJobFetcher) SourceResult {
-	timeout := 3 * time.Minute
+	timeout := 5 * time.Minute
 	fetchCtx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
@@ -163,7 +155,7 @@ func runGovSource(ctx context.Context, st *store.PostgresStore, s shared.GovJobF
 		verified, reason := antiFake.ValidateGovJob(items[i].Title, items[i].Department, items[i].ApplyURL)
 		items[i].IsVerified = verified
 		items[i].VerificationMeta = map[string]any{
-			"engine": "AntiFakeEngine v1",
+			"engine": "AntiFakeEngine v2",
 			"reason": reason,
 			"ts":     time.Now().Unix(),
 		}
@@ -181,7 +173,7 @@ func runGovSource(ctx context.Context, st *store.PostgresStore, s shared.GovJobF
 }
 
 func runPrivSource(ctx context.Context, st *store.PostgresStore, s shared.PrivJobFetcher) SourceResult {
-	timeout := 3 * time.Minute
+	timeout := 5 * time.Minute
 	fetchCtx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
@@ -198,7 +190,7 @@ func runPrivSource(ctx context.Context, st *store.PostgresStore, s shared.PrivJo
 			items[i].ScamScore = 0.9
 		}
 		items[i].VerificationMeta = map[string]any{
-			"engine": "AntiFakeEngine v1",
+			"engine": "AntiFakeEngine v2",
 			"isScam": isScam,
 			"ts":     time.Now().Unix(),
 		}
@@ -214,7 +206,7 @@ func runPrivSource(ctx context.Context, st *store.PostgresStore, s shared.PrivJo
 
 func runNaukri(ctx context.Context, st *store.PostgresStore, pool *browser.Pool, rot *proxy.Rotator) SourceResult {
 	name := "naukri"
-	timeout := 5 * time.Minute
+	timeout := 8 * time.Minute
 	fetchCtx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
@@ -225,9 +217,8 @@ func runNaukri(ctx context.Context, st *store.PostgresStore, pool *browser.Pool,
 	}
 	saved := 0
 	for i := range items {
-		// Convert old JobSource → PrivJobSource
-		priv := jobSourceToPriv(&items[i])
-		if err := st.SavePrivJob(priv); err != nil {
+		privItem := jobSourceToPriv(&items[i])
+		if err := st.SavePrivJob(privItem); err != nil {
 			log.Printf("ERROR saving naukri job: %v", err)
 			continue
 		}
@@ -236,7 +227,6 @@ func runNaukri(ctx context.Context, st *store.PostgresStore, pool *browser.Pool,
 	return SourceResult{Name: name, Fetched: len(items), Saved: saved}
 }
 
-// jobSourceToPriv converts the legacy JobSource (used by Naukri) to PrivJobSource.
 func jobSourceToPriv(j *shared.JobSource) *shared.PrivJobSource {
 	if j == nil {
 		return nil
@@ -247,26 +237,17 @@ func jobSourceToPriv(j *shared.JobSource) *shared.PrivJobSource {
 		Title:       j.Title,
 		Location:    j.Location,
 		URL:         j.ApplicationURL,
-		Salary:      "",
-		Experience:  "",
 		JobType:     j.JobType,
 		Skills:      j.Skills,
 		Description: j.Description,
 		PostedAt:    j.PostedAt,
 		CreatedAt:   time.Now(),
 	}
-	if j.SalaryMin != nil && j.SalaryMax != nil {
-		p.Salary = fmt.Sprintf("%d-%d", *j.SalaryMin, *j.SalaryMax)
-	} else if j.SalaryMin != nil {
-		p.Salary = fmt.Sprintf("%d", *j.SalaryMin)
-	} else if j.SalaryMax != nil {
-		p.Salary = fmt.Sprintf("%d", *j.SalaryMax)
-	}
 	return p
 }
 
 func runCourseSource(ctx context.Context, st *store.PostgresStore, s shared.CourseFetcher) SourceResult {
-	timeout := 3 * time.Minute
+	timeout := 5 * time.Minute
 	fetchCtx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
@@ -286,7 +267,7 @@ func runCourseSource(ctx context.Context, st *store.PostgresStore, s shared.Cour
 }
 
 func runVideoSource(ctx context.Context, st *store.PostgresStore, s shared.VideoFetcher) SourceResult {
-	timeout := 3 * time.Minute
+	timeout := 5 * time.Minute
 	fetchCtx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
@@ -298,6 +279,26 @@ func runVideoSource(ctx context.Context, st *store.PostgresStore, s shared.Video
 	for i := range items {
 		if err := st.SaveVideo(&items[i]); err != nil {
 			log.Printf("ERROR saving video from %s: %v", s.Name(), err)
+			continue
+		}
+		saved++
+	}
+	return SourceResult{Name: s.Name(), Fetched: len(items), Saved: saved}
+}
+
+func runFormsSource(ctx context.Context, st *store.PostgresStore, s *sources.GovFormsSource) SourceResult {
+	timeout := 8 * time.Minute
+	fetchCtx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+
+	items, err := s.Fetch(fetchCtx)
+	if err != nil {
+		return SourceResult{Name: s.Name(), Error: fmt.Sprintf("fetch: %v", err)}
+	}
+	saved := 0
+	for i := range items {
+		if err := st.SaveGovForm(&items[i]); err != nil {
+			log.Printf("ERROR saving gov form from %s: %v", s.Name(), err)
 			continue
 		}
 		saved++

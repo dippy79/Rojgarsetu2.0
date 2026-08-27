@@ -18,7 +18,7 @@ import (
 )
 
 var (
-	crawlerBlocksTotal = promauto.NewCounterVec(
+	CrawlerBlocksTotal = promauto.NewCounterVec(
 		prometheus.CounterOpts{
 			Name: "crawler_requests_blocked_total",
 			Help: "Total blocked crawler requests (403/429/robots.txt)",
@@ -26,14 +26,14 @@ var (
 		[]string{"reason", "domain"},
 	)
 
-	adaptiveThrottleActive = promauto.NewGauge(
+	AdaptiveThrottleActive = promauto.NewGauge(
 		prometheus.GaugeOpts{
 			Name: "crawler_adaptive_throttle_active",
 			Help: "Whether adaptive throttling is currently active (1) or not (0)",
 		},
 	)
 
-	defaultDomainLimiter = NewDomainLimiter()
+	DefaultDomainLimiter = NewDomainLimiter()
 )
 
 // BaseSource common functionality for all sources
@@ -127,7 +127,7 @@ func (dl *DomainLimiter) applyBackoff(domain string) {
 	newRate := 10 * dl.throttleMultiplier
 	newBurst := int(20 * dl.throttleMultiplier)
 	dl.limiters[domain] = rate.NewLimiter(rate.Limit(newRate), newBurst)
-	adaptiveThrottleActive.Set(1)
+	AdaptiveThrottleActive.Set(1)
 }
 
 // ---- method-based API (BaseSource) ----
@@ -157,7 +157,7 @@ func (b *BaseSource) CheckRobotsTxt(ctx context.Context, path string) bool {
 
 func (b *BaseSource) DoRequest(ctx context.Context, req *http.Request, domain string, dl *DomainLimiter) (*http.Response, error) {
 	if !dl.Allow(domain) {
-		crawlerBlocksTotal.WithLabelValues("throttle", domain).Inc()
+		CrawlerBlocksTotal.WithLabelValues("throttle", domain).Inc()
 		return nil, fmt.Errorf("throttled")
 	}
 
@@ -170,7 +170,7 @@ func (b *BaseSource) DoRequest(ctx context.Context, req *http.Request, domain st
 	}
 
 	if resp.StatusCode == 403 || resp.StatusCode == 429 {
-		crawlerBlocksTotal.WithLabelValues("blocked", domain).Inc()
+		CrawlerBlocksTotal.WithLabelValues("blocked", domain).Inc()
 		log.Warn().Int("status", resp.StatusCode).Str("domain", domain).Msg("Crawler blocked")
 		dl.applyBackoff(domain)
 		time.Sleep(5 * time.Minute)
@@ -210,7 +210,7 @@ func CheckRobotsTxt(baseURL, path string) bool {
 	robots := string(body)
 
 	if strings.Contains(robots, "User-agent: *") && strings.Contains(robots, "Disallow: "+path) {
-		crawlerBlocksTotal.WithLabelValues("robots", baseURL).Inc()
+		CrawlerBlocksTotal.WithLabelValues("robots", baseURL).Inc()
 		return false
 	}
 	return true
@@ -219,9 +219,9 @@ func CheckRobotsTxt(baseURL, path string) bool {
 // CheckStatusAndPause checks a response for block signals (403/429) and pauses if blocked.
 func CheckStatusAndPause(resp *http.Response, domain string) error {
 	if resp.StatusCode == 403 || resp.StatusCode == 429 {
-		crawlerBlocksTotal.WithLabelValues("blocked", domain).Inc()
+		CrawlerBlocksTotal.WithLabelValues("blocked", domain).Inc()
 		log.Warn().Int("status", resp.StatusCode).Str("domain", domain).Msg("Crawler blocked")
-		defaultDomainLimiter.applyBackoff(domain)
+		DefaultDomainLimiter.applyBackoff(domain)
 		time.Sleep(5 * time.Minute)
 		return fmt.Errorf("blocked: %d", resp.StatusCode)
 	}
