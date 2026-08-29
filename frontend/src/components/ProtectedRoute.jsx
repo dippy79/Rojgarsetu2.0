@@ -9,10 +9,9 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
 
   useEffect(() => {
     if (!loading) {
-      const token = localStorage.getItem('token');
-      const role = user?.role || localStorage.getItem('userRole') || localStorage.getItem('role');
+      const role = user?.role;
 
-      if (!token) {
+      if (!user) {
         router.replace('/login');
       } else if (allowedRoles && !allowedRoles.includes(role)) {
         router.replace('/unauthorized');

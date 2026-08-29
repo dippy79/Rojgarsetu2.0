@@ -100,6 +100,17 @@ func safeHandler(fn func(h *AppHandlers, c *gin.Context)) gin.HandlerFunc {
 	}
 }
 
+// @title RojgarSetu 2.0 API
+// @version 2.0.0
+// @description Enterprise-grade job aggregation platform with HttpOnly Cookie Auth.
+// @contact.name RojgarSetu Support
+// @contact.email support@rojgarsetu.in
+// @host localhost:3001
+// @BasePath /api/v1
+// @securityDefinitions.apikey CookieAuth
+// @in cookie
+// @name access_token
+
 func main() {
 	// Initialize logger
 	logger = zerolog.New(os.Stderr).Output(zerolog.ConsoleWriter{Out: os.Stderr, TimeFormat: time.RFC3339}).With().Timestamp().Caller().Logger()

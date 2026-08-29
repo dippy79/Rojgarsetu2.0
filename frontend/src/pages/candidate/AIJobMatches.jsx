@@ -1,7 +1,7 @@
 ﻿import React, { useState, useEffect, useCallback } from 'react';
 import { Sparkles, Briefcase, MapPin, Building, Zap, Loader2, ArrowUpRight, Award } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
-import { apiUrl } from '../../apiConfig';
+import api from '../../lib/api';
 
 export default function AIJobMatches() {
   const { user } = useAuth();
@@ -11,25 +11,14 @@ export default function AIJobMatches() {
 
   const fetchRecommendations = useCallback(async (candidateProfile) => {
     setLoading(true);
-    const token = localStorage.getItem('rojgar_token') || localStorage.getItem('token');
     try {
-      const res = await fetch(apiUrl('/api/v1/ai/recommend/jobs'), {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': token ? `Bearer ${token}` : ''
-        },
-        body: JSON.stringify({
-          user_skills: candidateProfile?.skills || [],
-          experience_years: candidateProfile?.experience_years || 0,
-          preferred_locations: candidateProfile?.preferred_location || []
-        })
+      const res = await api.post('/api/v1/ai/recommend/jobs', {
+        user_skills: candidateProfile?.skills || [],
+        experience_years: candidateProfile?.experience_years || 0,
+        preferred_locations: candidateProfile?.preferred_location || []
       });
 
-      if (res.ok) {
-        const data = await res.json();
-        setMatches(data.recommendations || []);
-      }
+      setMatches(res.data.recommendations || []);
     } catch (err) {
       console.error(err);
     } finally {
@@ -38,18 +27,12 @@ export default function AIJobMatches() {
   }, []);
 
   const fetchProfile = useCallback(async () => {
-    const token = localStorage.getItem('rojgar_token') || localStorage.getItem('token');
-    if (!token) return;
     try {
-      const res = await fetch(apiUrl('/api/v1/candidates/me'), {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (res.ok) {
-        const data = await res.json();
-        const p = data.candidate || data.data || data;
-        setProfile(p);
-        fetchRecommendations(p);
-      }
+      const res = await api.get('/api/v1/candidates/me');
+      const data = res.data;
+      const p = data.candidate || data.data || data;
+      setProfile(p);
+      fetchRecommendations(p);
     } catch (err) {
       console.error(err);
       setLoading(false);

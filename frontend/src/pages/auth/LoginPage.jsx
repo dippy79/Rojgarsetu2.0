@@ -37,10 +37,6 @@ const LoginPage = () => {
     try {
       if (login) {
         await login(loginForm.email, loginForm.password, loginForm.role);
-      } else {
-        localStorage.setItem('token', 'mock-token');
-        localStorage.setItem('userName', loginForm.email.split('@')[0]);
-        localStorage.setItem('userRole', loginForm.role);
       }
       router.push(`/dashboard/${loginForm.role.toLowerCase()}`);
     } catch (err) {
@@ -65,10 +61,6 @@ const LoginPage = () => {
         await register(registerForm);
       } else if (login) {
         await login(registerForm.email, registerForm.password, registerForm.role);
-      } else {
-        localStorage.setItem('token', 'mock-token');
-        localStorage.setItem('userName', registerForm.full_name || registerForm.email.split('@')[0]);
-        localStorage.setItem('userRole', registerForm.role);
       }
       router.push(`/dashboard/${registerForm.role.toLowerCase()}`);
     } catch (err) {

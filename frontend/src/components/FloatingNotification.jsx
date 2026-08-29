@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
+import api from '../lib/api';
 // import './FloatingNotification.css';
 
 const FloatingNotification = () => {
@@ -15,15 +16,10 @@ const FloatingNotification = () => {
 
     setIsLoading(true);
     try {
-      const response = await fetch(`/api/v1/users/${user.id}/notifications?limit=10`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
-          'Content-Type': 'application/json',
-        },
-      });
+      const response = await api.get(`/api/v1/users/${user.id}/notifications?limit=10`);
 
-      if (response.ok) {
-        const data = await response.json();
+      if (response.data) {
+        const data = response.data;
         if (data.status === 'success' && data.data) {
           setNotifications(data.data);
           const unread = data.data.filter(n => !n.read_at).length;
@@ -40,15 +36,9 @@ const FloatingNotification = () => {
   // Mark notification as read
   const markAsRead = async (notificationId) => {
     try {
-      const response = await fetch(`/api/v1/notifications/${notificationId}/read`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
-          'Content-Type': 'application/json',
-        },
-      });
+      const response = await api.post(`/api/v1/notifications/${notificationId}/read`);
 
-      if (response.ok) {
+      if (response.data) {
         setNotifications(prev => prev.map(n => 
           n.id === notificationId ? { ...n, read_at: new Date().toISOString() } : n
         ));

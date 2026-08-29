@@ -10,6 +10,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletResponse;
+
 /**
  * Authentication Controller for user registration and login operations.
  * <p>Provides endpoints for user registration and authentication with JWT token generation.</p>
@@ -85,10 +88,11 @@ public class AuthController {
      * <p>Authenticates user credentials and generates JWT token for session management.</p>
      *
      * @param body Authentication request containing email and password
+     * @param response HttpServletResponse to set HttpOnly cookie
      * @return ResponseEntity with JWT token and user role or error details
      */
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody AuthRequest body) {
+    public ResponseEntity<?> login(@RequestBody AuthRequest body, HttpServletResponse response) {
         String email = body.getEmail();
         String password = body.getPassword();
 
@@ -106,6 +110,15 @@ public class AuthController {
                     user.getEmail(),
                     user.getRole() != null ? user.getRole() : "CANDIDATE"
                 );
+
+                // Set HttpOnly Cookie
+                Cookie jwtCookie = new Cookie("token", token);
+                jwtCookie.setHttpOnly(true);
+                jwtCookie.setSecure(false); // Set to true in production with HTTPS
+                jwtCookie.setPath("/");
+                jwtCookie.setMaxAge(86400); // 24 hours
+                response.addCookie(jwtCookie);
+
                 return ResponseEntity.ok(Map.of(
                     "token", token,
                     "role", user.getRole() != null ? user.getRole() : "CANDIDATE"

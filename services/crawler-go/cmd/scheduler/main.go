@@ -56,11 +56,13 @@ func main() {
 
 	// ── HTTP routes ──────────────────────────────────────────────────────────
 	http.HandleFunc("/health", healthHandler)
-	http.HandleFunc("/stats", statsHandler)
-	http.HandleFunc("/crawl", crawlHandler)
-	http.HandleFunc("/sources", sourcesHandler)
-	http.HandleFunc("/forms", formsHandler)
-	http.HandleFunc("/legal/takedown", takedownHandler)
+
+	// Protected routes (Admin only)
+	http.Handle("/stats", adminAuth(http.HandlerFunc(statsHandler)))
+	http.Handle("/crawl", adminAuth(http.HandlerFunc(crawlHandler)))
+	http.Handle("/sources", adminAuth(http.HandlerFunc(sourcesHandler)))
+	http.Handle("/forms", adminAuth(http.HandlerFunc(formsHandler)))
+	http.Handle("/legal/takedown", adminAuth(http.HandlerFunc(takedownHandler)))
 
 	portStr := os.Getenv("PORT")
 	if portStr == "" {
@@ -300,4 +302,25 @@ func runCrawl() {
 
 	log.Printf("=== crawl complete: sources_run=%d succeeded=%d failed=%d total_saved=%d duration=%s ===",
 		summary.SourcesRun, summary.Succeeded, summary.Failed, summary.TotalSaved, summary.Duration)
+}
+
+// ── Middleware ──────────────────────────────────────────────────────────────
+
+func adminAuth(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		adminKey := os.Getenv("ADMIN_API_KEY")
+		if adminKey == "" {
+			// If not set, deny all for security
+			http.Error(w, "API configuration error", http.StatusInternalServerError)
+			return
+		}
+
+		key := r.Header.Get("X-Admin-Key")
+		if key != adminKey {
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
 }

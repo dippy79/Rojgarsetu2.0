@@ -113,21 +113,14 @@ Rojgarsetu2.0/
 ```bash
 git clone https://github.com/dippy79/Rojgarsetu2.0.git
 cd Rojgarsetu2.0
+cp .env.example .env
 ```
-Create a `.env` file in the root directory:
-```env
-# Database Credentials
-POSTGRES_USER=rojgar_admin
-POSTGRES_PASSWORD=<YOUR_SECURE_PASSWORD>
-POSTGRES_DB=rojgarsetu2
+Update the `.env` file with your secure credentials.
 
-# Caching & JWT
-REDIS_URL=redis://redis:6379
-JWT_SECRET=<MIN_32_CHAR_SECRET_KEY>
-
-# AI & LLM
-GEMINI_API_KEY=<YOUR_GEMINI_KEY>
-```
+### 🔐 HttpOnly Cookie Authentication
+RojgarSetu 2.0 uses **HttpOnly, Secure, and SameSite: Strict** cookies for JWT storage. This eliminates XSS-based token theft.
+* The frontend automatically includes credentials in API calls.
+* No sensitive tokens are stored in `localStorage`.
 
 ### 2. Launch Production Stack
 ```bash

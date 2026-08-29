@@ -44,6 +44,13 @@ func (h *JobHandler) GetJob(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"data": job})
 }
 
+// CreateJob godoc
+// @Summary Create a new job
+// @Tags Jobs
+// @Security CookieAuth
+// @Param request body db.CreateJobRequest true "Job Data"
+// @Success 201 {object} db.SavedJob
+// @Router /jobs [post]
 func (h *JobHandler) CreateJob(c *gin.Context) {
 	var req db.CreateJobRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -63,6 +70,14 @@ func (h *JobHandler) CreateJob(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{"data": job})
 }
 
+// UpdateJob godoc
+// @Summary Update a job
+// @Tags Jobs
+// @Security CookieAuth
+// @Param id path string true "Job ID"
+// @Param request body db.CreateJobRequest true "Job Data"
+// @Success 200 {object} db.SavedJob
+// @Router /jobs/{id} [put]
 func (h *JobHandler) UpdateJob(c *gin.Context) {
 	id := c.Param("id")
 	var req db.CreateJobRequest
@@ -78,6 +93,13 @@ func (h *JobHandler) UpdateJob(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"data": job})
 }
 
+// DeleteJob godoc
+// @Summary Delete a job
+// @Tags Jobs
+// @Security CookieAuth
+// @Param id path string true "Job ID"
+// @Success 204
+// @Router /jobs/{id} [delete]
 func (h *JobHandler) DeleteJob(c *gin.Context) {
 	id := c.Param("id")
 	if err := h.svc.DeleteJob(c, id); err != nil {

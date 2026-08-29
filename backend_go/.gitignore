@@ -1,0 +1,15 @@
+# Binaries
+*.exe
+server
+server.exe
+main
+main.exe
+*.out
+
+# Common Go ignores
+vendor/
+node_modules/
+.idea/
+.vscode/
+*.log
+.env

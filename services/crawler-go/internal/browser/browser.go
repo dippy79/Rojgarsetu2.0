@@ -18,11 +18,8 @@ type Pool struct {
 
 // NewPool creates a new Playwright-based browser pool
 func NewPool(size int) (*Pool, error) {
-	err := playwright.Install()
-	if err != nil {
-		return nil, fmt.Errorf("could not install playwright: %w", err)
-	}
-
+	// pw.Run() starts the playwright driver.
+	// Installation is handled during Docker build to ensure zero runtime latency.
 	pw, err := playwright.Run()
 	if err != nil {
 		return nil, fmt.Errorf("could not start playwright: %w", err)

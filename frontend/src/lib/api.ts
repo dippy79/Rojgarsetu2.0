@@ -1,33 +1,49 @@
 // frontend/src/lib/api.ts - API utilities for frontend with TypeScript
-import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
-import type { 
-  ApiResponse, 
-  Job, 
-  Course, 
-  User, 
+import axios, { AxiosInstance } from 'axios';
+import type {
+  ApiResponse,
+  Job,
+  Course,
+  User,
   UserProfile,
-  Pagination 
 } from '../types';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || 'http://localhost:3000';
+// Central API base-URL resolver (Consolidated from apiConfig.js)
+const NORMALIZED_DEFAULTS = [
+  'http://localhost:3001',
+  'http://localhost:8083',
+  'https://api.rojgarsetu.in',
+];
+
+function normalizeBase(base?: string) {
+  if (!base) return null;
+  let b = String(base).replace(/\/+$/, '');
+  return b;
+}
+
+export function getApiBaseUrl(): string {
+  if (typeof window !== 'undefined') {
+    // @ts-ignore
+    if (window.__ROJGAR_API__) return normalizeBase(window.__ROJGAR_API__) || 'http://localhost:3001';
+    // @ts-ignore
+    if (window.__ROJGAR_API_ENV__) return normalizeBase(window.__ROJGAR_API_ENV__) || 'http://localhost:3001';
+  }
+
+  const envUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_BASE;
+  if (envUrl) return normalizeBase(envUrl) || 'http://localhost:3001';
+
+  return 'http://localhost:3001'; // Default to API Gateway
+}
+
+const API_BASE = getApiBaseUrl();
 
 // Create axios instance with default config
 const api: AxiosInstance = axios.create({
     baseURL: API_BASE,
+    withCredentials: true, // IMPORTANT: Enable cookie-based auth
     headers: {
         'Content-Type': 'application/json'
     }
-});
-
-// Add token to requests if available
-api.interceptors.request.use((config) => {
-    if (typeof window !== 'undefined') {
-        const token = localStorage.getItem('token');
-        if (token) {
-            config.headers.Authorization = `Bearer ${token}`;
-        }
-    }
-    return config;
 });
 
 // Handle response errors
@@ -36,8 +52,6 @@ api.interceptors.response.use(
     (error) => {
         if (error.response?.status === 401) {
             if (typeof window !== 'undefined') {
-                localStorage.removeItem('token');
-                localStorage.removeItem('user');
                 window.location.href = '/login';
             }
         }
@@ -53,185 +67,35 @@ export const fetcher = async (url: string) => {
 
 // Auth API
 export const authAPI = {
-    register: (data: { email: string; password: string; role: string; firstName?: string; lastName?: string; companyName?: string }) => 
-        api.post<ApiResponse<{ user: User; accessToken: string; refreshToken: string }>>('/api/auth/register', data),
-    
-    login: (data: { email: string; password: string }) => 
-        api.post<ApiResponse<{ user: User; accessToken: string; refreshToken: string }>>('/api/auth/login', data),
-    
+    register: (data: { email: string; password: string; role: string; firstName?: string; lastName?: string; companyName?: string }) =>
+        api.post<ApiResponse<{ user: User }>>('/api/auth/register', data),
+
+    login: (data: { email: string; password: string }) =>
+        api.post<ApiResponse<{ user: User }>>('/api/auth/login', data),
+
     logout: () => api.post<ApiResponse<any>>('/api/auth/logout'),
-    
-    getProfile: () => api.get<ApiResponse<UserProfile>>('/api/auth/profile'),
-    
-    updateProfile: (data: Partial<UserProfile>) => 
-        api.put<ApiResponse<any>>('/api/auth/profile', data),
-    
-    refreshToken: (data: { refreshToken: string }) => 
-        api.post<ApiResponse<{ accessToken: string; refreshToken: string }>>('/api/auth/refresh', data)
+
+    getProfile: () => api.get<ApiResponse<UserProfile>>('/api/v1/candidates/me'),
+
+    updateProfile: (data: Partial<UserProfile>) =>
+        api.put<ApiResponse<any>>('/api/v1/candidates/me', data),
+
+    refreshToken: () =>
+        api.post<ApiResponse<any>>('/api/auth/refresh')
 };
 
 // Jobs API
 export const jobsAPI = {
-    // Get all jobs with filters
-    getJobs: (params?: { 
-        category?: string; 
-        type?: string; 
-        location?: string; 
-        salaryMin?: number; 
-        salaryMax?: number; 
-        search?: string; 
-        page?: number; 
-        limit?: number; 
-        sortBy?: string; 
-        sortOrder?: string;
-    }) => api.get<ApiResponse<Job[]>>('/api/jobs', { params }),
-    
-    // Get single job
-    getJob: (id: string) => api.get<ApiResponse<Job>>(`/api/jobs/${id}`),
-    
-    // Search jobs
-    searchJobs: (q: string, page?: number, limit?: number) => 
-        api.get<ApiResponse<Job[]>>('/api/jobs/search', { params: { q, page, limit } }),
-    
-    // Get featured jobs
-    getFeaturedJobs: (limit = 5) => 
-        api.get<ApiResponse<Job[]>>('/api/jobs/featured', { params: { limit } }),
-    
-    // Get job categories
-    getCategories: () => api.get<ApiResponse<Array<{ category: string; count: number }>>>('/api/jobs/categories'),
-    
-    // Get similar jobs
-    getSimilarJobs: (id: string, limit?: number) => 
-        api.get<ApiResponse<Job[]>>(`/api/jobs/${id}/similar`, { params: { limit } }),
-    
-    // Create job (company/admin)
-    createJob: (data: Partial<Job>) => api.post<ApiResponse<Job>>('/api/jobs', data),
-    
-    // Update job (company/admin)
-    updateJob: (id: string, data: Partial<Job>) => api.put<ApiResponse<Job>>(`/api/jobs/${id}`, data),
-    
-    // Delete job (company/admin)
-    deleteJob: (id: string) => api.delete<ApiResponse<any>>(`/api/jobs/${id}`),
-    
-    // Save job (candidate)
-    saveJob: (jobId: string) => api.post<ApiResponse<any>>(`/api/jobs/${jobId}/save`),
-    
-    // Unsave job (candidate)
-    unsaveJob: (jobId: string) => api.delete<ApiResponse<any>>(`/api/jobs/${jobId}/save`),
-    
-    // Get saved jobs (candidate)
-    getSavedJobs: () => api.get<ApiResponse<Job[]>>('/api/jobs/saved'),
-    
-    // Apply to job (candidate)
-    applyToJob: (jobId: string, data: { coverLetter?: string; resumeUrl?: string }) => 
-        api.post<ApiResponse<any>>(`/api/jobs/${jobId}/apply`, data),
-    
-    // Withdraw application (candidate)
-    withdrawApplication: (jobId: string) => api.delete<ApiResponse<any>>(`/api/jobs/${jobId}/apply`),
-    
-    // Get my applications (candidate)
-    getMyApplications: () => api.get<ApiResponse<any[]>>('/api/jobs/applications')
+    getJobs: (params?: any) => api.get<ApiResponse<Job[]>>('/api/v1/jobs', { params }),
+    getJob: (id: string) => api.get<ApiResponse<Job>>(`/api/v1/jobs/${id}`),
+    searchJobs: (q: string, page?: number, limit?: number) =>
+        api.get<ApiResponse<Job[]>>('/api/v1/jobs/search', { params: { q, page, limit } }),
 };
 
 // Courses API
 export const coursesAPI = {
-    // Get all courses with filters
-    getCourses: (params?: { 
-        category?: string; 
-        duration?: string; 
-        mode?: string; 
-        feesMin?: number; 
-        feesMax?: number; 
-        search?: string; 
-        page?: number; 
-        limit?: number; 
-        sortBy?: string; 
-        sortOrder?: string;
-    }) => api.get<ApiResponse<Course[]>>('/api/courses', { params }),
-    
-    // Get single course
-    getCourse: (id: string) => api.get<ApiResponse<Course>>(`/api/courses/${id}`),
-    
-    // Search courses
-    searchCourses: (q: string, page?: number, limit?: number) => 
-        api.get<ApiResponse<Course[]>>('/api/courses/search', { params: { q, page, limit } }),
-    
-    // Get featured courses
-    getFeaturedCourses: (limit = 5) => 
-        api.get<ApiResponse<Course[]>>('/api/courses/featured', { params: { limit } }),
-    
-    // Get course categories
-    getCategories: () => api.get<ApiResponse<Array<{ category: string; count: number }>>>('/api/courses/categories'),
-    
-    // Get similar courses
-    getSimilarCourses: (id: string, limit?: number) => 
-        api.get<ApiResponse<Course[]>>(`/api/courses/${id}/similar`, { params: { limit } }),
-    
-    // Create course (company/admin)
-    createCourse: (data: Partial<Course>) => api.post<ApiResponse<Course>>('/api/courses', data),
-    
-    // Update course (company/admin)
-    updateCourse: (id: string, data: Partial<Course>) => api.put<ApiResponse<Course>>(`/api/courses/${id}`, data),
-    
-    // Delete course (company/admin)
-    deleteCourse: (id: string) => api.delete<ApiResponse<any>>(`/api/courses/${id}`)
-};
-
-// Companies API
-export const companiesAPI = {
-    // Get all companies
-    getCompanies: (params?: any) => api.get<ApiResponse<any[]>>('/api/companies', { params }),
-    
-    // Get single company
-    getCompany: (id: string) => api.get<ApiResponse<any>>(`/api/companies/${id}`),
-    
-    // Get company jobs
-    getCompanyJobs: (id: string) => api.get<ApiResponse<Job[]>>(`/api/companies/${id}/jobs`),
-    
-    // Get company courses
-    getCompanyCourses: (id: string) => api.get<ApiResponse<Course[]>>(`/api/companies/${id}/courses`),
-    
-    // Update company (company admin)
-    updateCompany: (id: string, data: any) => api.put<ApiResponse<any>>(`/api/companies/${id}`, data),
-    
-    // Get company applicants (company admin)
-    getCompanyApplicants: (companyId: string, params?: any) => 
-        api.get<ApiResponse<any[]>>(`/api/companies/${companyId}/applicants`, { params }),
-    
-    // Update applicant status (company admin)
-    updateApplicantStatus: (companyId: string, applicationId: string, status: string) => 
-        api.put<ApiResponse<any>>(`/api/companies/${companyId}/applicants/${applicationId}`, { status })
-};
-
-// Applications API
-export const applicationsAPI = {
-    // Get all applications (admin/company)
-    getApplications: (params?: any) => api.get<ApiResponse<any[]>>('/api/applications', { params }),
-    
-    // Get single application
-    getApplication: (id: string) => api.get<ApiResponse<any>>(`/api/applications/${id}`),
-    
-    // Update application status
-    updateApplication: (id: string, status: string, notes?: string) => 
-        api.put<ApiResponse<any>>(`/api/applications/${id}`, { status, notes })
-};
-
-// Notifications API
-export const notificationsAPI = {
-    // Get my notifications
-    getNotifications: () => api.get<ApiResponse<any[]>>('/api/notifications'),
-    
-    // Mark notification as read
-    markAsRead: (id: string) => api.put<ApiResponse<any>>(`/api/notifications/${id}/read`),
-    
-    // Mark all as read
-    markAllAsRead: () => api.put<ApiResponse<any>>('/api/notifications/read-all'),
-    
-    // Delete notification
-    deleteNotification: (id: string) => api.delete<ApiResponse<any>>(`/api/notifications/${id}`),
-    
-    // Get unread count
-    getUnreadCount: () => api.get<ApiResponse<{ count: number }>>('/api/notifications/unread-count')
+    getCourses: (params?: any) => api.get<ApiResponse<Course[]>>('/api/v1/courses', { params }),
+    getCourse: (id: string) => api.get<ApiResponse<Course>>(`/api/v1/courses/${id}`),
 };
 
 export default api;

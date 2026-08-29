@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useAuth } from '../../hooks/useAuth';
+import api from '../../lib/api';
 import {
   LayoutDashboard, User, FileText, Bookmark, Sparkles,
   LogOut, Menu, X, Briefcase, MapPin, Calendar,
@@ -25,32 +26,21 @@ export const MyApplications = () => {
   const fetchApplications = useCallback(async () => {
     setLoading(true);
     setError(null);
-    const token = localStorage.getItem('rojgar_token') || localStorage.getItem('token');
 
     try {
-      const res = await fetch(`${API_BASE}/api/v1/applications/me`, {
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': token ? `Bearer ${token}` : '',
-        },
-      });
-
-      if (res.status === 401) {
-        localStorage.removeItem('rojgar_token');
+      const res = await api.get('/api/v1/applications/me');
+      const data = res.data;
+      setApplications(data?.applications ?? data?.data ?? data ?? []);
+    } catch (err) {
+      if (err.response?.status === 401) {
         router.push('/login');
         return;
       }
-
-      if (res.ok) {
-        const data = await res.json();
-        setApplications(data?.applications ?? data?.data ?? data ?? []);
-      }
-    } catch (err) {
       setError('Neural link synchronization failed. Displaying cached applications.');
     } finally {
       setLoading(false);
     }
-  }, [API_BASE, router]);
+  }, [router]);
 
   useEffect(() => {
     fetchApplications();

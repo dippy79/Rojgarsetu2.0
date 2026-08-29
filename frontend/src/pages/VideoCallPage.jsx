@@ -1,6 +1,7 @@
 ﻿import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import { Mic, Video, PhoneOff } from 'lucide-react';
+import api from '../lib/api';
 
 export default function VideoCallPage() {
   const router = useRouter();
@@ -9,12 +10,9 @@ export default function VideoCallPage() {
 
   useEffect(() => {
     if (id && typeof window !== 'undefined') {
-      const token = localStorage.getItem('rojgar_token') || localStorage.getItem('token');
-      fetch(`http://localhost:3001/api/v1/interviews/${id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      })
-        .then(r => r.ok ? r.json() : {})
-        .then(data => setRoomUrl(data.room_url || ''));
+      api.get(`/api/v1/interviews/${id}`)
+        .then(res => setRoomUrl(res.data.room_url || ''))
+        .catch(err => console.error("Video call connection error:", err));
     }
   }, [id]);
 

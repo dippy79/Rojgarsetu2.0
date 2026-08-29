@@ -1,19 +1,18 @@
 ﻿import React, { useState, useEffect } from 'react';
 import { Bell } from 'lucide-react';
+import api from '../lib/api';
 
 export default function NotificationBell() {
   const [notifications, setNotifications] = useState([]);
   const [open, setOpen] = useState(false);
 
-  const fetchNotifications = () => {
-    const token = localStorage.getItem('rojgar_token');
-    if (!token) return;
-    fetch('http://localhost:3001/api/v1/notifications', {
-      headers: { Authorization: `Bearer ${token}` }
-    })
-      .then(r => r.ok ? r.json() : [])
-      .then(data => setNotifications(Array.isArray(data) ? data : []))
-      .catch(err => console.error(err));
+  const fetchNotifications = async () => {
+    try {
+      const res = await api.get('/api/v1/notifications');
+      setNotifications(Array.isArray(res.data) ? res.data : []);
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   useEffect(() => {

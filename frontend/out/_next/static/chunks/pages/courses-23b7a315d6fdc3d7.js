@@ -1,1 +1,0 @@
-(self.webpackChunk_N_E=self.webpackChunk_N_E||[]).push([[2520],{3266:function(n,u,_){(window.__NEXT_P=window.__NEXT_P||[]).push(["/courses",function(){return _(3105)}])},3105:function(n,u,_){"use strict";_.r(u);var t=_(7412);u.default=t.default}},function(n){n.O(0,[7412,2888,9774,179],function(){return n(n.s=3266)}),_N_E=n.O()}]);

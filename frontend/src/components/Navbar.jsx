@@ -12,28 +12,11 @@ const Navbar = () => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
 
-  // Use local state for SSR-safe auth info
-  const [authState, setAuthState] = useState({
-    token: null,
-    name: 'Simranjeet Singh',
-    role: 'candidate'
-  });
-
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      setAuthState({
-        token: localStorage.getItem('token'),
-        name: localStorage.getItem('userName') || localStorage.getItem('name') || 'Simranjeet Singh',
-        role: localStorage.getItem('userRole') || localStorage.getItem('role') || 'candidate'
-      });
-    }
-  }, [isAuthenticated, user]);
-
-  const isLoggedIn = Boolean(isAuthenticated || user || authState.token);
+  const isLoggedIn = Boolean(isAuthenticated || user);
 
   const currentUser = user || {
-    name: authState.name,
-    role: authState.role,
+    name: 'User',
+    role: 'candidate',
   };
 
   // Close dropdown on outside click
@@ -50,7 +33,6 @@ const Navbar = () => {
   const handleLogout = () => {
     setDropdownOpen(false);
     if (logout) logout();
-    localStorage.clear();
     router.push('/login');
   };
 

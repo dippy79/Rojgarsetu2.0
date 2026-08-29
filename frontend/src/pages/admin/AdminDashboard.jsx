@@ -7,7 +7,7 @@ import {
   ShieldCheck, ShieldAlert, Clock, ArrowUpRight, Loader2, Globe, Activity
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
-import { apiUrl } from '../../apiConfig';
+import api from '../../lib/api';
 
 export default function AdminDashboard() {
   const [tab, setTab] = useState('overview');
@@ -19,27 +19,21 @@ export default function AdminDashboard() {
 
   const fetchData = useCallback(async () => {
     setLoading(true);
-    const token = localStorage.getItem('rojgar_token') || localStorage.getItem('token');
-    const headers = { Authorization: token ? `Bearer ${token}` : '' };
 
     try {
       if (tab === 'overview') {
-        const res = await fetch(apiUrl('/api/v1/stats'), { headers });
-        if (res.ok) setStats(await res.json());
+        const res = await api.get('/api/v1/stats');
+        setStats(res.data);
       } else if (tab === 'users') {
-        const res = await fetch(apiUrl('/api/v1/admin/users'), { headers });
-        if (res.ok) setUsers(await res.json());
+        const res = await api.get('/api/v1/admin/users');
+        setUsers(res.data);
       } else if (tab === 'crawler') {
-        const hRes = await fetch(apiUrl('/api/crawler/health'));
-        const sRes = await fetch(apiUrl('/api/crawler/stats'));
-        if (hRes.ok) setCrawlerStats(prev => ({ ...prev, health: (hRes.json()).status || 'IDLE' }));
-        if (sRes.ok) {
-           const sData = await sRes.json();
-           setCrawlerStats(prev => ({ ...prev, logs: sData.logs || [] }));
-        }
+        const hRes = await api.get('/api/crawler/health');
+        const sRes = await api.get('/api/crawler/stats');
+        setCrawlerStats(prev => ({ ...prev, health: hRes.data.status || 'IDLE', logs: sRes.data.logs || [] }));
       } else if (tab === 'email') {
-        const res = await fetch(apiUrl('/api/v1/admin/emails'), { headers });
-        if (res.ok) setEmails(await res.json());
+        const res = await api.get('/api/v1/admin/emails');
+        setEmails(res.data);
       }
     } catch (err) {
       console.error(err);
@@ -51,7 +45,7 @@ export default function AdminDashboard() {
   useEffect(() => { fetchData(); }, [fetchData]);
 
   const triggerCrawl = async () => {
-    await fetch(apiUrl('/api/crawler/crawl'), { method: 'POST' });
+    await api.post('/api/crawler/crawl');
     setTab('crawler');
     fetchData();
   };

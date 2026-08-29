@@ -42,6 +42,12 @@ func (h *CandidateHandler) GetCandidate(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"data": candidate})
 }
 
+// GetMyProfile godoc
+// @Summary Get current user profile
+// @Tags Candidate
+// @Security CookieAuth
+// @Success 200 {object} db.Candidate
+// @Router /candidates/me [get]
 func (h *CandidateHandler) GetMyProfile(c *gin.Context) {
 	userID := middleware.GetUserID(c)
 	if userID == "" {
@@ -56,6 +62,13 @@ func (h *CandidateHandler) GetMyProfile(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"data": candidate})
 }
 
+// UpdateMyProfile godoc
+// @Summary Update current user profile
+// @Tags Candidate
+// @Security CookieAuth
+// @Param request body db.UpdateCandidateRequest true "Profile Data"
+// @Success 200 {object} db.Candidate
+// @Router /candidates/me [put]
 func (h *CandidateHandler) UpdateMyProfile(c *gin.Context) {
 	var req db.UpdateCandidateRequest
 	if err := c.ShouldBindJSON(&req); err != nil {

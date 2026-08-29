@@ -1,8 +1,0 @@
-# Template: mobile_app_flutter/android/key.properties
-# Generate keystore first: keytool -genkey -v -keystore android/rojgarsetu.jks -keyalg RSA -keysize 2048 -validity 10000 -alias rojgarsetu
-
-storePassword=change_me_store_password
-keyPassword=change_me_key_password
-keyAlias=rojgarsetu
-storeFile=android/rojgarsetu.jks
-

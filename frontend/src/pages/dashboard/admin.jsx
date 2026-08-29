@@ -1,6 +1,7 @@
 import dynamic from 'next/dynamic'
 import { useRouter } from 'next/router'
 import { useEffect } from 'react'
+import { useAuth } from '../../hooks/useAuth'
 
 const AdminDashboard = dynamic(
   () => import('../admin/AdminDashboard'),
@@ -9,17 +10,21 @@ const AdminDashboard = dynamic(
 
 export default function AdminDashboardPage() {
   const router = useRouter()
+  const { user, initialized } = useAuth()
 
   useEffect(() => {
-    const token = localStorage.getItem('token') || localStorage.getItem('rojgar_token')
-    const role = localStorage.getItem('userRole') || localStorage.getItem('role')
-
-    if (!token) {
-      router.push('/login')
-    } else if (role !== 'admin') {
-      router.push('/unauthorized')
+    if (initialized) {
+      if (!user) {
+        router.push('/login')
+      } else if (user.role !== 'admin') {
+        router.push('/unauthorized')
+      }
     }
-  }, [router])
+  }, [user, initialized, router])
+
+  if (!initialized || !user || user.role !== 'admin') {
+    return null; // Or a loading spinner
+  }
 
   return <AdminDashboard />
 }

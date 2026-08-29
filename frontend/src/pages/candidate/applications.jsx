@@ -1,6 +1,7 @@
 import dynamic from 'next/dynamic'
 import { useRouter } from 'next/router'
 import { useEffect } from 'react'
+import { useAuth } from '../../hooks/useAuth'
 
 const MyApplications = dynamic(
   () => import('./MyApplications'),
@@ -9,11 +10,15 @@ const MyApplications = dynamic(
 
 export default function MyApplicationsPage() {
   const router = useRouter()
+  const { user, initialized } = useAuth()
 
   useEffect(() => {
-    const token = localStorage.getItem('token') || localStorage.getItem('rojgar_token')
-    if (!token) router.push('/login')
-  }, [router])
+    if (initialized && !user) {
+      router.push('/login')
+    }
+  }, [user, initialized, router])
+
+  if (!initialized || !user) return null
 
   return <MyApplications />
 }

@@ -9,11 +9,18 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/redis/go-redis/v9"
+	"github.com/rs/zerolog/log"
 )
 
 // CacheMiddleware creates a Redis caching middleware with configurable TTL
 func CacheMiddleware(redisClient *redis.Client, ttl time.Duration) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		// Skip caching if Redis is not available
+		if redisClient == nil {
+			c.Next()
+			return
+		}
+
 		// Skip caching for non-GET requests
 		if c.Request.Method != "GET" {
 			c.Next()
@@ -23,8 +30,10 @@ func CacheMiddleware(redisClient *redis.Client, ttl time.Duration) gin.HandlerFu
 		// Generate cache key
 		cacheKey := generateCacheKey(c)
 
-		// Try to get from cache
-		ctx := context.Background()
+		// Try to get from cache with a short timeout to prevent blocking
+		ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
+		defer cancel()
+
 		cachedData, err := redisClient.Get(ctx, cacheKey).Bytes()
 		if err == nil {
 			// Cache hit
@@ -35,6 +44,9 @@ func CacheMiddleware(redisClient *redis.Client, ttl time.Duration) gin.HandlerFu
 				c.Abort()
 				return
 			}
+		} else if err != redis.Nil {
+			// Real error (not just missing key)
+			log.Warn().Err(err).Str("key", cacheKey).Msg("Redis GET failed, bypassing cache")
 		}
 
 		// Cache miss - proceed with request
@@ -54,8 +66,13 @@ func CacheMiddleware(redisClient *redis.Client, ttl time.Duration) gin.HandlerFu
 			// Only cache if response is valid JSON
 			var js interface{}
 			if json.Unmarshal(blw.body, &js) == nil {
-				if err := redisClient.Set(ctx, cacheKey, blw.body, ttl).Err(); err == nil {
+				setCtx, setCancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
+				defer setCancel()
+
+				if err := redisClient.Set(setCtx, cacheKey, blw.body, ttl).Err(); err == nil {
 					c.Header("X-Cache-Status", "CACHED")
+				} else {
+					log.Warn().Err(err).Str("key", cacheKey).Msg("Redis SET failed")
 				}
 			}
 		}
@@ -69,6 +86,9 @@ func generateCacheKey(c *gin.Context) string {
 
 // InvalidateCache invalidates cache entries matching a pattern
 func InvalidateCache(redisClient *redis.Client, pattern string) error {
+	if redisClient == nil {
+		return nil
+	}
 	ctx := context.Background()
 	iter := redisClient.Scan(ctx, 0, pattern, 0).Iterator()
 	for iter.Next(ctx) {
@@ -79,7 +99,7 @@ func InvalidateCache(redisClient *redis.Client, pattern string) error {
 	return iter.Err()
 }
 
-// InvalidateCacheByPattern invalidates cache entries by path pattern
+// InvalidateCacheByPath invalidates cache entries by path pattern
 func InvalidateCacheByPath(redisClient *redis.Client, method, path string) error {
 	pattern := fmt.Sprintf("cache:%s:%s:*", method, path)
 	return InvalidateCache(redisClient, pattern)
@@ -88,6 +108,11 @@ func InvalidateCacheByPath(redisClient *redis.Client, method, path string) error
 // CacheInvalidationMiddleware invalidates cache on write operations
 func CacheInvalidationMiddleware(redisClient *redis.Client) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		if redisClient == nil {
+			c.Next()
+			return
+		}
+
 		// Only invalidate for write operations
 		if c.Request.Method == "POST" || c.Request.Method == "PUT" || c.Request.Method == "DELETE" {
 			c.Next()
@@ -99,13 +124,14 @@ func CacheInvalidationMiddleware(redisClient *redis.Client) gin.HandlerFunc {
 				// Invalidate related cache entries
 				switch {
 				case strings.Contains(path, "/gov-jobs"):
-				_=	InvalidateCacheByPath(redisClient, "GET", "/api/v1/gov-jobs")
-				case strings.Contains(path, "/private-jobs"):
-				_=	InvalidateCacheByPath(redisClient, "GET", "/api/v1/private-jobs")
+					_ = InvalidateCacheByPath(redisClient, "GET", "/api/v1/gov-jobs")
+				case strings.Contains(path, "/private-jobs") || strings.Contains(path, "/priv-jobs"):
+					_ = InvalidateCacheByPath(redisClient, "GET", "/api/v1/private-jobs")
+					_ = InvalidateCacheByPath(redisClient, "GET", "/api/v1/priv-jobs")
 				case strings.Contains(path, "/courses"):
-				_=	InvalidateCacheByPath(redisClient, "GET", "/api/v1/courses")
+					_ = InvalidateCacheByPath(redisClient, "GET", "/api/v1/courses")
 				case strings.Contains(path, "/videos"):
-				_=	InvalidateCacheByPath(redisClient, "GET", "/api/v1/videos")
+					_ = InvalidateCacheByPath(redisClient, "GET", "/api/v1/videos")
 				}
 			}
 		} else {

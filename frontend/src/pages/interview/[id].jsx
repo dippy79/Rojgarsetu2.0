@@ -1,6 +1,7 @@
 import dynamic from 'next/dynamic'
 import { useRouter } from 'next/router'
 import { useEffect } from 'react'
+import { useAuth } from '../../hooks/useAuth'
 
 const VideoCallPage = dynamic(
   () => import('../VideoCallPage'),
@@ -9,11 +10,15 @@ const VideoCallPage = dynamic(
 
 export default function InterviewPage() {
   const router = useRouter()
+  const { user, initialized } = useAuth()
 
   useEffect(() => {
-    const token = localStorage.getItem('token') || localStorage.getItem('rojgar_token')
-    if (!token) router.push('/login')
-  }, [router])
+    if (initialized && !user) {
+      router.push('/login')
+    }
+  }, [user, initialized, router])
+
+  if (!initialized || !user) return null
 
   return <VideoCallPage />
 }

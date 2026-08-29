@@ -21,6 +21,7 @@ type Config struct {
 		Issuer             string        `json:"issuer"`
 		Audience           string        `json:"audience"`
 		Secret             string        `json:"secret"`
+		RefreshSessionKey  string        `json:"refresh_session_key"`
 		Expiry             time.Duration `json:"expiry"`
 	} `json:"jwt"`
 	LoginRateLimit int `json:"login_rate_limit"`
@@ -82,6 +83,15 @@ func Load() *Config {
 	}
 	if len(cfg.JWT.Secret) < 32 {
 		panic("JWT_SECRET must be at least 32 characters long for security")
+	}
+
+	// Read refresh token key from file or environment
+	cfg.JWT.RefreshSessionKey = readSecret("REFRESH_TOKEN_KEY", "REFRESH_TOKEN_KEY_FILE")
+	if cfg.JWT.RefreshSessionKey == "" {
+		panic("REFRESH_TOKEN_KEY environment variable or file required")
+	}
+	if len(cfg.JWT.RefreshSessionKey) < 32 {
+		panic("REFRESH_SESSION_KEY must be at least 32 characters long for security")
 	}
 
 	expiryStr := os.Getenv("JWT_EXPIRY_SECONDS")

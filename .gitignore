@@ -31,3 +31,10 @@ __pycache__/
 node_modules
 
 .fake
+# Build Artifacts
+frontend/.next/
+frontend/build/
+frontend/out/
+
+# Python Venv
+services/ai-engine-python/.venv/

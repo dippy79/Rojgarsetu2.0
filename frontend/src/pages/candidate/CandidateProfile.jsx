@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useAuth } from '../../hooks/useAuth';
+import api from '../../lib/api';
 import {
   User, Mail, Phone, MapPin, Briefcase, Award,
   FileText, Globe, Github, Linkedin, Plus, X,
@@ -47,7 +48,6 @@ export const CandidateProfile = () => {
   }, []);
 
   const handleAuthError = useCallback(() => {
-    localStorage.removeItem('rojgar_token');
     showToast('Session expired. Please login again.', 'error');
     setTimeout(() => router.push('/login'), 1500);
   }, [router, showToast]);
@@ -55,47 +55,37 @@ export const CandidateProfile = () => {
   const fetchProfile = useCallback(async () => {
     setLoading(true);
     setError(null);
-    const token = localStorage.getItem('rojgar_token') || localStorage.getItem('token');
 
     try {
-      const res = await fetch(`${API_BASE}/api/v1/candidates/me`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
+      const res = await api.get('/api/v1/candidates/me');
+      const data = res.data;
+      const cand = data?.candidate || data?.data || {};
+      setProfile({
+        full_name: cand?.full_name || user?.name || '',
+        email: cand?.email || user?.email || '',
+        phone: cand?.phone || '',
+        title: cand?.title || '',
+        bio: cand?.bio || '',
+        location: cand?.location || '',
+        targetSalary: cand?.targetSalary || '',
+        targetRole: cand?.targetRole || '',
+        skills: Array.isArray(cand?.skills) ? cand.skills : [],
+        experience: Array.isArray(cand?.experience) ? cand.experience : [],
+        education: Array.isArray(cand?.education) ? cand.education : [],
+        portfolio_links: cand?.portfolio_links || { github: '', linkedin: '', website: '' },
+        certifications: Array.isArray(cand?.certifications) ? cand.certifications : [],
+        resume_url: cand?.resume_url || '',
       });
-
-      if (res.status === 401) {
-        handleAuthError();
-        return;
-      }
-
-      if (res.ok) {
-        const data = await res.json();
-        const cand = data?.candidate || data?.data || {};
-        setProfile({
-          full_name: cand?.full_name || user?.name || '',
-          email: cand?.email || user?.email || '',
-          phone: cand?.phone || '',
-          title: cand?.title || '',
-          bio: cand?.bio || '',
-          location: cand?.location || '',
-          targetSalary: cand?.targetSalary || '',
-          targetRole: cand?.targetRole || '',
-          skills: Array.isArray(cand?.skills) ? cand.skills : [],
-          experience: Array.isArray(cand?.experience) ? cand.experience : [],
-          education: Array.isArray(cand?.education) ? cand.education : [],
-          portfolio_links: cand?.portfolio_links || { github: '', linkedin: '', website: '' },
-          certifications: Array.isArray(cand?.certifications) ? cand.certifications : [],
-          resume_url: cand?.resume_url || '',
-        });
-      }
     } catch (err) {
-      setError('Failed to synchronize profile with the cloud node.');
+      if (err.response?.status === 401) {
+        handleAuthError();
+      } else {
+        setError('Failed to synchronize profile with the cloud node.');
+      }
     } finally {
       setLoading(false);
     }
-  }, [API_BASE, handleAuthError, user]);
+  }, [handleAuthError, user]);
 
   useEffect(() => {
     fetchProfile();
@@ -116,23 +106,10 @@ export const CandidateProfile = () => {
   const handleSaveProfile = async (e) => {
     e.preventDefault();
     setSaving(true);
-    const token = localStorage.getItem('rojgar_token') || localStorage.getItem('token');
 
     try {
-      const res = await fetch(`${API_BASE}/api/v1/candidates/me`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(profile)
-      });
-
-      if (res.ok) {
-        showToast('Neural profile updated successfully!');
-      } else {
-        showToast('Failed to commit changes to database.', 'error');
-      }
+      const res = await api.put('/api/v1/candidates/me', profile);
+      showToast('Neural profile updated successfully!');
     } catch (err) {
       showToast('Network latency detected. Save failed.', 'error');
     } finally {

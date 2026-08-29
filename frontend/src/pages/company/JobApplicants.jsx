@@ -3,6 +3,7 @@ import { Star, MoreVertical, Search, Filter, Loader2, ArrowLeft, Calendar, User,
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useAuth } from '../../hooks/useAuth';
+import api from '../../lib/api';
 
 const COLUMNS = ['Applied', 'Shortlisted', 'Interview', 'Hired', 'Rejected'];
 
@@ -17,21 +18,13 @@ export default function JobApplicants() {
   const fetchApplications = useCallback(async () => {
     setLoading(true);
     setError(null);
-    const token = localStorage.getItem('rojgar_token') || localStorage.getItem('token');
     try {
-      const res = await fetch('http://localhost:3001/api/v1/company/applications', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setApplications(Array.isArray(data) ? data : data.data || []);
-      } else {
-        setError("Recruitment node connection error.");
-        setApplications([]);
-      }
+      const res = await api.get('/api/v1/company/applications');
+      const data = res.data;
+      setApplications(Array.isArray(data) ? data : data.data || []);
     } catch (err) {
       console.error(err);
-      setError("Recruitment node sync failed. Please try again later.");
+      setError("Recruitment node connection error.");
       setApplications([]);
     } finally {
       setLoading(false);
@@ -41,12 +34,10 @@ export default function JobApplicants() {
   useEffect(() => { fetchApplications(); }, [fetchApplications]);
 
   const updateStatus = async (id, status) => {
-    const token = localStorage.getItem('rojgar_token') || localStorage.getItem('token');
     try {
-      await fetch(`http://localhost:3001/api/v1/applications/${id}/status`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ status, recruiter_notes: `Status changed to ${status}` })
+      await api.patch(`/api/v1/applications/${id}/status`, {
+        status,
+        recruiter_notes: `Status changed to ${status}`
       });
       fetchApplications();
     } catch (err) {

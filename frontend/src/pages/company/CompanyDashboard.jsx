@@ -3,6 +3,7 @@ import { Briefcase, Users, Calendar, CheckCircle2, PlusCircle, ArrowUpRight, Lay
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useAuth } from '../../hooks/useAuth';
+import api from '../../lib/api';
 
 export default function CompanyDashboard() {
   const router = useRouter();
@@ -15,24 +16,15 @@ export default function CompanyDashboard() {
   const fetchData = useCallback(async () => {
     setLoading(true);
     setError(null);
-    const token = localStorage.getItem('rojgar_token') || localStorage.getItem('token');
-    const headers = { Authorization: `Bearer ${token}` };
 
     try {
       const [compRes, jobsRes] = await Promise.all([
-        fetch('http://localhost:3001/api/v1/companies/me', { headers }),
-        fetch('http://localhost:3001/api/v1/companies/me/jobs', { headers })
+        api.get('/api/v1/companies/me'),
+        api.get('/api/v1/companies/me/jobs')
       ]);
 
-      if (compRes.ok) {
-        const compData = await compRes.json();
-        if (compData.stats) setStats(compData.stats);
-      }
-
-      if (jobsRes.ok) {
-        const jobsData = await jobsRes.json();
-        if (Array.isArray(jobsData)) setRecentApplicants(jobsData.slice(0, 5));
-      }
+      if (compRes.data.stats) setStats(compRes.data.stats);
+      if (Array.isArray(jobsRes.data)) setRecentApplicants(jobsRes.data.slice(0, 5));
     } catch (err) {
       console.error(err);
       setError("Hiring Node connection error. Some intelligence may be delayed.");

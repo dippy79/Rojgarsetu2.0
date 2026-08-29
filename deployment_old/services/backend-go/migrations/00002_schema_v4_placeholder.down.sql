@@ -1,3 +1,0 @@
--- +goose Down
--- Reverse schema v4 placeholder
--- DROP TABLE IF EXISTS users CASCADE;

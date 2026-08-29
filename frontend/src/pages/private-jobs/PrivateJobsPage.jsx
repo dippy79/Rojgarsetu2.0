@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useAuth } from '../../hooks/useAuth';
+import api from '../../lib/api';
 import JobFilters from '../../components/JobFilters';
 import JobCard from '../../components/JobCard';
 import { Search, Sparkles, Loader2, Info } from 'lucide-react';
-import { apiUrl } from '../../apiConfig';
 
 export const PrivateJobsPage = () => {
   const { isAuthenticated } = useAuth();
@@ -20,26 +20,16 @@ export const PrivateJobsPage = () => {
   const fetchPrivateJobs = useCallback(async () => {
     setLoading(true);
     setError(null);
-    const token = localStorage.getItem('rojgar_token') || localStorage.getItem('token');
 
     try {
-      const queryParams = new URLSearchParams({
+      const queryParams = {
         location: filters.location,
         job_type: filters.jobType,
         company: filters.company,
-      });
+      };
 
-      const response = await fetch(apiUrl(`/api/v1/priv-jobs?${queryParams.toString()}`), {
-        headers: {
-          'Authorization': token ? `Bearer ${token}` : '',
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
-
-      const result = await response.json();
-      setJobs(result.data || []);
+      const res = await api.get('/api/v1/priv-jobs', { params: queryParams });
+      setJobs(res.data.data || []);
     } catch (err) {
       console.error("Fetch error:", err);
       setError("AI-aggregator offline. Please try again later.");

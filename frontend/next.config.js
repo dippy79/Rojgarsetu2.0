@@ -3,8 +3,9 @@ const nextConfig = {
   output: 'export',
   images: {
     unoptimized: true,
-    domains: ['localhost'],
     remotePatterns: [
+      { protocol: 'https', hostname: 'i.ytimg.com' },
+      { protocol: 'https', hostname: 'img.youtube.com' },
       { protocol: 'https', hostname: '**' },
     ],
   },

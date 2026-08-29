@@ -1,1 +1,0 @@
-(self.webpackChunk_N_E=self.webpackChunk_N_E||[]).push([[7932],{7101:function(n,u,_){(window.__NEXT_P=window.__NEXT_P||[]).push(["/courses/CoursesPage",function(){return _(7412)}])}},function(n){n.O(0,[7412,2888,9774,179],function(){return n(n.s=7101)}),_N_E=n.O()}]);

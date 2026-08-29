@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useAuth } from '../../hooks/useAuth';
-import { apiUrl } from '../../apiConfig';
+import api from '../../lib/api';
 import { Search, GraduationCap, Clock, BookOpen, Filter, ArrowRight, Loader2 } from 'lucide-react';
 
 export const CoursesPage = () => {
@@ -19,11 +19,8 @@ export const CoursesPage = () => {
     setLoading(true);
     setError(null);
     try {
-      const queryParams = new URLSearchParams(filters);
-      const response = await fetch(apiUrl(`/api/v1/courses?${queryParams.toString()}`));
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      const result = await response.json();
-      setCourses(result.data || []);
+      const res = await api.get('/api/v1/courses', { params: filters });
+      setCourses(res.data.data || []);
     } catch (err) {
       console.error(err);
       setError("Unable to sync courses. Please try again later.");

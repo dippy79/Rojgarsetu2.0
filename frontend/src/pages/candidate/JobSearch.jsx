@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useAuth } from '../../hooks/useAuth';
+import api from '../../lib/api';
 import JobFilters from '../../components/JobFilters';
 import JobCard from '../../components/JobCard';
 import { Search, MapPin, Sparkles, Filter } from 'lucide-react';
@@ -18,34 +19,19 @@ export const JobSearch = () => {
     category: '',
   });
 
-  const API_BASE = process.env.REACT_APP_BACKEND_URL || 'http://localhost:3001';
-
   const fetchJobs = useCallback(async () => {
     setLoading(true);
     setError(null);
-    const token = localStorage.getItem('rojgar_token') || localStorage.getItem('token');
 
     try {
-      const queryParams = new URLSearchParams({
+      const queryParams = {
         location: filters.location,
         category: filters.category,
         jobType: filters.jobType.join(','),
-      });
+      };
 
-      const res = await fetch(`${API_BASE}/api/v1/jobs?${queryParams.toString()}`, {
-        headers: {
-          'Authorization': token ? `Bearer ${token}` : '',
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        setJobs(data?.jobs ?? data ?? []);
-      } else {
-        setError("AI Discovery Engine connection error.");
-        setJobs([]);
-      }
+      const res = await api.get('/api/v1/jobs', { params: queryParams });
+      setJobs(res.data?.jobs ?? res.data ?? []);
     } catch (err) {
       console.error(err);
       setError("AI Discovery Engine offline. Please try again later.");
@@ -53,7 +39,7 @@ export const JobSearch = () => {
     } finally {
       setLoading(false);
     }
-  }, [filters, API_BASE]);
+  }, [filters]);
 
   useEffect(() => {
     fetchJobs();

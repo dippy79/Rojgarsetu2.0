@@ -1,20 +1,42 @@
 import os
 import logging
 import json
-from fastapi import FastAPI, HTTPException
+import re
+from fastapi import FastAPI, HTTPException, Security, Depends, Request
+from fastapi.security.api_key import APIKeyHeader
 from pydantic import BaseModel
 from typing import List, Optional
 import google.generativeai as genai
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Rate limiting setup
+limiter = Limiter(key_func=get_remote_address)
 app = FastAPI(
     title="RojgarSetu AI Engine",
     description="Recommendation and matching service for RojgarSetu",
     version="1.0.0"
 )
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+API_KEY_NAME = "X-API-Key"
+api_key_header = APIKeyHeader(name=API_KEY_NAME, auto_error=False)
+
+async def get_api_key(api_key_header: str = Security(api_key_header)):
+    expected_key = os.getenv("API_KEY")
+    if not expected_key:
+        raise HTTPException(status_code=500, detail="API key not configured")
+
+    if api_key_header == expected_key:
+        return api_key_header
+    else:
+        raise HTTPException(status_code=403, detail="Could not validate credentials")
 
 # Database connection URL from environment
 DATABASE_URL = os.getenv(
@@ -34,8 +56,21 @@ class RecommendationRequest(BaseModel):
 class ResumeParseRequest(BaseModel):
     text: str
 
-@app.post("/parse-resume")
-def parse_resume(payload: ResumeParseRequest):
+def extract_keywords_basic(text: str) -> dict:
+    """Rule-based fallback for resume parsing when AI is unavailable."""
+    skills = re.findall(r'\b(Python|Go|Java|React|SQL|AWS|Docker|Kubernetes|JavaScript|TypeScript|Node\.js|Flutter|Dart|Kotlin|Swift|Android|iOS|Machine Learning|AI|Data Science)\b', text, re.IGNORECASE)
+    return {
+        "name": "Extracted User",
+        "email": "extracted@example.com",
+        "skills": list(set(skills)),
+        "experience": [],
+        "education": [],
+        "source": "fallback"
+    }
+
+@app.post("/parse-resume", dependencies=[Depends(get_api_key)])
+@limiter.limit("5/minute")
+def parse_resume(request: Request, payload: ResumeParseRequest):
     if not os.getenv("GEMINI_API_KEY"):
         return {"error": "Gemini API key not configured"}
 
@@ -57,16 +92,25 @@ def parse_resume(payload: ResumeParseRequest):
         """
         response = model.generate_content(prompt)
         text = response.text.strip()
-        # Handle cases where model might wrap JSON in markdown blocks
+
         if "```json" in text:
             text = text.split("```json")[1].split("```")[0].strip()
         elif "```" in text:
             text = text.split("```")[1].split("```")[0].strip()
 
-        return json.loads(text)
+        result = json.loads(text)
+        result["source"] = "gemini"
+        return result
+
     except Exception as e:
-        logger.error(f"Resume parse failed: {e}")
-        return {"error": "parse_failed", "details": str(e)}
+        logger.error(f"Gemini API failed: {e}")
+        if "quota" in str(e).lower() or "rate" in str(e).lower() or "limit" in str(e).lower():
+            logger.info("Triggering rule-based fallback for resume parsing")
+            return {
+                **extract_keywords_basic(payload.text),
+                "warning": "AI service temporarily unavailable. Using rule-based extraction."
+            }
+        raise HTTPException(status_code=503, detail="AI service unavailable.")
 
 class JobRecord(BaseModel):
     id: str
@@ -76,7 +120,6 @@ class JobRecord(BaseModel):
     description: Optional[str] = ""
     job_type: Optional[str] = ""
     source_table: Optional[str] = ""
-
 
 def get_db_connection():
     """Create a new database connection."""
@@ -88,9 +131,8 @@ def get_db_connection():
         logger.error(f"Database connection failed: {e}")
         return None
 
-
 def fetch_jobs_from_db() -> List[JobRecord]:
-    """Fetch available jobs from the company_jobs table."""
+    """Fetch available jobs from the database."""
     conn = get_db_connection()
     if not conn:
         return []
@@ -142,9 +184,7 @@ def fetch_jobs_from_db() -> List[JobRecord]:
             jobs = []
             for row in rows:
                 job_id, title, location, skills, description, job_type, source_table = row
-                # skills comes from PostgreSQL as a list (text[])
                 if isinstance(skills, str):
-                    # Handle case where it's returned as a string
                     skills_list = [s.strip().strip('"') for s in skills.strip('{}').split(',') if s.strip()]
                 else:
                     skills_list = list(skills) if skills else []
@@ -162,8 +202,8 @@ def fetch_jobs_from_db() -> List[JobRecord]:
         logger.error(f"Error fetching jobs from database: {e}")
         return []
     finally:
-        conn.close()
-
+        if conn:
+            conn.close()
 
 def calculate_skill_match_score(user_skills: set, job_skills: set) -> float:
     """Calculate Jaccard similarity between user skills and job skills."""
@@ -175,75 +215,41 @@ def calculate_skill_match_score(user_skills: set, job_skills: set) -> float:
         return 0.0
     return round(len(intersection) / len(union), 2)
 
-
 def calculate_keyword_overlap(user_skills: set, job_text: str) -> float:
-    """Calculate simple keyword overlap between user skills and job title/description."""
+    """Calculate simple keyword overlap."""
     if not user_skills or not job_text:
         return 0.0
     job_words = set(job_text.lower().split())
     intersection = user_skills.intersection(job_words)
     if not intersection:
         return 0.0
-    # Score based on how many skills matched in the text
     return round(len(intersection) / len(user_skills), 2)
 
-
 def recommend_jobs_from_db(user_skills: List[str], preferred_locations: List[str]) -> dict:
-    """Core recommendation logic: fetch jobs from DB and score them."""
-    # Validate input
+    """Core recommendation logic."""
     if not user_skills:
-        return {
-            "status": "error",
-            "message": "user_skills list is empty. Provide at least one skill to get recommendations.",
-            "recommendations": []
-        }
+        return {"status": "error", "message": "user_skills empty", "recommendations": []}
 
-    # Normalize user skills
     user_skills_set = set(skill.lower().strip() for skill in user_skills if skill.strip())
     if not user_skills_set:
-        return {
-            "status": "error",
-            "message": "user_skills contains only empty values. Provide at least one valid skill.",
-            "recommendations": []
-        }
+        return {"status": "error", "message": "user_skills invalid", "recommendations": []}
 
-    # Normalize preferred locations
     preferred_locations_lower = [loc.lower().strip() for loc in preferred_locations if loc.strip()]
 
-    # Fetch jobs from database
     jobs = fetch_jobs_from_db()
     if not jobs:
-        return {
-            "status": "error",
-            "message": "No jobs found in the database. Please ensure jobs have been crawled/added.",
-            "recommendations": []
-        }
-
-    logger.info(f"Fetched {len(jobs)} jobs from DB, scoring against {len(user_skills_set)} skills")
+        return {"status": "error", "message": "No jobs found", "recommendations": []}
 
     scored_jobs = []
-
     for job in jobs:
-        # Normalize job skills
         job_skills_set = set(skill.lower().strip() for skill in job.skills if skill.strip())
-
-        # Calculate skill match score (Jaccard similarity)
         skill_score = calculate_skill_match_score(user_skills_set, job_skills_set)
-
-        # Calculate keyword overlap with title and description
         job_text = f"{job.title} {job.description}"
         keyword_score = calculate_keyword_overlap(user_skills_set, job_text)
-
-        # Combined score: 70% skill match, 30% keyword overlap
         score = (skill_score * 0.7) + (keyword_score * 0.3)
-
-        # Location boost: +0.15 if job location matches preferred location
         if preferred_locations_lower and job.location.lower() in preferred_locations_lower:
             score += 0.15
-
-        # Cap score at 1.0
         score = min(score, 1.0)
-
         if score > 0:
             scored_jobs.append({
                 "job_id": job.id,
@@ -255,10 +261,7 @@ def recommend_jobs_from_db(user_skills: List[str], preferred_locations: List[str
                 "matched_skills": list(user_skills_set.intersection(job_skills_set))
             })
 
-    # Sort descending by match score
     scored_jobs.sort(key=lambda x: x["match_score"], reverse=True)
-
-    # Return top 20 results
     top_recommendations = scored_jobs[:20]
 
     return {
@@ -268,15 +271,12 @@ def recommend_jobs_from_db(user_skills: List[str], preferred_locations: List[str
         "recommendations": top_recommendations
     }
 
-
 @app.get("/")
 def read_root():
     return {"service": "RojgarSetu AI Engine", "status": "active"}
 
-
 @app.get("/health")
 def health_check():
-    # Check database connectivity
     db_healthy = False
     conn = get_db_connection()
     if conn:
@@ -295,14 +295,9 @@ def health_check():
         "database": "connected" if db_healthy else "disconnected"
     }
 
-
-@app.post("/recommend/jobs")
-def recommend_jobs(payload: RecommendationRequest):
-    """
-    Recommend jobs based on candidate skills and preferred locations.
-    Queries the company_jobs table from PostgreSQL and scores jobs by
-    skill overlap (Jaccard similarity + keyword matching).
-    """
+@app.post("/recommend/jobs", dependencies=[Depends(get_api_key)])
+@limiter.limit("20/minute")
+def recommend_jobs(request: Request, payload: RecommendationRequest):
     try:
         result = recommend_jobs_from_db(
             user_skills=payload.user_skills,
@@ -311,7 +306,4 @@ def recommend_jobs(payload: RecommendationRequest):
         return result
     except Exception as e:
         logger.error(f"Unexpected error in recommend_jobs: {e}")
-        raise HTTPException(
-            status_code=500,
-            detail=f"Internal server error: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=str(e))

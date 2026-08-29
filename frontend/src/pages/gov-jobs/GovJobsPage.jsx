@@ -2,10 +2,10 @@ import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useAuth } from '../../hooks/useAuth';
+import api from '../../lib/api';
 import JobFilters from '../../components/JobFilters';
 import JobCard from '../../components/JobCard';
 import { Search, MapPin, ShieldCheck, ArrowRight, Loader2, Info } from 'lucide-react';
-import { apiUrl } from '../../apiConfig';
 
 export const GovJobsPage = () => {
   const { user, isAuthenticated } = useAuth();
@@ -22,27 +22,16 @@ export const GovJobsPage = () => {
   const fetchGovJobs = useCallback(async () => {
     setLoading(true);
     setError(null);
-    const token = localStorage.getItem('rojgar_token') || localStorage.getItem('token');
 
     try {
-      const queryParams = new URLSearchParams({
+      const queryParams = {
         location: filters.location,
         department: filters.department,
-        // Backend currently supports department, location, source
-      });
+      };
 
-      const response = await fetch(apiUrl(`/api/v1/gov-jobs?${queryParams.toString()}`), {
-        headers: {
-          'Authorization': token ? `Bearer ${token}` : '',
-          'Content-Type': 'application/json'
-        }
-      });
-
-      if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
-
-      const result = await response.json();
-      setJobs(result.data || []);
-      setPagination(result.pagination);
+      const res = await api.get('/api/v1/gov-jobs', { params: queryParams });
+      setJobs(res.data.data || []);
+      setPagination(res.data.pagination);
     } catch (err) {
       console.error("Fetch error:", err);
       setError("Failed to sync with live government registries. Please try again later.");

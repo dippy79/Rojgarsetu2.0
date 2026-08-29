@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { useAuth } from '../../hooks/useAuth';
-import { apiUrl } from '../../apiConfig';
+import api from '../../lib/api';
 import { Play, Search, Youtube, TrendingUp, Clock, Filter, Loader2, ArrowUpRight } from 'lucide-react';
 
 export const VideosPage = () => {
@@ -17,11 +16,8 @@ export const VideosPage = () => {
     setLoading(true);
     setError(null);
     try {
-      const queryParams = new URLSearchParams(filters);
-      const response = await fetch(apiUrl(`/api/v1/videos?${queryParams.toString()}`));
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      const result = await response.json();
-      setVideos(result.data || []);
+      const res = await api.get('/api/v1/videos', { params: filters });
+      setVideos(res.data.data || []);
     } catch (err) {
       console.error(err);
       setError("Video feed sync failed. Please try again later.");

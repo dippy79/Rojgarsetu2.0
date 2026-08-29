@@ -41,8 +41,8 @@ func GenerateRefreshTokenID() string {
 }
 
 // HashSession binds IP + UA with HMAC
-func HashSession(ip, ua string) string {
-	h := hmac.New(sha256.New, []byte("rojgarsetu-refresh-key-change-in-prod"))
+func HashSession(ip, ua string, cfg *config.Config) string {
+	h := hmac.New(sha256.New, []byte(cfg.JWT.RefreshSessionKey))
 	h.Write([]byte(ip + ua))
 	return hex.EncodeToString(h.Sum(nil))
 }

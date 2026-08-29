@@ -2,6 +2,7 @@
 import { useRouter } from 'next/router';
 import { ArrowLeft, Briefcase, MapPin, DollarSign, Calendar, Sparkles, Send, Loader2, Globe, Laptop } from 'lucide-react';
 import Link from 'next/link';
+import api from '../../lib/api';
 
 export default function PostJob() {
   const router = useRouter();
@@ -20,7 +21,6 @@ export default function PostJob() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    const token = localStorage.getItem('rojgar_token') || localStorage.getItem('token');
     const payload = {
       ...formData,
       skills_required: formData.skills_required.split(',').map(s => s.trim()).filter(Boolean),
@@ -30,19 +30,11 @@ export default function PostJob() {
     };
 
     try {
-      const res = await fetch('http://localhost:3001/api/v1/company-jobs', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify(payload)
-      });
-
-      if (res.ok) {
-        router.push('/dashboard/company');
-      } else {
-        alert("Failed to publish job. Please try again.");
-      }
+      await api.post('/api/v1/company-jobs', payload);
+      router.push('/dashboard/company');
     } catch (err) {
       console.error(err);
+      alert("Failed to publish job. Please try again.");
     } finally {
       setLoading(false);
     }

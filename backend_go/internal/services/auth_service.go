@@ -105,6 +105,11 @@ func (s *AuthService) Login(c *gin.Context) {
 		return
 	}
 
+	// Set HttpOnly Cookies for security
+	c.SetSameSite(http.SameSiteStrictMode)
+	c.SetCookie("access_token", accessToken, 900, "/", "", false, true) // 15 min
+	c.SetCookie("refresh_token", refreshToken, 86400, "/", "", false, true) // 24 hours
+
 	c.JSON(http.StatusOK, TokenResponse{
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
@@ -137,6 +142,10 @@ func (s *AuthService) Refresh(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create access token"})
 		return
 	}
+
+	// Update HttpOnly Cookie
+	c.SetSameSite(http.SameSiteStrictMode)
+	c.SetCookie("access_token", accessToken, 900, "/", "", false, true)
 
 	c.JSON(http.StatusOK, gin.H{"access_token": accessToken})
 }

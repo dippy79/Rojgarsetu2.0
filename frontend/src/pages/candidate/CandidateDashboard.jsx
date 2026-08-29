@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useAuth } from '../../hooks/useAuth';
+import api from '../../lib/api';
 import DashboardAnalytics from '../../components/DashboardAnalytics';
 import {
   LayoutDashboard, User, FileText, Bookmark, Sparkles, LogOut, Menu, X,
@@ -24,44 +25,29 @@ export const CandidateDashboard = () => {
     placements: 3200,
   });
 
-  const API_BASE = process.env.REACT_APP_BACKEND_URL || 'http://localhost:3001';
-
   const fetchData = useCallback(async () => {
     setLoading(true);
     setError(null);
-    const token = localStorage.getItem('rojgar_token') || localStorage.getItem('token');
 
     try {
-      const headers = {
-        'Content-Type': 'application/json',
-        'Authorization': token ? `Bearer ${token}` : '',
-      };
-
       const [profileRes, appsRes, statsRes] = await Promise.allSettled([
-        fetch(`${API_BASE}/api/v1/candidates/me`, { headers }),
-        fetch(`${API_BASE}/api/v1/applications/me?limit=5`, { headers }),
-        fetch(`${API_BASE}/api/v1/stats`),
+        api.get('/api/v1/candidates/me'),
+        api.get('/api/v1/applications/me?limit=5'),
+        api.get('/api/v1/stats'),
       ]);
 
       if (profileRes.status === 'fulfilled') {
-        if (profileRes.value.status === 401) {
-           logout();
-           router.push('/login');
-           return;
-        }
-        if (profileRes.value.ok) {
-          const pData = await profileRes.value.json();
-          setCandidateProfile(pData?.candidate ?? pData?.data ?? pData);
-        }
+        const pData = profileRes.value.data;
+        setCandidateProfile(pData?.candidate ?? pData?.data ?? pData);
       }
 
-      if (appsRes.status === 'fulfilled' && appsRes.value.ok) {
-        const aData = await appsRes.value.json();
+      if (appsRes.status === 'fulfilled') {
+        const aData = appsRes.value.data;
         setRecentApps(aData?.applications ?? aData?.data ?? aData ?? []);
       }
 
-      if (statsRes.status === 'fulfilled' && statsRes.value.ok) {
-        const sData = await statsRes.value.json();
+      if (statsRes.status === 'fulfilled') {
+        const sData = statsRes.value.data;
         setPlatformStats(prev => ({ ...prev, ...sData }));
       }
     } catch (err) {
@@ -69,7 +55,7 @@ export const CandidateDashboard = () => {
     } finally {
       setLoading(false);
     }
-  }, [API_BASE, logout, router]);
+  }, [logout, router]);
 
   useEffect(() => {
     fetchData();

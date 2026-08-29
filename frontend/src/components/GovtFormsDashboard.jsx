@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { apiUrl } from '../apiConfig';
+import api from '../lib/api';
 import { FileText, Calendar, ArrowRight, ShieldAlert, Clock, CheckCircle2, Loader2, Search } from 'lucide-react';
 
 const GovtFormsDashboard = () => {
@@ -11,10 +11,8 @@ const GovtFormsDashboard = () => {
     async function load() {
       try {
         setLoading(true);
-        const response = await fetch(apiUrl('/api/v1/forms'));
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        const data = await response.json();
-        setForms(data.data || data.forms || []);
+        const res = await api.get('/api/v1/forms');
+        setForms(res.data.data || res.data.forms || []);
       } catch (err) {
         console.error(err);
         setError("Live feed synchronization interrupted. Please try again later.");
