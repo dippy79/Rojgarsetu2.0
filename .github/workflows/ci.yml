@@ -12,12 +12,16 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
-          go-version: '1.24'
+          go-version: '1.25.0'
           cache: true
       - name: Mod tidy + build
-        run: cd backend_go && go mod tidy && go build ./...
+        working-directory: backend_go
+        run: |
+          go mod tidy
+          go build ./...
       - name: Test
-        run: cd backend_go && go test ./... -v --timeout=60s || true
+        working-directory: backend_go
+        run: go test ./... -v --timeout=60s || true
 
   frontend:
     runs-on: ubuntu-latest
@@ -25,11 +29,14 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: '24'
           cache: 'npm'
           cache-dependency-path: frontend/package-lock.json
       - name: Install + build
-        run: cd frontend && npm install && npm run build
+        working-directory: frontend
+        run: |
+          npm install
+          npm run build
 
   ai-engine:
     runs-on: ubuntu-latest
@@ -40,7 +47,7 @@ jobs:
           python-version: '3.11'
           cache: 'pip'
       - name: Install + test
+        working-directory: services/ai-engine-python
         run: |
-          cd services/ai-engine-python
           pip install -r requirements.txt
           python -m pytest tests/ -v || true
