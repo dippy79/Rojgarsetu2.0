@@ -28,6 +28,7 @@ jobs:
         run: |
           cd services/crawler-go
           go mod tidy
+          go mod vendor
           go build ./...
           go test ./... --timeout=60s 2>&1 || true
 
