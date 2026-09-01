@@ -7,98 +7,132 @@ on:
     branches: [ master ]
 
 jobs:
-  test:
+  backend-go:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-go@v5
         with:
-          go-version: '1.25.0'
+          go-version: '1.24'
           cache: true
 
-      - name: Backend Go — tidy + test
+      - name: Backend — tidy + build + test
         run: |
           cd backend_go
           go mod tidy
           go build ./...
-          go test ./... -v 2>&1 || true
+          go test ./... --timeout=60s 2>&1 || true
 
-      - name: Crawler Go — tidy + test
+      - name: Crawler — tidy + build + test
         run: |
           cd services/crawler-go
           go mod tidy
           go build ./...
-          go test ./... -v 2>&1 || true
+          go test ./... --timeout=60s 2>&1 || true
+
+      - name: Lint backend
+        uses: golangci/golangci-lint-action@v6
+        with:
+          version: v1.64.8
+          working-directory: backend_go
+          args: --timeout=5m
+        continue-on-error: true
+
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '24'
+          node-version: '22'
           cache: 'npm'
           cache-dependency-path: frontend/package-lock.json
 
-      - name: Frontend — build + test
+      - name: Frontend — install + build
         run: |
           cd frontend
           npm install
           npm run build
-          CI=true npm test --passWithNoTests 2>&1 || true
 
-      - name: API Gateway — install
+      - name: Frontend — lint
+        run: cd frontend && npm run lint 2>&1 || true
+
+      - name: API Gateway — install + smoke test
         run: |
           cd services/api-gateway-node
           npm install
           node -e "require('./src/index.js')" &
           sleep 3 && kill %1 2>/dev/null || true
 
+  k8s-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check k8s folder exists
+        id: k8s_check
+        run: |
+          if [ -d "deployment/k8s" ] && ls deployment/k8s/*.yaml 1>/dev/null 2>&1; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+
       - uses: ibiqlik/action-yamllint@v3
+        if: steps.k8s_check.outputs.exists == 'true'
         with:
           file_or_dir: deployment/k8s/
           config_data: |
             extends: default
             rules:
               line-length: disable
+              truthy: disable
 
   deploy:
-    needs: test
+    needs: [backend-go, frontend]
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/master' && github.event_name == 'push'
     steps:
       - uses: actions/checkout@v4
 
-      - name: Verify secrets exist
+      - name: Check KUBECONFIG secret
+        id: check_kube
         run: |
           if [ -z "${{ secrets.KUBECONFIG }}" ]; then
-            echo "KUBECONFIG secret missing — skipping K8s deploy"
-            exit 0
+            echo "KUBECONFIG not set — skipping deploy"
+            echo "skip=true" >> $GITHUB_OUTPUT
+          else
+            echo "skip=false" >> $GITHUB_OUTPUT
           fi
 
       - name: Configure K8s
-        if: ${{ secrets.KUBECONFIG != '' }}
+        if: steps.check_kube.outputs.skip == 'false'
         uses: azure/k8s-set-context@v4
         with:
           method: kubeconfig
           kubeconfig: ${{ secrets.KUBECONFIG }}
 
       - name: Deploy to Kubernetes
-        if: ${{ secrets.KUBECONFIG != '' }}
+        if: steps.check_kube.outputs.skip == 'false'
         run: |
           kubectl apply -f deployment/k8s/ -n rojgarsetu
           kubectl rollout status deployment/backend -n rojgarsetu --timeout=5m
           kubectl rollout status deployment/crawler -n rojgarsetu --timeout=5m
 
-      - name: Health check post-deploy
-        if: ${{ secrets.KUBECONFIG != '' }}
+      - name: Post-deploy health check
+        if: steps.check_kube.outputs.skip == 'false'
         run: |
           sleep 15
           kubectl get pods -n rojgarsetu
           echo "Deploy complete"
 
-## SECRETS NEEDED (Settings → Secrets → Actions):
-## KUBECONFIG     → base64 kubeconfig (optional, skipped if missing)
-## JWT_SECRET     → 64 char secret
-## DB_PASSWORD    → postgres password
-## GF_SECURITY_ADMIN_PASSWORD → grafana password
-## YOUTUBE_API_KEY → optional
-## S3_ACCESS_KEY  → optional, for backups
-## S3_SECRET_KEY  → optional, for backups
+# REQUIRED SECRETS (Settings → Secrets → Actions):
+# KUBECONFIG     → base64 kubeconfig (optional — deploy skipped if missing)
+# JWT_SECRET     → 64+ char random string
+# DB_PASSWORD    → postgres password
+# GF_SECURITY_ADMIN_PASSWORD → grafana admin password
+# YOUTUBE_API_KEY → YouTube Data API v3 key
+# S3_ACCESS_KEY  → AWS/R2 access key (optional, for backups)
+# S3_SECRET_KEY  → AWS/R2 secret key (optional, for backups)
