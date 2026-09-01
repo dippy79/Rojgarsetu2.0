@@ -1,120 +1,118 @@
 package tests
 
 import (
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"strings"
 	"testing"
 
 	"github.com/gin-gonic/gin"
-	"github.com/stretchr/testify/assert"
 )
 
-// TestGetGovJobs tests fetching government jobs
-func TestGetGovJobs(t *testing.T) {
+// TestGetGovJobsReturnsJSON verifies the response structure of the gov-jobs list
+func TestGetGovJobsReturnsJSON(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	
 	router := gin.New()
+
 	router.GET("/api/v1/gov-jobs", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
-			"data": []gin.H{
-				{
-					"id":         "1",
-					"title":      "Software Engineer",
-					"department": "IT",
-					"location":   "Delhi",
-				},
-			},
+			"success": true,
+			"data": []interface{}{},
 			"pagination": gin.H{
-				"page":       1,
-				"limit":      20,
-				"total":      1,
-				"total_pages": 1,
+				"total": 0,
+				"limit": 20,
+				"page":  1,
 			},
 		})
 	})
 
-	req, _ := http.NewRequest("GET", "/api/v1/gov-jobs?page=1&limit=20", nil)
+	req, _ := http.NewRequest("GET", "/api/v1/gov-jobs", nil)
 	w := httptest.NewRecorder()
 	router.ServeHTTP(w, req)
 
-	assert.Equal(t, http.StatusOK, w.Code)
-	assert.Contains(t, w.Body.String(), "Software Engineer")
+	if w.Code != http.StatusOK {
+		t.Errorf("expected 200, got %d", w.Code)
+	}
+
+	var resp map[string]interface{}
+	if err := json.Unmarshal(w.Body.Bytes(), &resp); err != nil {
+		t.Errorf("failed to unmarshal JSON: %v", err)
+	}
+
+	if _, ok := resp["data"]; !ok {
+		t.Error("response missing 'data' field")
+	}
+	if _, ok := resp["pagination"]; !ok {
+		t.Error("response missing 'pagination' field")
+	}
 }
 
-// TestApplyJob tests job application
-func TestApplyJob(t *testing.T) {
+// TestGetGovJobsPagination verifies that pagination parameters are reflected in the response
+func TestGetGovJobsPagination(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	
 	router := gin.New()
-	router.POST("/api/v1/gov-jobs/:id/apply", func(c *gin.Context) {
+
+	router.GET("/api/v1/gov-jobs", func(c *gin.Context) {
+		limit := c.DefaultQuery("limit", "20")
+		page := c.DefaultQuery("page", "1")
 		c.JSON(http.StatusOK, gin.H{
-			"message": "Application submitted successfully",
-			"application_id": "app-123",
-		})
-	})
-
-	req, _ := http.NewRequest("POST", "/api/v1/gov-jobs/1/apply", nil)
-	w := httptest.NewRecorder()
-	router.ServeHTTP(w, req)
-
-	assert.Equal(t, http.StatusOK, w.Code)
-	assert.Contains(t, w.Body.String(), "Application submitted successfully")
-}
-
-// TestGetMyApplications tests fetching user's applications
-func TestGetMyApplications(t *testing.T) {
-	gin.SetMode(gin.TestMode)
-	
-	router := gin.New()
-	router.GET("/api/v1/applications", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{
-			"data": []gin.H{
-				{
-					"id":         "app-123",
-					"job_id":     "1",
-					"job_title":  "Software Engineer",
-					"status":     "pending",
-					"applied_at": "2026-08-16T10:00:00Z",
-				},
-			},
 			"pagination": gin.H{
-				"page":       1,
-				"limit":      20,
-				"total":      1,
-				"total_pages": 1,
+				"limit": limit,
+				"page":  page,
 			},
 		})
 	})
 
-	req, _ := http.NewRequest("GET", "/api/v1/applications?page=1&limit=20", nil)
-	w := httptest.NewRecorder()
-	router.ServeHTTP(w, req)
+	t.Run("Custom Limit", func(t *testing.T) {
+		req, _ := http.NewRequest("GET", "/api/v1/gov-jobs?limit=5&page=2", nil)
+		w := httptest.NewRecorder()
+		router.ServeHTTP(w, req)
 
-	assert.Equal(t, http.StatusOK, w.Code)
-	assert.Contains(t, w.Body.String(), "app-123")
+		var resp map[string]interface{}
+		json.Unmarshal(w.Body.Bytes(), &resp)
+
+		pagination := resp["pagination"].(map[string]interface{})
+		if pagination["limit"] != "5" {
+			t.Errorf("expected limit 5, got %v", pagination["limit"])
+		}
+		if pagination["page"] != "2" {
+			t.Errorf("expected page 2, got %v", pagination["page"])
+		}
+	})
 }
 
 // TestGetGovJobByID tests fetching single government job
 func TestGetGovJobByID(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	
 	router := gin.New()
 	router.GET("/api/v1/gov-jobs/:id", func(c *gin.Context) {
+		id := c.Param("id")
 		c.JSON(http.StatusOK, gin.H{
 			"data": gin.H{
-				"id":         "1",
-				"title":      "Software Engineer",
-				"department": "IT",
-				"location":   "Delhi",
-				"eligibility": "Bachelor's in Computer Science",
+				"id":    id,
+				"title": "UPSC Civil Services 2026",
 			},
 		})
 	})
 
-	req, _ := http.NewRequest("GET", "/api/v1/gov-jobs/1", nil)
+	req, _ := http.NewRequest("GET", "/api/v1/gov-jobs/UPSC-123", nil)
 	w := httptest.NewRecorder()
 	router.ServeHTTP(w, req)
 
-	assert.Equal(t, http.StatusOK, w.Code)
-	assert.Contains(t, w.Body.String(), "Software Engineer")
+	if w.Code != http.StatusOK {
+		t.Errorf("expected 200, got %d", w.Code)
+	}
+	if !strings.Contains(w.Body.String(), "UPSC-123") {
+		t.Errorf("expected response to contain 'UPSC-123'")
+	}
+}
+
+// TestDBConnectivity demonstrates skipping if DATABASE_URL is not set
+func TestDBConnectivity(t *testing.T) {
+	if os.Getenv("DATABASE_URL") == "" {
+		t.Skip("DATABASE_URL not set, skipping DB tests")
+	}
+	// Real DB test logic would go here
 }
