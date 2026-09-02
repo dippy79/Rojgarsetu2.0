@@ -19,14 +19,14 @@ jobs:
 
       - name: Backend — tidy + build + test
         run: |
-          working-directory: backend_go
+          cd backend_go
           go mod tidy
           go build ./...
           go test ./... --timeout=60s 2>&1 || true
 
       - name: Crawler — tidy + build + test
         run: |
-          working-directory: services/crawler-go
+          cd services/crawler-go
           go mod tidy
           go mod vendor
           go build ./...
