@@ -28,20 +28,18 @@ func IsSpam(text string) bool {
 // TestHashGeneration verifies consistency and uniqueness of SHA256 fingerprints
 func TestHashGeneration(t *testing.T) {
 	title := "UPSC Exam"
-	url := "https://upsc.gov.in"
-	org := "UPSC"
 	source := "upsc_official"
 
 	// Consistency
-	hash1 := crawler.GenerateJobHash(source, title, org, url)
-	hash2 := crawler.GenerateJobHash(source, title, org, url)
+	hash1 := crawler.GenerateJobHash(source, title)
+	hash2 := crawler.GenerateJobHash(source, title)
 
 	if hash1 != hash2 {
 		t.Errorf("expected consistent hash, got %s and %s", hash1, hash2)
 	}
 
 	// Uniqueness
-	hash3 := crawler.GenerateJobHash(source, "SSC Exam", org, "https://ssc.gov.in")
+	hash3 := crawler.GenerateJobHash(source, "SSC Exam")
 	if hash1 == hash3 {
 		t.Errorf("different inputs produced identical hash: %s", hash1)
 	}
