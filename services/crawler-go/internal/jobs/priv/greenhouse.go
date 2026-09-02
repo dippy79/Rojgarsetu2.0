@@ -1,4 +1,4 @@
-﻿package priv
+package priv
 
 import (
 	"github.com/rojgarsetu/crawler/internal/shared"

@@ -1,4 +1,4 @@
-﻿package courses
+package courses
 
 import (
 	"github.com/rojgarsetu/crawler/internal/shared"
