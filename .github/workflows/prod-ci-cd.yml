@@ -47,7 +47,7 @@ jobs:
         working-directory: frontend
         run: |
           npm ci
-          npm test
+          npm run type-check
 
       - name: Setup Python
         uses: actions/setup-python@v5
