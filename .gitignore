@@ -3,8 +3,7 @@ bin/
 dist/
 *.exe
 *.dll
-*.so
-vendor/
+*.so
 
 # OS & IDE
 .idea/
@@ -38,3 +37,5 @@ frontend/out/
 
 # Python Venv
 services/ai-engine-python/.venv/
+# Vendor — keep crawler vendor, ignore others
+!services/crawler-go/vendor/
