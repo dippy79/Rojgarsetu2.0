@@ -3,7 +3,8 @@ bin/
 dist/
 *.exe
 *.dll
-*.so
+*.so
+
 
 # OS & IDE
 .idea/
