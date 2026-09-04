@@ -15,8 +15,9 @@ Thumbs.db
 # Environment Variables (CRITICAL)
 .env
 .env.local
-.env.*
-*.env
+.env.*.local
+!.env.example
+.env.*.local
 
 # Secrets & Keys
 *.pem
