@@ -85,7 +85,7 @@ jobs:
 
       - name: Resolve Maven dependencies for Trivy
         working-directory: services/auth-java
-        run: mvn --batch-mode dependency:go-offline
+        run: mvn --batch-mode dependency:resolve
 
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
@@ -95,16 +95,12 @@ jobs:
           severity: 'HIGH,CRITICAL'
           format: 'sarif'
           output: 'trivy-results.sarif'
-          args: '--offline-scan'
+          args: '--scanners vuln'
 
       - name: Upload Trivy results to GitHub Security
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: 'trivy-results.sarif'
-
-      - name: Remove Trivy envs file
-        if: always()
-        run: rm -f trivy_envs.txt
 
   deploy:
     needs: [test, build, security]
