@@ -3,6 +3,8 @@ package browser
 import (
 	"context"
 	"fmt"
+	"os"
+	"strconv"
 	"sync"
 
 	"github.com/mxschmitt/playwright-go"
@@ -16,8 +18,20 @@ type Pool struct {
 	mu      sync.Mutex
 }
 
-// NewPool creates a new Playwright-based browser pool
+// NewPool creates a new Playwright-based browser pool.
+// The effective size is driven by MAX_WORKERS when not explicitly supplied.
 func NewPool(size int) (*Pool, error) {
+	if size <= 0 {
+		if v := os.Getenv("MAX_WORKERS"); v != "" {
+			if parsed, err := strconv.Atoi(v); err == nil && parsed > 0 {
+				size = parsed
+			}
+		}
+	}
+	if size <= 0 {
+		size = 5
+	}
+
 	// pw.Run() starts the playwright driver.
 	// Installation is handled during Docker build to ensure zero runtime latency.
 	pw, err := playwright.Run()
@@ -49,7 +63,7 @@ func NewPool(size int) (*Pool, error) {
 // Run executes a function with a fresh Playwright page
 func (p *Pool) Run(ctx context.Context, fn func(playwright.Page) error) error {
 	p.mu.Lock()
-	// Create a new context for each run to isolate cookies/cache
+	// Create a new context for each run to isolate cookies/cache.
 	browserContext, err := p.browser.NewContext(playwright.BrowserNewContextOptions{
 		UserAgent: playwright.String("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"),
 	})
@@ -58,13 +72,21 @@ func (p *Pool) Run(ctx context.Context, fn func(playwright.Page) error) error {
 	if err != nil {
 		return fmt.Errorf("could not create browser context: %w", err)
 	}
-	defer browserContext.Close()
+	defer func() {
+		if closeErr := browserContext.Close(); closeErr != nil {
+			log.Warn().Err(closeErr).Msg("browser context close returned an error")
+		}
+	}()
 
 	page, err := browserContext.NewPage()
 	if err != nil {
 		return fmt.Errorf("could not create page: %w", err)
 	}
-	defer page.Close()
+	defer func() {
+		if closeErr := page.Close(); closeErr != nil {
+			log.Warn().Err(closeErr).Msg("page close returned an error")
+		}
+	}()
 
 	// Handle panic within the scraper logic
 	var runErr error
@@ -85,10 +107,14 @@ func (p *Pool) Run(ctx context.Context, fn func(playwright.Page) error) error {
 func (p *Pool) Close() error {
 	log.Info().Msg("Closing browser pool")
 	if p.browser != nil {
-		p.browser.Close()
+		if err := p.browser.Close(); err != nil {
+			log.Warn().Err(err).Msg("browser close returned an error")
+		}
 	}
 	if p.pw != nil {
-		return p.pw.Stop()
+		if err := p.pw.Stop(); err != nil {
+			return err
+		}
 	}
 	return nil
 }

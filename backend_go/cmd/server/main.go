@@ -288,6 +288,13 @@ func run(cfg *config.Config) error {
 	router.GET("/health", healthHandler)
 	router.HEAD("/health", healthHandler)
 
+	adminRoutes := router.Group("/api/admin")
+	adminRoutes.Use(middleware.AuthMiddleware(cfg))
+	adminRoutes.Use(middleware.AdminMFAMiddleware(cfg))
+	adminRoutes.GET("/health", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"status": "ok"})
+	})
+
 	// -------------------------------------------------------------
 	// 4. SYNCHRONOUS ROUTE REGISTRATION (Routes exist immediately on startup)
 	// -------------------------------------------------------------

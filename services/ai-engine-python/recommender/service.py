@@ -2,6 +2,9 @@ import os
 import logging
 import json
 import re
+import time
+from concurrent.futures import ThreadPoolExecutor
+from functools import lru_cache
 from fastapi import FastAPI, HTTPException, Security, Depends, Request
 from fastapi.security.api_key import APIKeyHeader
 from pydantic import BaseModel
@@ -131,79 +134,99 @@ def get_db_connection():
         logger.error(f"Database connection failed: {e}")
         return None
 
-def fetch_jobs_from_db() -> List[JobRecord]:
-    """Fetch available jobs from the database."""
+def _normalize_job_row(row, source_table: str) -> JobRecord:
+    job_id, title, location, skills, description, job_type = row
+    if isinstance(skills, str):
+        skills_list = [s.strip().strip('"') for s in skills.strip('{}').split(',') if s.strip()]
+    else:
+        skills_list = list(skills) if skills else []
+    return JobRecord(
+        id=job_id,
+        title=title,
+        location=location or "",
+        skills=skills_list,
+        description=description or "",
+        job_type=job_type or "",
+        source_table=source_table or ""
+    )
+
+
+def _fetch_jobs_table(table_name: str, query: str) -> List[JobRecord]:
     conn = get_db_connection()
     if not conn:
         return []
 
     try:
         with conn.cursor() as cur:
-            cur.execute("""
-                SELECT
-                    cj.id::text AS id,
-                    COALESCE(cj.title, '') AS title,
-                    COALESCE(cj.location, '') AS location,
-                    COALESCE(cj.skills, '{}') AS skills,
-                    COALESCE(cj.description, '') AS description,
-                    COALESCE(cj.job_type, '') AS job_type,
-                    'company_jobs' AS source_table
-                FROM company_jobs cj
-                WHERE cj.is_active = true
-
-                UNION ALL
-
-                SELECT
-                    pj.id::text AS id,
-                    COALESCE(pj.title, '') AS title,
-                    COALESCE(pj.location, '') AS location,
-                    COALESCE(pj.skills, '{}') AS skills,
-                    COALESCE(pj.description, '') AS description,
-                    COALESCE(pj.job_type, '') AS job_type,
-                    'jobs_private' AS source_table
-                FROM jobs_private pj
-                WHERE pj.is_active = true
-
-                UNION ALL
-
-                SELECT
-                    gj.id::text AS id,
-                    COALESCE(gj.title, '') AS title,
-                    COALESCE(gj.location, '') AS location,
-                    '{}'::text[] AS skills,
-                    TRIM(
-                        COALESCE(gj.eligibility, '') || ' ' || COALESCE(gj.department, '')
-                    ) AS description,
-                    '' AS job_type,
-                    'jobs_government' AS source_table
-                FROM jobs_government gj
-                WHERE gj.is_active = true
-                LIMIT 200
-            """)
+            cur.execute(query)
             rows = cur.fetchall()
-            jobs = []
-            for row in rows:
-                job_id, title, location, skills, description, job_type, source_table = row
-                if isinstance(skills, str):
-                    skills_list = [s.strip().strip('"') for s in skills.strip('{}').split(',') if s.strip()]
-                else:
-                    skills_list = list(skills) if skills else []
-                jobs.append(JobRecord(
-                    id=job_id,
-                    title=title,
-                    location=location or "",
-                    skills=skills_list,
-                    description=description or "",
-                    job_type=job_type or "",
-                    source_table=source_table or ""
-                ))
-            return jobs
+        return [_normalize_job_row(row, table_name) for row in rows]
     except Exception as e:
-        logger.error(f"Error fetching jobs from database: {e}")
+        logger.error(f"Error fetching jobs from {table_name}: {e}")
         return []
     finally:
-        if conn:
-            conn.close()
+        conn.close()
+
+
+@lru_cache(maxsize=1)
+def fetch_jobs_from_db_cached(cache_window: int) -> List[JobRecord]:
+    """Fetch jobs from each source table in parallel and merge results in memory."""
+    queries = {
+        "company_jobs": """
+            SELECT
+                cj.id::text AS id,
+                COALESCE(cj.title, '') AS title,
+                COALESCE(cj.location, '') AS location,
+                COALESCE(cj.skills, '{}') AS skills,
+                COALESCE(cj.description, '') AS description,
+                COALESCE(cj.job_type, '') AS job_type
+            FROM company_jobs cj
+            WHERE cj.is_active = true
+            LIMIT 200
+        """,
+        "jobs_private": """
+            SELECT
+                pj.id::text AS id,
+                pj.title AS title,
+                COALESCE(pj.location, '') AS location,
+                COALESCE(pj.skills, '{}') AS skills,
+                COALESCE(pj.description, '') AS description,
+                COALESCE(pj.job_type, '') AS job_type
+            FROM jobs_private pj
+            WHERE pj.is_active = true
+            LIMIT 200
+        """,
+        "jobs_government": """
+            SELECT
+                gj.id::text AS id,
+                COALESCE(gj.title, '') AS title,
+                COALESCE(gj.location, '') AS location,
+                '{}'::text[] AS skills,
+                TRIM(
+                    COALESCE(gj.eligibility, '') || ' ' || COALESCE(gj.department, '')
+                ) AS description,
+                '' AS job_type
+            FROM jobs_government gj
+            WHERE gj.is_active = true
+            LIMIT 200
+        """,
+    }
+
+    merged_jobs: List[JobRecord] = []
+    with ThreadPoolExecutor(max_workers=3) as executor:
+        futures = [
+            executor.submit(_fetch_jobs_table, table_name, query)
+            for table_name, query in queries.items()
+        ]
+        for future in futures:
+            merged_jobs.extend(future.result())
+    return merged_jobs
+
+
+def fetch_jobs_from_db() -> List[JobRecord]:
+    """Fetch available jobs from the database with a short-lived cache."""
+    cache_window = int(time.time() // 300)
+    return fetch_jobs_from_db_cached(cache_window)
 
 def calculate_skill_match_score(user_skills: set, job_skills: set) -> float:
     """Calculate Jaccard similarity between user skills and job skills."""

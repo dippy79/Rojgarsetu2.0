@@ -5,6 +5,8 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"os"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -66,8 +68,12 @@ func (e *Engine) Run() CrawlResult {
 
 	log.Println("=== Starting crawl run ===")
 
-	// Create worker pool with max 5 concurrent goroutines
 	maxWorkers := 5
+	if v := strings.TrimSpace(os.Getenv("MAX_WORKERS")); v != "" {
+		if parsed, err := strconv.Atoi(v); err == nil && parsed > 0 {
+			maxWorkers = parsed
+		}
+	}
 	workerSemaphore := make(chan struct{}, maxWorkers)
 	var wg sync.WaitGroup
 	var statsMutex sync.Mutex
