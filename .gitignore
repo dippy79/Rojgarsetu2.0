@@ -29,6 +29,8 @@ secrets/
 *.log
 __pycache__/
 node_modules
+# vendor/ (commented out — crawler needs vendor)
+!services/crawler-go/vendor/
 
 .fake
 # Build Artifacts
@@ -38,5 +40,3 @@ frontend/out/
 
 # Python Venv
 services/ai-engine-python/.venv/
-# Vendor — keep crawler vendor, ignore others
-!services/crawler-go/vendor/

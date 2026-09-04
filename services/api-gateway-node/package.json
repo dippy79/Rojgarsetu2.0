@@ -5,7 +5,8 @@
     "scripts":  {
                     "start":  "node src/index.js",
                     "dev":  "nodemon src/index.js",
-                    "test":  "echo \u0027No tests defined\u0027 \u0026\u0026 exit 0"
+                    "test":  "npm run type-check",
+                    "type-check":  "tsc --noEmit"
                 },
     "dependencies":  {
                          "cors":  "^2.8.5",
@@ -16,5 +17,9 @@
                          "jsonwebtoken":  "^9.0.2",
                          "pg":  "^8.11.0",
                          "redis":  "^4.6.7"
+                     },
+    "devDependencies":  {
+                         "@types/node":  "^22.0.0",
+                         "typescript":  "^5.0.0"
                      }
 }
