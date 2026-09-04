@@ -1,25 +1,28 @@
 {
-    "name":  "rojgarsetu-api-gateway",
-    "version":  "1.0.0",
-    "main":  "src/index.js",
-    "scripts":  {
-                    "start":  "node src/index.js",
-                    "dev":  "nodemon src/index.js",
-                    "test":  "npm run type-check",
-                    "type-check":  "tsc --noEmit"
-                },
-    "dependencies":  {
-                         "cors":  "^2.8.5",
-                         "dotenv":  "^16.3.1",
-                         "express":  "^4.18.2",
-                         "express-rate-limit":  "^8.6.2",
-                         "http-proxy-middleware":  "^2.0.6",
-                         "jsonwebtoken":  "^9.0.2",
-                         "pg":  "^8.11.0",
-                         "redis":  "^4.6.7"
-                     },
-    "devDependencies":  {
-                         "@types/node":  "^22.0.0",
-                         "typescript":  "^5.0.0"
-                     }
+    "name": "rojgarsetu-api-gateway",
+    "version": "1.0.0",
+    "main": "src/index.js",
+    "scripts": {
+        "start": "node src/index.js",
+        "dev": "nodemon src/index.js",
+        "test": "npm run type-check",
+        "type-check": "tsc --noEmit"
+    },
+    "dependencies": {
+        "cookie-parser": "^1.4.7",
+        "cors": "^2.8.5",
+        "csurf": "^1.11.0",
+        "dotenv": "^16.3.1",
+        "express": "^4.18.2",
+        "express-rate-limit": "^8.6.2",
+        "http-proxy-middleware": "^2.0.6",
+        "jsonwebtoken": "^9.0.2",
+        "pg": "^8.11.0",
+        "rate-limit-redis": "^6.0.1",
+        "redis": "^4.6.7"
+    },
+    "devDependencies": {
+        "@types/node": "^22.0.0",
+        "typescript": "^5.0.0"
+    }
 }

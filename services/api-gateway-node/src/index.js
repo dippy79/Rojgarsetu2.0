@@ -1,11 +1,16 @@
 const express = require('express');
 const { createProxyMiddleware } = require('http-proxy-middleware');
 const rateLimit = require('express-rate-limit');
+const RedisStore = require('rate-limit-redis');
+const Redis = require('redis');
+const csrf = require('csurf');
+const cookieParser = require('cookie-parser');
 require('dotenv').config();
 
 const app = express();
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ limit: '1mb', extended: true }));
+app.use(cookieParser());
 
 const cors = require('cors');
 app.use(cors({
@@ -35,24 +40,84 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));
 
-// Rate limiting
-const generalLimiter = rateLimit({
-  windowMs: 60000,
-  max: 100,
-  message: { error: 'Too many requests, please try again later' }
-});
+// Redis client for rate limiting with graceful degradation
+let redisClient = null;
+let redisAvailable = false;
 
-const loginLimiter = rateLimit({
-  windowMs: 60000,
-  max: 5,
-  message: { error: 'Too many login attempts, please try again later' }
-});
+if (process.env.REDIS_URL || process.env.REDIS_HOST) {
+  try {
+    const redisUrl = process.env.REDIS_URL || `redis://${process.env.REDIS_HOST || 'localhost'}:${process.env.REDIS_PORT || 6379}`;
+    redisClient = Redis.createClient({
+      url: redisUrl,
+      socket: {
+        reconnectStrategy: (retries) => {
+          if (retries > 3) {
+            console.error('[API Gateway] Redis reconnection failed after 3 attempts');
+            return new Error('Redis reconnection failed');
+          }
+          return Math.min(retries * 100, 3000);
+        }
+      }
+    });
 
-const applyLimiter = rateLimit({
-  windowMs: 60000,
-  max: 10,
-  message: { error: 'Too many application attempts, please try again later' }
-});
+    redisClient.on('error', (err) => {
+      console.error('[API Gateway] Redis client error:', err.message);
+      redisAvailable = false;
+    });
+
+    redisClient.on('connect', () => {
+      console.log('[API Gateway] Redis client connected');
+      redisAvailable = true;
+    });
+
+    redisClient.on('disconnect', () => {
+      console.warn('[API Gateway] Redis client disconnected');
+      redisAvailable = false;
+    });
+
+    (async () => {
+      try {
+        await redisClient.connect();
+        redisAvailable = true;
+      } catch (err) {
+        console.error('[API Gateway] Failed to connect to Redis, falling back to in-memory rate limiting:', err.message);
+        redisAvailable = false;
+      }
+    })();
+  } catch (err) {
+    console.error('[API Gateway] Redis initialization failed, falling back to in-memory rate limiting:', err.message);
+    redisAvailable = false;
+  }
+} else {
+  console.log('[API Gateway] Redis URL not configured, using in-memory rate limiting');
+}
+
+// Rate limiting with Redis backend or fallback to in-memory
+const createRateLimiter = (windowMs, max, message) => {
+  const config = {
+    windowMs,
+    max,
+    message,
+    standardHeaders: true,
+    legacyHeaders: false,
+  };
+
+  if (redisAvailable && redisClient) {
+    config.store = new RedisStore({
+      client: redisClient,
+      prefix: 'rate_limit:',
+    });
+    console.log('[API Gateway] Using Redis-backed rate limiting');
+  } else {
+    console.log('[API Gateway] Using in-memory rate limiting');
+  }
+
+  return rateLimit(config);
+};
+
+const generalLimiter = createRateLimiter(60000, 100, { error: 'Too many requests, please try again later' });
+const loginLimiter = createRateLimiter(60000, 5, { error: 'Too many login attempts, please try again later' });
+const applyLimiter = createRateLimiter(60000, 10, { error: 'Too many application attempts, please try again later' });
 
 // Apply rate limiters before proxy middleware
 app.use('/auth/login', loginLimiter);
@@ -62,6 +127,27 @@ app.use('/api/', generalLimiter);
 app.use('/api/v1/*/apply', applyLimiter);
 app.use('/api/v1/gov-jobs', applyLimiter);
 app.use('/api/v1/priv-jobs', applyLimiter);
+
+// CSRF Protection (applies only to state-changing methods)
+const csrfSecret = process.env.CSRF_SECRET || 'default-csrf-secret-change-in-production';
+const csrfProtection = csrf({
+  cookie: {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict',
+    maxAge: 3600000, // 1 hour
+  },
+  secret: csrfSecret,
+  ignoreMethods: ['GET', 'HEAD', 'OPTIONS'],
+});
+
+// CSRF token endpoint for frontend (must be before CSRF protection application)
+app.get('/api/csrf-token', csrfProtection, (req, res) => {
+  res.json({ csrfToken: req.csrfToken() });
+});
+
+// Apply CSRF protection to state-changing API routes only
+app.use('/api', csrfProtection);
 
 // Input validation middleware
 app.use((req, res, next) => {
@@ -134,9 +220,14 @@ app.use('/ai', createProxyMiddleware({ target: AI_TARGET, pathRewrite: { '^/ai':
 app.use('/api', createProxyMiddleware({ target: BACKEND_TARGET, pathRewrite: { '^/api': '' }, ...proxyOptions }));
 
 app.use((_req, res) => res.status(404).json({ error: 'Route not found' }));
-app.use((err, _req, res, _next) => { 
-  console.error('[API Gateway] Unhandled error:', err); 
-  if (!res.headersSent) res.status(500).json({ error: 'Internal server error' }); 
+
+// General error handler with CSRF error handling
+app.use((err, _req, res, _next) => {
+  if (err.code === 'EBADCSRFTOKEN') {
+    return res.status(403).json({ error: 'Invalid CSRF token' });
+  }
+  console.error('[API Gateway] Unhandled error:', err);
+  if (!res.headersSent) res.status(500).json({ error: 'Internal server error' });
 });
 
 const server = app.listen(PORT, '::', () => {
@@ -146,10 +237,22 @@ const server = app.listen(PORT, '::', () => {
   console.log(`[API Gateway] AI engine proxy→ ${AI_TARGET}`);
 });
 
-const shutdown = (signal) => { 
-  console.log(`[API Gateway] Received ${signal}. Shutting down...`); 
-  server.close(() => process.exit(0)); 
-  setTimeout(() => process.exit(1), 10000).unref(); 
+const shutdown = (signal) => {
+  console.log(`[API Gateway] Received ${signal}. Shutting down...`);
+  
+  // Close Redis connection if available
+  if (redisClient && redisAvailable) {
+    redisClient.quit()
+      .then(() => console.log('[API Gateway] Redis connection closed'))
+      .catch((err) => console.error('[API Gateway] Error closing Redis connection:', err.message))
+      .finally(() => {
+        server.close(() => process.exit(0));
+        setTimeout(() => process.exit(1), 10000).unref();
+      });
+  } else {
+    server.close(() => process.exit(0));
+    setTimeout(() => process.exit(1), 10000).unref();
+  }
 };
 process.on('SIGTERM', () => shutdown('SIGTERM'));
 process.on('SIGINT', () => shutdown('SIGINT'));
