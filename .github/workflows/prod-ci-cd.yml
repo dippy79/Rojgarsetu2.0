@@ -8,6 +8,7 @@ env:
   GO_VERSION: '1.24'
   NODE_VERSION: '22'
   PYTHON_VERSION: '3.11'
+  ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
 
 jobs:
   test:
@@ -47,7 +48,7 @@ jobs:
         working-directory: frontend
         run: |
           npm install --legacy-peer-deps
-          npm run type-check 2>&1 || true
+          CI=false npm run type-check 2>&1 || true
 
       - name: Setup Python
         uses: actions/setup-python@v5

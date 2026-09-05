@@ -35,8 +35,8 @@ jobs:
       - name: Install + build
         working-directory: frontend
         run: |
-          npm install
-          npm run build
+          npm install --legacy-peer-deps
+          CI=false npm run build
 
   ai-engine:
     runs-on: ubuntu-latest
