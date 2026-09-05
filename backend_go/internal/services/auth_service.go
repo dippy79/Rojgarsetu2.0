@@ -107,7 +107,7 @@ func (s *AuthService) Login(c *gin.Context) {
 
 	// Set HttpOnly Cookies for security
 	c.SetSameSite(http.SameSiteStrictMode)
-	c.SetCookie("access_token", accessToken, 900, "/", "", false, true) // 15 min
+	c.SetCookie("access_token", accessToken, 900, "/", "", false, true)     // 15 min
 	c.SetCookie("refresh_token", refreshToken, 86400, "/", "", false, true) // 24 hours
 
 	c.JSON(http.StatusOK, TokenResponse{

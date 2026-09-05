@@ -13,7 +13,7 @@ import (
 )
 
 type UploadService struct {
-	database *db.PostgresDB
+	database  *db.PostgresDB
 	uploadDir string
 }
 

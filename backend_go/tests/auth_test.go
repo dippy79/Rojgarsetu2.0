@@ -19,9 +19,9 @@ func TestHealthEndpoint(t *testing.T) {
 	// Replicating health check logic from main.go
 	router.GET("/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
-			"status":    "UP",
-			"service":   "backend-api",
-			"db_ready":  true,
+			"status":   "UP",
+			"service":  "backend-api",
+			"db_ready": true,
 		})
 	})
 

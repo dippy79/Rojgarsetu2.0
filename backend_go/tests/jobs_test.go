@@ -19,7 +19,7 @@ func TestGetGovJobsReturnsJSON(t *testing.T) {
 	router.GET("/api/v1/gov-jobs", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{
 			"success": true,
-			"data": []interface{}{},
+			"data":    []interface{}{},
 			"pagination": gin.H{
 				"total": 0,
 				"limit": 20,

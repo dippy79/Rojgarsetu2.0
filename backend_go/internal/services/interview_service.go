@@ -22,7 +22,7 @@ func NewInterviewService(database *db.PostgresDB) *InterviewService {
 }
 
 type DailyRoomResponse struct {
-	URL string `json:"url"`
+	URL  string `json:"url"`
 	Name string `json:"name"`
 }
 
@@ -34,7 +34,7 @@ func (s *InterviewService) CreateRoom(interviewID string) (string, error) {
 
 	exp := time.Now().Add(24 * time.Hour).Unix()
 	body, _ := json.Marshal(map[string]interface{}{
-		"name": "interview-" + interviewID,
+		"name":    "interview-" + interviewID,
 		"privacy": "private",
 		"properties": map[string]interface{}{
 			"exp": exp,
