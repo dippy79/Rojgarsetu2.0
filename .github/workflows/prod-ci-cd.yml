@@ -46,6 +46,8 @@ jobs:
 
       - name: Node test frontend
         working-directory: frontend
+        env:
+          NODE_OPTIONS: "--max-old-space-size=4096"
         run: |
           npm install --legacy-peer-deps
           CI=false npm run type-check 2>&1 || true

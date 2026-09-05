@@ -1,11 +1,11 @@
-FROM node:18-alpine AS builder
+FROM node:22-alpine AS builder
 WORKDIR /app
 
 # Copy package files
 COPY package*.json ./
 
-# Clean install dependencies
-RUN npm install --force
+# Use legacy-peer-deps to avoid resolution crashes
+RUN npm install --legacy-peer-deps
 
 # Copy source code
 COPY . .
@@ -13,10 +13,10 @@ COPY . .
 # Environment setup to prevent memory leaks & strict warning crashes
 ENV NODE_OPTIONS="--max-old-space-size=4096"
 ENV CI=false
-ENV DISABLE_ESLINT_PLUGIN=true
+ENV NEXT_TELEMETRY_DISABLED=1
 
-# Inline environment variables to guarantee build pass
-RUN CI=false DISABLE_ESLINT_PLUGIN=true npm run build
+# Run build with static export
+RUN npm run build
 
 # Nginx Production Stage
 FROM nginx:alpine

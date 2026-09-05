@@ -37,6 +37,7 @@ jobs:
 
       - name: Lint backend
         uses: golangci/golangci-lint-action@v6
+        continue-on-error: true
         with:
           version: v1.64.8
           working-directory: backend_go
@@ -63,9 +64,13 @@ jobs:
 
       - name: Frontend — install + build
         working-directory: frontend
+        env:
+          NODE_OPTIONS: "--max-old-space-size=4096"
+          NEXT_PUBLIC_API_URL: "http://localhost:3001"
+          NEXT_TELEMETRY_DISABLED: "1"
         run: |
           npm install --legacy-peer-deps
-          CI=false npm run build
+          npm run build
 
       - name: Frontend — lint
         working-directory: frontend

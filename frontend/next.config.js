@@ -9,8 +9,14 @@ const nextConfig = {
       { protocol: 'https', hostname: '**' },
     ],
   },
+  // Disabling optimizePackageImports for stability in CI
   experimental: {
-    optimizePackageImports: ['lucide-react'],
+    // optimizePackageImports: ['lucide-react'],
+  },
+  webpack: (config) => {
+    // Optimize memory usage for webpack in CI
+    config.cache = false;
+    return config;
   },
 };
 module.exports = nextConfig;
