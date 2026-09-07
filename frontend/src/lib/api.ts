@@ -10,8 +10,6 @@ import type {
 
 // Central API base-URL resolver (Consolidated from apiConfig.js)
 const NORMALIZED_DEFAULTS = [
-  'http://localhost:3001',
-  'http://localhost:8083',
   'https://api.rojgarsetu.in',
 ];
 
@@ -24,15 +22,17 @@ function normalizeBase(base?: string) {
 export function getApiBaseUrl(): string {
   if (typeof window !== 'undefined') {
     // @ts-ignore
-    if (window.__ROJGAR_API__) return normalizeBase(window.__ROJGAR_API__) || 'http://localhost:3001';
+    if (window.__ROJGAR_API__) return normalizeBase(window.__ROJGAR_API__) || '';
     // @ts-ignore
-    if (window.__ROJGAR_API_ENV__) return normalizeBase(window.__ROJGAR_API_ENV__) || 'http://localhost:3001';
+    if (window.__ROJGAR_API_ENV__) return normalizeBase(window.__ROJGAR_API_ENV__) || '';
   }
 
   const envUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_BASE;
-  if (envUrl) return normalizeBase(envUrl) || 'http://localhost:3001';
+  if (!envUrl) {
+    throw new Error('FATAL: NEXT_PUBLIC_API_URL environment variable is missing.');
+  }
 
-  return 'http://localhost:3001'; // Default to API Gateway
+  return normalizeBase(envUrl) || '';
 }
 
 const API_BASE = getApiBaseUrl();

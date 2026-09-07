@@ -132,7 +132,8 @@ func main() {
 
 	redisURL = os.Getenv("REDIS_URL")
 	if redisURL == "" {
-		redisURL = "redis://localhost:6379"
+		logger.Fatal().Msg("REDIS_URL environment variable required")
+		return
 	}
 
 	// Initialize Redis client
@@ -227,7 +228,8 @@ func run(cfg *config.Config) error {
 	// -------------------------------------------------------------
 	origins := os.Getenv("CORS_ORIGINS")
 	if origins == "" {
-		origins = "http://localhost:8080,http://localhost:3000,http://localhost:3001,http://127.0.0.1:3000,http://127.0.0.1:8080"
+		logger.Fatal().Msg("CORS_ORIGINS environment variable required")
+		return
 	}
 
 	corsMiddleware := cors.New(cors.Config{

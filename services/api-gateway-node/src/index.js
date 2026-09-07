@@ -17,18 +17,13 @@ app.use(cors({
   origin: function(origin, callback) {
     const allowed = process.env.ALLOWED_ORIGINS
       ? process.env.ALLOWED_ORIGINS.split(',')
-      : [
-          'http://localhost:3000',
-          'http://localhost:3001',
-          'http://localhost:3002',
-          'http://localhost:8080',
-          'http://localhost:80',
-          'http://localhost',
-          'http://127.0.0.1:3000',
-          'http://127.0.0.1:3001',
-          'http://127.0.0.1:3002',
-          'http://127.0.0.1:8080'
-        ];
+      : [];
+
+    if (allowed.length === 0) {
+      console.error('FATAL: ALLOWED_ORIGINS environment variable is missing or empty.');
+      process.exit(1);
+    }
+
     if (!origin || allowed.includes(origin)) {
       callback(null, true);
     } else {
@@ -44,55 +39,56 @@ app.use(cors({
 let redisClient = null;
 let redisAvailable = false;
 
-if (process.env.REDIS_URL || process.env.REDIS_HOST) {
-  try {
-    const redisUrl = process.env.REDIS_URL || `redis://${process.env.REDIS_HOST || 'localhost'}:${process.env.REDIS_PORT || 6379}`;
-    redisClient = Redis.createClient({
-      url: redisUrl,
-      socket: {
-        reconnectStrategy: (retries) => {
-          if (retries > 3) {
-            console.error('[API Gateway] Redis reconnection failed after 3 attempts');
-            return new Error('Redis reconnection failed');
-          }
-          return Math.min(retries * 100, 3000);
-        }
-      }
-    });
-
-    redisClient.on('error', (err) => {
-      console.error('[API Gateway] Redis client error:', err.message);
-      redisAvailable = false;
-    });
-
-    redisClient.on('connect', () => {
-      console.log('[API Gateway] Redis client connected');
-      redisAvailable = true;
-    });
-
-    redisClient.on('disconnect', () => {
-      console.warn('[API Gateway] Redis client disconnected');
-      redisAvailable = false;
-    });
-
-    (async () => {
-      try {
-        await redisClient.connect();
-        redisAvailable = true;
-      } catch (err) {
-        console.error('[API Gateway] Failed to connect to Redis, falling back to in-memory rate limiting:', err.message);
-        redisAvailable = false;
-      }
-    })();
-  } catch (err) {
-    console.error('[API Gateway] Redis initialization failed, falling back to in-memory rate limiting:', err.message);
-    redisAvailable = false;
-  }
-} else {
-  console.log('[API Gateway] Redis URL not configured, using in-memory rate limiting');
+if (!process.env.REDIS_URL && !process.env.REDIS_HOST) {
+  console.error('FATAL: REDIS_URL environment variable is required for production.');
+  process.exit(1);
 }
 
-// Rate limiting with Redis backend or fallback to in-memory
+try {
+  const redisUrl = process.env.REDIS_URL || `redis://${process.env.REDIS_HOST}:${process.env.REDIS_PORT || 6379}`;
+  redisClient = Redis.createClient({
+    url: redisUrl,
+    socket: {
+      reconnectStrategy: (retries) => {
+        if (retries > 3) {
+          console.error('[API Gateway] Redis reconnection failed after 3 attempts');
+          return new Error('Redis reconnection failed');
+        }
+        return Math.min(retries * 100, 3000);
+      }
+    }
+  });
+
+  redisClient.on('error', (err) => {
+    console.error('[API Gateway] Redis client error:', err.message);
+    redisAvailable = false;
+  });
+
+  redisClient.on('connect', () => {
+    console.log('[API Gateway] Redis client connected');
+    redisAvailable = true;
+  });
+
+  redisClient.on('disconnect', () => {
+    console.warn('[API Gateway] Redis client disconnected');
+    redisAvailable = false;
+  });
+
+  (async () => {
+    try {
+      await redisClient.connect();
+      redisAvailable = true;
+    } catch (err) {
+      console.error('[API Gateway] Failed to connect to Redis:', err.message);
+      process.exit(1); // Fail fast in production
+    }
+  })();
+} catch (err) {
+  console.error('[API Gateway] Redis initialization failed:', err.message);
+  process.exit(1);
+}
+
+// Rate limiting with Redis backend
 const createRateLimiter = (windowMs, max, message) => {
   const config = {
     windowMs,
@@ -100,18 +96,13 @@ const createRateLimiter = (windowMs, max, message) => {
     message,
     standardHeaders: true,
     legacyHeaders: false,
-  };
-
-  if (redisAvailable && redisClient) {
-    config.store = new RedisStore({
+    store: new RedisStore({
       client: redisClient,
       prefix: 'rate_limit:',
-    });
-    console.log('[API Gateway] Using Redis-backed rate limiting');
-  } else {
-    console.log('[API Gateway] Using in-memory rate limiting');
-  }
+    }),
+  };
 
+  console.log('[API Gateway] Using Redis-backed rate limiting');
   return rateLimit(config);
 };
 
@@ -129,7 +120,12 @@ app.use('/api/v1/gov-jobs', applyLimiter);
 app.use('/api/v1/priv-jobs', applyLimiter);
 
 // CSRF Protection (applies only to state-changing methods)
-const csrfSecret = process.env.CSRF_SECRET || 'default-csrf-secret-change-in-production';
+const csrfSecret = process.env.CSRF_SECRET;
+if (!csrfSecret || csrfSecret === 'default-csrf-secret-change-in-production') {
+  console.error('FATAL: CSRF_SECRET environment variable is missing or insecure.');
+  process.exit(1);
+}
+
 const csrfProtection = csrf({
   cookie: {
     httpOnly: true,
@@ -171,10 +167,15 @@ app.use((req, res, next) => {
 const PORT = process.env.PORT || 3002;
 
 // Consolidated Target Configuration
-const BACKEND_TARGET = process.env.BACKEND_SERVICE_URL || 'http://backend:8083';
-const AUTH_TARGET = process.env.AUTH_SERVICE_URL || process.env.AUTH_URL || 'http://auth-service:8081';
-const AI_TARGET = process.env.AI_ENGINE_URL || process.env.AI_URL || 'http://ai-engine:8000';
-const CRAWLER_TARGET = process.env.CRAWLER_SERVICE_URL || 'http://crawler:8080';
+const BACKEND_TARGET = process.env.BACKEND_SERVICE_URL;
+const AUTH_TARGET = process.env.AUTH_SERVICE_URL || process.env.AUTH_URL;
+const AI_TARGET = process.env.AI_ENGINE_URL || process.env.AI_URL;
+const CRAWLER_TARGET = process.env.CRAWLER_SERVICE_URL;
+
+if (!BACKEND_TARGET || !AUTH_TARGET || !AI_TARGET || !CRAWLER_TARGET) {
+  console.error('FATAL: Upstream service URLs (BACKEND_SERVICE_URL, AUTH_SERVICE_URL, AI_ENGINE_URL, CRAWLER_SERVICE_URL) are missing.');
+  process.exit(1);
+}
 
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'UP', gateway: 'API Gateway Online' });

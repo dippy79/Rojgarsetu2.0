@@ -1,9 +1,9 @@
 # Binaries
 *.exe
-server
-server.exe
-main
-main.exe
+/server
+/server.exe
+/main
+/main.exe
 *.out
 
 # Common Go ignores

@@ -42,13 +42,18 @@ async def get_api_key(api_key_header: str = Security(api_key_header)):
         raise HTTPException(status_code=403, detail="Could not validate credentials")
 
 # Database connection URL from environment
-DATABASE_URL = os.getenv(
-    "DATABASE_URL",
-    "postgresql://postgres:postgres@postgres:5432/rojgarsetu"
-)
+DATABASE_URL = os.getenv("DATABASE_URL")
+if not DATABASE_URL:
+    logger.fatal("DATABASE_URL environment variable is required")
+    exit(1)
 
 # Configure Gemini
-genai.configure(api_key=os.getenv("GEMINI_API_KEY", ""))
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+if not GEMINI_API_KEY:
+    logger.fatal("GEMINI_API_KEY environment variable is required")
+    exit(1)
+
+genai.configure(api_key=GEMINI_API_KEY)
 
 class RecommendationRequest(BaseModel):
     user_skills: List[str] = []
