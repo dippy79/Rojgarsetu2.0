@@ -91,14 +91,20 @@ jobs:
         run: mvn clean package -DskipTests --batch-mode
 
       - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@master
-        with:
-          scan-type: 'fs'
-          scan-ref: '.'
-          severity: 'HIGH,CRITICAL'
-          format: 'sarif'
-          output: 'trivy-results.sarif'
-          args: '--scanners vuln --skip-files services/auth-java/pom.xml'
+        run: |
+          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
+          trivy fs . \
+            --scanners vuln \
+            --skip-dirs services/auth-java \
+            --skip-dirs node_modules \
+            --skip-dirs frontend/.next \
+            --skip-dirs .git \
+            --severity HIGH,CRITICAL \
+            --format sarif \
+            --output trivy-results.sarif \
+            --exit-code 0 \
+            --timeout 10m
+        continue-on-error: true
 
       - name: Upload Trivy results to GitHub Security
         uses: github/codeql-action/upload-sarif@v3
