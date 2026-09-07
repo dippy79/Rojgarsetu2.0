@@ -62,6 +62,26 @@ jobs:
           cache: 'npm'
           cache-dependency-path: frontend/package-lock.json
 
+      - name: Cache Maven
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2
+
+      - name: Pre-resolve Maven deps
+        working-directory: services/auth-java
+        run: mvn dependency:resolve -q 2>&1 || true
+
+      - name: Trivy Security Scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: fs
+          scan-ref: .
+          scanners: vuln          # secret scanning skip karo (slow)
+          skip-dirs: services/auth-java/.m2,node_modules
+          timeout: 10m
+        continue-on-error: true   # rate limit se CI block na ho
+
       - name: Frontend — install + build
         working-directory: frontend
         env:
