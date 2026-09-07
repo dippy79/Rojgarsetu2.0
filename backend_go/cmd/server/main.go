@@ -228,8 +228,7 @@ func run(cfg *config.Config) error {
 	// -------------------------------------------------------------
 	origins := os.Getenv("CORS_ORIGINS")
 	if origins == "" {
-		logger.Fatal().Msg("CORS_ORIGINS environment variable required")
-		return
+		return fmt.Errorf("CORS_ORIGINS environment variable required")
 	}
 
 	corsMiddleware := cors.New(cors.Config{
