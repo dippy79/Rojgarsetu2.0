@@ -75,13 +75,15 @@ jobs:
           mvn dependency:resolve -q --no-transfer-progress 2>&1 || true
 
       - name: Trivy Security Scan
-        uses: aquasecurity/trivy-action@master
-        with:
-          scan-type: fs
-          scan-ref: .
-          scanners: vuln
-          skip-dirs: node_modules,services/auth-java,frontend/.next,.git
-          exit-code: '0'
+        run: |
+          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
+          trivy fs . \
+            --scanners vuln \
+            --skip-dirs services/auth-java \
+            --skip-dirs node_modules \
+            --skip-dirs frontend/.next \
+            --exit-code 0 \
+            --timeout 10m
         continue-on-error: true
 
       - name: Frontend — install + build
