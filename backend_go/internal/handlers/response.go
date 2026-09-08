@@ -50,6 +50,7 @@ type PrivJobResponse struct {
 	Title       string     `json:"title"`
 	Location    string     `json:"location"`
 	URL         string     `json:"url"`
+	ApplyLink   string     `json:"apply_link"` // Alias for frontend
 	Salary      string     `json:"salary"`
 	Experience  string     `json:"experience"`
 	JobType     string     `json:"job_type"`
@@ -61,12 +62,14 @@ type PrivJobResponse struct {
 }
 
 func toPrivJobResponse(r db.GetPrivJobsRow) PrivJobResponse {
+	u := nullStr(r.Url)
 	return PrivJobResponse{
 		ID:          r.ID.String(),
 		Company:     r.Company,
 		Title:       r.Title,
 		Location:    nullStr(r.Location),
-		URL:         nullStr(r.Url),
+		URL:         u,
+		ApplyLink:   u,
 		Salary:      nullStr(r.Salary),
 		Experience:  nullStr(r.Experience),
 		JobType:     nullStr(r.JobType),
@@ -79,12 +82,14 @@ func toPrivJobResponse(r db.GetPrivJobsRow) PrivJobResponse {
 }
 
 func toPrivJobByIDResponse(r db.GetPrivJobByIDRow) PrivJobResponse {
+	u := nullStr(r.Url)
 	return PrivJobResponse{
 		ID:          r.ID.String(),
 		Company:     r.Company,
 		Title:       r.Title,
 		Location:    nullStr(r.Location),
-		URL:         nullStr(r.Url),
+		URL:         u,
+		ApplyLink:   u,
 		Salary:      nullStr(r.Salary),
 		Experience:  nullStr(r.Experience),
 		JobType:     nullStr(r.JobType),
@@ -103,6 +108,7 @@ type GovJobResponse struct {
 	Department   string     `json:"department"`
 	Location     string     `json:"location"`
 	ApplyURL     string     `json:"apply_url"`
+	ApplyLink    string     `json:"apply_link"` // Alias for frontend
 	LastDate     *time.Time `json:"last_date"`
 	Source       string     `json:"source"`
 	Eligibility  string     `json:"eligibility"`
@@ -113,12 +119,14 @@ type GovJobResponse struct {
 }
 
 func toGovJobResponse(r db.GetGovJobsRow) GovJobResponse {
+	u := nullStr(r.ApplyUrl)
 	return GovJobResponse{
 		ID:           r.ID.String(),
 		Title:        r.Title,
 		Department:   nullStr(r.Department),
 		Location:     nullStr(r.Location),
-		ApplyURL:     nullStr(r.ApplyUrl),
+		ApplyURL:     u,
+		ApplyLink:    u,
 		LastDate:     nullTimePtr(r.LastDate),
 		Source:       r.Source,
 		Eligibility:  nullStr(r.Eligibility),
@@ -130,12 +138,14 @@ func toGovJobResponse(r db.GetGovJobsRow) GovJobResponse {
 }
 
 func toGovJobByIDResponse(r db.GetGovJobByIDRow) GovJobResponse {
+	u := nullStr(r.ApplyUrl)
 	return GovJobResponse{
 		ID:           r.ID.String(),
 		Title:        r.Title,
 		Department:   nullStr(r.Department),
 		Location:     nullStr(r.Location),
-		ApplyURL:     nullStr(r.ApplyUrl),
+		ApplyURL:     u,
+		ApplyLink:    u,
 		LastDate:     nullTimePtr(r.LastDate),
 		Source:       r.Source,
 		Eligibility:  nullStr(r.Eligibility),
