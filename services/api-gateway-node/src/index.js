@@ -1,7 +1,7 @@
 const express = require('express');
 const { createProxyMiddleware } = require('http-proxy-middleware');
 const rateLimit = require('express-rate-limit');
-const RedisStore = require('rate-limit-redis');
+const { RedisStore } = require('rate-limit-redis');
 const Redis = require('redis');
 const csrf = require('csurf');
 const cookieParser = require('cookie-parser');
@@ -97,7 +97,7 @@ const createRateLimiter = (windowMs, max, message) => {
     standardHeaders: true,
     legacyHeaders: false,
     store: new RedisStore({
-      client: redisClient,
+      sendCommand: (...args) => redisClient.sendCommand(args),
       prefix: 'rate_limit:',
     }),
   };
@@ -189,8 +189,14 @@ const proxyOptions = {
   onProxyReq: (proxyReq, req) => {
     if (req.headers.authorization) proxyReq.setHeader('Authorization', req.headers.authorization);
     proxyReq.setHeader('X-Forwarded-For', req.ip);
-    const bodyData = fixRequestBody(proxyReq, req);
-    if (bodyData) proxyReq.write(bodyData);
+
+    // Fix for body-parser + http-proxy-middleware
+    if (req.body && Object.keys(req.body).length > 0) {
+      const bodyData = JSON.stringify(req.body);
+      proxyReq.setHeader('Content-Type', 'application/json');
+      proxyReq.setHeader('Content-Length', Buffer.byteLength(bodyData));
+      proxyReq.write(bodyData);
+    }
   },
   onProxyRes: (proxyRes) => { delete proxyRes.headers['x-powered-by']; },
   onError: (err, _req, res) => {

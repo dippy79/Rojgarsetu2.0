@@ -1,0 +1,131 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: rojgar-postgres-prod
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - rojgar-network
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+
+  redis:
+    image: redis:7-alpine
+    container_name: rojgar-redis-prod
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+    networks:
+      - rojgar-network
+
+  backend:
+    image: rojgarsetu2-backend:latest
+    container_name: rojgar-backend-prod
+    restart: unless-stopped
+    environment:
+      PORT: 8083
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?sslmode=disable
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: ${JWT_SECRET}
+      REFRESH_TOKEN_KEY: ${REFRESH_TOKEN_KEY}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS}
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - rojgar-network
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+
+  auth-service:
+    image: rojgarsetu2-auth-service:latest
+    container_name: rojgar-auth-service-prod
+    restart: unless-stopped
+    environment:
+      PORT: 8081
+      SPRING_PROFILES_ACTIVE: prod
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - rojgar-network
+
+  ai-engine:
+    image: rojgarsetu2-ai-engine:latest
+    container_name: rojgar-ai-engine-prod
+    restart: unless-stopped
+    environment:
+      API_KEY: ${AI_ENGINE_API_KEY}
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?sslmode=disable
+    depends_on:
+      - postgres
+    networks:
+      - rojgar-network
+
+  api-gateway:
+    image: rojgarsetu2-api-gateway:latest
+    container_name: rojgar-api-gateway-prod
+    restart: unless-stopped
+    environment:
+      PORT: 3000
+      AUTH_SERVICE_URL: http://auth-service:8081
+      BACKEND_SERVICE_URL: http://backend:8083
+      AI_ENGINE_URL: http://ai-engine:8000
+      CRAWLER_SERVICE_URL: http://crawler:8080
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: ${JWT_SECRET}
+      CSRF_SECRET: ${CSRF_SECRET}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS}
+    depends_on:
+      - backend
+      - auth-service
+    networks:
+      - rojgar-network
+
+  frontend:
+    image: rojgarsetu2-frontend:latest
+    container_name: rojgar-frontend-prod
+    restart: unless-stopped
+    networks:
+      - rojgar-network
+
+  nginx:
+    image: nginx:alpine
+    container_name: rojgar-nginx-prod
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./certs:/etc/nginx/certs:ro
+    depends_on:
+      - api-gateway
+      - frontend
+    networks:
+      - rojgar-network
+
+networks:
+  rojgar-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:

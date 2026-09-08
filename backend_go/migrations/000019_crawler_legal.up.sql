@@ -1,25 +1,15 @@
 -- Crawler source registry
 CREATE TABLE IF NOT EXISTS crawler_sources (
     id          SERIAL PRIMARY KEY,
-    name        VARCHAR(100) NOT NULL,
-    category    VARCHAR(50) NOT NULL,
+    name        VARCHAR(100) NOT NULL UNIQUE,
+    category    VARCHAR(50) NOT NULL DEFAULT 'GOVT_JOB',
     source_type VARCHAR(50) NOT NULL,
     base_url    TEXT NOT NULL,
     robots_txt_url TEXT,
     is_active   BOOLEAN DEFAULT true,
+    last_crawled_at TIMESTAMP WITH TIME ZONE,
     created_at  TIMESTAMPTZ DEFAULT now()
 );
-
--- Add missing columns to crawler_sources if table already exists
-DO $$
-BEGIN
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'crawler_sources' AND column_name = 'category') THEN
-        ALTER TABLE crawler_sources ADD COLUMN category VARCHAR(50) NOT NULL DEFAULT 'GOVT_JOB';
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'crawler_sources' AND column_name = 'robots_txt_url') THEN
-        ALTER TABLE crawler_sources ADD COLUMN robots_txt_url TEXT;
-    END IF;
-END $$;
 
 -- Unified crawled jobs (links to existing jobs_government/jobs_private)
 CREATE TABLE IF NOT EXISTS crawled_jobs (
@@ -34,37 +24,11 @@ CREATE TABLE IF NOT EXISTS crawled_jobs (
     apply_url           TEXT NOT NULL,
     source_attribution  VARCHAR(255) NOT NULL,
     hash_checksum       VARCHAR(64) UNIQUE NOT NULL,
+    status              VARCHAR(50) DEFAULT 'ACTIVE',
     is_taken_down       BOOLEAN DEFAULT false,
-    created_at          TIMESTAMPTZ DEFAULT now()
+    created_at          TIMESTAMPTZ DEFAULT now(),
+    updated_at          TIMESTAMPTZ DEFAULT now()
 );
-
--- Add missing columns to crawled_jobs if table already exists
-DO $$
-BEGIN
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'crawled_jobs' AND column_name = 'job_type') THEN
-        ALTER TABLE crawled_jobs ADD COLUMN job_type VARCHAR(20) DEFAULT 'GOVT';
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'crawled_jobs' AND column_name = 'qualification_req') THEN
-        ALTER TABLE crawled_jobs ADD COLUMN qualification_req TEXT;
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'crawled_jobs' AND column_name = 'salary_or_pay_scale') THEN
-        ALTER TABLE crawled_jobs ADD COLUMN salary_or_pay_scale VARCHAR(100);
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'crawled_jobs' AND column_name = 'apply_url') THEN
-        ALTER TABLE crawled_jobs ADD COLUMN apply_url TEXT;
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'crawled_jobs' AND column_name = 'source_attribution') THEN
-        ALTER TABLE crawled_jobs ADD COLUMN source_attribution VARCHAR(255);
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'crawled_jobs' AND column_name = 'is_taken_down') THEN
-        ALTER TABLE crawled_jobs ADD COLUMN is_taken_down BOOLEAN DEFAULT false;
-    END IF;
-    -- Rename company to company_or_dept if it exists
-    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'crawled_jobs' AND column_name = 'company') AND
-       NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'crawled_jobs' AND column_name = 'company_or_dept') THEN
-        ALTER TABLE crawled_jobs RENAME COLUMN company TO company_or_dept;
-    END IF;
-END $$;
 
 CREATE INDEX IF NOT EXISTS idx_crawled_jobs_hash ON crawled_jobs(hash_checksum);
 CREATE INDEX IF NOT EXISTS idx_crawled_jobs_type ON crawled_jobs(job_type, is_taken_down);
@@ -83,7 +47,7 @@ CREATE TABLE IF NOT EXISTS gov_forms_info (
     created_at        TIMESTAMPTZ DEFAULT now()
 );
 
--- Crawler telemetry (extends existing analytics)
+-- Crawler telemetry
 CREATE TABLE IF NOT EXISTS crawler_logs (
     id               SERIAL PRIMARY KEY,
     source_id        INT REFERENCES crawler_sources(id),
@@ -92,6 +56,7 @@ CREATE TABLE IF NOT EXISTS crawler_logs (
     duplicates_found INT DEFAULT 0,
     status           VARCHAR(50) NOT NULL,
     error_message    TEXT,
+    execution_time_ms INT DEFAULT 0,
     created_at       TIMESTAMPTZ DEFAULT now()
 );
 
@@ -107,27 +72,12 @@ CREATE TABLE IF NOT EXISTS takedown_requests (
     resolved_at  TIMESTAMPTZ
 );
 
--- Seed initial sources (using ON CONFLICT DO NOTHING)
-INSERT INTO crawler_sources (name, category, source_type, base_url, robots_txt_url)
-SELECT 'UPSC', 'GOVT_JOB', 'html_upsc', 'https://www.upsc.gov.in', 'https://www.upsc.gov.in/robots.txt'
-WHERE NOT EXISTS (SELECT 1 FROM crawler_sources WHERE name = 'UPSC');
-
-INSERT INTO crawler_sources (name, category, source_type, base_url, robots_txt_url)
-SELECT 'SSC', 'GOVT_JOB', 'html_ssc', 'https://ssc.gov.in', 'https://ssc.gov.in/robots.txt'
-WHERE NOT EXISTS (SELECT 1 FROM crawler_sources WHERE name = 'SSC');
-
-INSERT INTO crawler_sources (name, category, source_type, base_url, robots_txt_url)
-SELECT 'Railway RRB', 'GOVT_JOB', 'html_rrb', 'https://www.rrbapply.gov.in', 'https://www.rrbapply.gov.in/robots.txt'
-WHERE NOT EXISTS (SELECT 1 FROM crawler_sources WHERE name = 'Railway RRB');
-
-INSERT INTO crawler_sources (name, category, source_type, base_url, robots_txt_url)
-SELECT 'NCS Portal', 'GOVT_JOB', 'html_ncs', 'https://www.ncs.gov.in', 'https://www.ncs.gov.in/robots.txt'
-WHERE NOT EXISTS (SELECT 1 FROM crawler_sources WHERE name = 'NCS Portal');
-
-INSERT INTO crawler_sources (name, category, source_type, base_url, robots_txt_url)
-SELECT 'Adzuna API', 'PRIVATE_JOB', 'api_adzuna', 'https://api.adzuna.com/v1/api/jobs/in/search', NULL
-WHERE NOT EXISTS (SELECT 1 FROM crawler_sources WHERE name = 'Adzuna API');
-
-INSERT INTO crawler_sources (name, category, source_type, base_url, robots_txt_url)
-SELECT 'Jooble API', 'PRIVATE_JOB', 'api_jooble', 'https://jooble.org/api', NULL
-WHERE NOT EXISTS (SELECT 1 FROM crawler_sources WHERE name = 'Jooble API');
+-- Seed initial sources
+INSERT INTO crawler_sources (name, category, source_type, base_url, robots_txt_url) VALUES
+('UPSC', 'GOVT_JOB', 'html_upsc', 'https://www.upsc.gov.in', 'https://www.upsc.gov.in/robots.txt'),
+('SSC', 'GOVT_JOB', 'html_ssc', 'https://ssc.gov.in', 'https://ssc.gov.in/robots.txt'),
+('Railway RRB', 'GOVT_JOB', 'html_rrb', 'https://www.rrbapply.gov.in', 'https://www.rrbapply.gov.in/robots.txt'),
+('NCS Portal', 'GOVT_JOB', 'html_ncs', 'https://www.ncs.gov.in', 'https://www.ncs.gov.in/robots.txt'),
+('Adzuna API', 'PRIVATE_JOB', 'api_adzuna', 'https://api.adzuna.com/v1/api/jobs/in/search', NULL),
+('Jooble API', 'PRIVATE_JOB', 'api_jooble', 'https://jooble.org/api', NULL)
+ON CONFLICT (name) DO NOTHING;

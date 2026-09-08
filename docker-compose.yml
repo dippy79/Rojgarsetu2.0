@@ -129,6 +129,7 @@ services:
       DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?sslmode=disable
       REDIS_URL: redis://redis:6379/0
       API_KEY: ${AI_ENGINE_API_KEY}
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
     depends_on:
       postgres:
         condition: service_healthy
@@ -215,8 +216,10 @@ services:
       BACKEND_SERVICE_URL: http://backend:8083
       AI_ENGINE_URL: http://ai-engine:8000
       CRAWLER_SERVICE_URL: http://crawler:8080
+      REDIS_URL: redis://redis:6379
       ALLOWED_ORIGINS: ${ALLOWED_ORIGINS}
       JWT_SECRET: ${JWT_SECRET}
+      CSRF_SECRET: ${CSRF_SECRET}
     depends_on:
       backend:
         condition: service_healthy
@@ -235,6 +238,9 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+        NEXT_PUBLIC_WS_HOST: ${NEXT_PUBLIC_WS_HOST}
     container_name: rojgar-frontend
     restart: unless-stopped
     ports:
