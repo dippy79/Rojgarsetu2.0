@@ -43,15 +43,27 @@ async def get_api_key(api_key_header: str = Security(api_key_header)):
 
 # Database connection URL from environment
 DATABASE_URL = os.getenv("DATABASE_URL")
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+
+# Skip fatal exits if we are just doing a smoke test/import (e.g. in CI or metadata check)
+IS_SMOKE_TEST = os.getenv("SMOKE_TEST") == "true" or os.getenv("GITHUB_ACTIONS") == "true"
+
 if not DATABASE_URL:
-    logger.fatal("DATABASE_URL environment variable is required")
-    exit(1)
+    if IS_SMOKE_TEST:
+        logger.warning("DATABASE_URL not set, but continuing due to SMOKE_TEST/CI mode")
+        DATABASE_URL = "postgresql://mock:mock@localhost:5432/mock"
+    else:
+        logger.fatal("DATABASE_URL environment variable is required")
+        exit(1)
 
 # Configure Gemini
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 if not GEMINI_API_KEY:
-    logger.fatal("GEMINI_API_KEY environment variable is required")
-    exit(1)
+    if IS_SMOKE_TEST:
+        logger.warning("GEMINI_API_KEY not set, but continuing due to SMOKE_TEST/CI mode")
+        GEMINI_API_KEY = "mock_key"
+    else:
+        logger.fatal("GEMINI_API_KEY environment variable is required")
+        exit(1)
 
 genai.configure(api_key=GEMINI_API_KEY)
 

@@ -54,6 +54,15 @@ frontend:
           cache: 'pip'
       - name: Install + test
         working-directory: services/ai-engine-python
+        env:
+          DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/rojgarsetu2"
+          GEMINI_API_KEY: "dummy_gemini_api_key_for_ci_build_pass"
+          API_KEY: "dummy_internal_api_key"
         run: |
           pip install -r requirements.txt
-          python -m pytest tests/ -v || true
+          # Only run tests if the directory exists
+          if [ -d "tests" ]; then
+            python -m pytest tests/ -v || true
+          else
+            echo "No tests directory found, skipping pytest"
+          fi

@@ -12,11 +12,11 @@
 
 ## ⚙️ BACKEND (Go / Java / Node.js)
 - [ ] Consolidate duplicate routes (e.g., `/private-jobs` vs `/priv-jobs`).
-- [ ] Optimize database indexes based on query analysis.
+- [x] Optimize database indexes based on query analysis (Done in Migration 25).
 - [ ] Fix N+1 query issues in complex joins.
 - [ ] Implement token revocation mechanism beyond basic expiry.
 - [ ] Add Multi-Factor Authentication (MFA).
-- [ ] Move rate limiting to Redis (currently in-memory).
+- [x] Move rate limiting to Redis (Done in api-gateway).
 - [ ] Integrate centralized error tracking/alerting (e.g., Sentry).
 
 ## 🤖 AI ENGINE (Python)
@@ -35,19 +35,19 @@
 - [ ] Complete Task D Batch Restructuring (Move to `shared/`, `jobs/`, `courses/`, `videos/`).
 
 ## 🛠️ INFRASTRUCTURE & DEVOPS
-- [ ] Implement resource limits (CPU/Memory) in `docker-compose.yml`.
-- [ ] Harden logging configuration (max-size, max-file).
+- [x] Implement resource limits (CPU/Memory) in `docker-compose.yml`.
+- [x] Harden logging configuration (max-size, max-file).
 - [ ] Complete blue-green deployment scripts.
 - [ ] Finalize K8s manifests (HPA, VPA, PDB).
 - [ ] Set up weekly database backup verification job.
 - [ ] Implement secret rotation mechanism.
 
 ## 🔐 SECURITY
-- [ ] Replace `localStorage` with `HttpOnly` cookies for token storage.
-- [ ] Implement CSRF protection.
-- [ ] Add Content Security Policy (CSP) headers.
+- [x] Replace `localStorage` with `HttpOnly` cookies for token storage.
+- [x] Implement CSRF protection.
+- [x] Add Content Security Policy (CSP) headers (Done in Nginx & Gateway).
 - [ ] Implement request signing for inter-service communication.
-- [ ] Add brute force protection.
+- [x] Add brute force protection (Done via Rate Limiting).
 
 ## 📊 MONITORING & ANALYTICS
 - [ ] Finalize Grafana dashboards (Throughput, DB Pool, TLS Health, Containers).
