@@ -8,6 +8,8 @@ on:
 
 env:
   ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
+  NEXT_PUBLIC_API_URL: "http://localhost:3001"
+  NEXT_PUBLIC_WS_HOST: "localhost:3001"
 
 jobs:
   backend-go:

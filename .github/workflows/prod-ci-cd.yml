@@ -9,6 +9,18 @@ env:
   NODE_VERSION: '22'
   PYTHON_VERSION: '3.11'
   ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
+  NEXT_PUBLIC_API_URL: "http://localhost:3001"
+  NEXT_PUBLIC_WS_HOST: "localhost:3001"
+  POSTGRES_USER: "postgres"
+  POSTGRES_PASSWORD: "password"
+  JWT_SECRET: "dummy_jwt_secret_32_characters_long_min"
+  REFRESH_TOKEN_KEY: "dummy_refresh_token_key_32_chars"
+  CSRF_SECRET: "dummy_csrf_secret_32_characters_long"
+  ALLOWED_ORIGINS: "http://localhost:3000"
+  AI_ENGINE_API_KEY: "dummy"
+  GEMINI_API_KEY: "dummy"
+  CRAWLER_ADMIN_KEY: "dummy"
+  YOUTUBE_API_KEY: "dummy"
 
 jobs:
   test:

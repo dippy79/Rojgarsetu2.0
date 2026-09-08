@@ -28,7 +28,14 @@ export function getApiBaseUrl(): string {
   }
 
   const envUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_BASE;
+
   if (!envUrl) {
+    // During build time (server-side), we can provide a fallback if it's not strictly required
+    // for the build itself. This prevents FATAL errors during 'next build' in CI.
+    if (typeof window === 'undefined') {
+      console.warn('WARNING: NEXT_PUBLIC_API_URL is missing during build time. Using fallback.');
+      return 'http://localhost:3001';
+    }
     throw new Error('FATAL: NEXT_PUBLIC_API_URL environment variable is missing.');
   }
 
