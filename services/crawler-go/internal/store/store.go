@@ -622,8 +622,8 @@ func (s *PostgresStore) GetJobsBySource(source string, limit int) ([]parser.Job,
 // SaveLog records a crawl run summary in the crawler_logs table.
 func (s *PostgresStore) SaveLog(sourcesRun, found, saved, duplicates int, status, errMsg string) error {
 	query := `
-		INSERT INTO crawler_logs (source, status, jobs_found, jobs_saved, errors, started_at, completed_at)
-		VALUES ('all_sources', $1, $2, $3, $4, NOW() - INTERVAL '1 second', NOW())
+		INSERT INTO crawler_logs (status, jobs_found, jobs_saved, errors, started_at, completed_at)
+		VALUES ($1, $2, $3, $4, NOW() - INTERVAL '1 second', NOW())
 	`
 	_, err := s.db.Exec(query, status, found, saved, errMsg)
 	return err

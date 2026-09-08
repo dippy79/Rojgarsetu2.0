@@ -19,7 +19,7 @@ func NewSSCSource(pool *browser.Pool) *SSCSource {
 }
 
 func (s *SSCSource) Fetch(ctx context.Context) ([]sources.GovJobSource, error) {
-	jobs, _ := s.engine.ScrapePortal(ctx, "https://ssc.gov.in/Portal/ResultDetails", "SSC", "CENTRAL", "ALL_INDIA")
+	jobs, _ := s.engine.ScrapePortal(ctx, "https://ssc.gov.in/Notices", "SSC", "CENTRAL", "ALL_INDIA")
 	return jobs, nil
 }
 

@@ -8,6 +8,13 @@ const cookieParser = require('cookie-parser');
 require('dotenv').config();
 
 const app = express();
+
+// DEBUG LOGGING
+app.use((req, res, next) => {
+  console.log(`[API Gateway] Incoming: ${req.method} ${req.url}`);
+  next();
+});
+
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ limit: '1mb', extended: true }));
 app.use(cookieParser());
@@ -142,8 +149,19 @@ app.get('/api/csrf-token', csrfProtection, (req, res) => {
   res.json({ csrfToken: req.csrfToken() });
 });
 
-// Apply CSRF protection to state-changing API routes only
-app.use('/api', csrfProtection);
+// Apply CSRF protection to state-changing API routes only, EXCLUDING auth
+app.use('/api', (req, res, next) => {
+  // Skip CSRF for auth routes as they are the entry point
+  // We check both req.path (relative to /api) and req.originalUrl
+  const isAuth = req.path.startsWith('/auth') || req.originalUrl.startsWith('/api/auth');
+
+  if (isAuth) {
+    console.log(`[API Gateway] Skipping CSRF for auth route: ${req.originalUrl}`);
+    return next();
+  }
+
+  csrfProtection(req, res, next);
+});
 
 // Input validation middleware
 app.use((req, res, next) => {
@@ -206,6 +224,12 @@ const proxyOptions = {
 };
 
 // Route Definitions
+app.use('/api/auth', createProxyMiddleware({
+  target: AUTH_TARGET,
+  pathRewrite: { '^/api/auth': '/auth' },
+  ...proxyOptions,
+}));
+
 app.use('/api/v1', createProxyMiddleware({
   target: BACKEND_TARGET,
   ...proxyOptions,

@@ -28,13 +28,30 @@ export const AuthProvider = ({ children }) => {
   const login = async (email, password) => {
     try {
       const response = await authAPI.login({ email, password });
-      if (response.data && response.data.data) {
+      if (response.data && response.data.success && response.data.data) {
         setUser(response.data.data.user);
         return response.data.data.user;
       }
-      throw new Error("Login failed");
+      throw new Error(response.data?.message || "Login failed");
     } catch (err) {
       console.error("Login Error:", err);
+      throw err;
+    }
+  };
+
+  const register = async (registerData) => {
+    try {
+      const response = await authAPI.register(registerData);
+      if (response.data && response.data.success) {
+        // Auto-login after registration if token is provided, or just return success
+        if (response.data.data.token && response.data.data.user) {
+            setUser(response.data.data.user);
+        }
+        return response.data.data;
+      }
+      throw new Error(response.data?.message || "Registration failed");
+    } catch (err) {
+      console.error("Registration Error:", err);
       throw err;
     }
   };
@@ -53,7 +70,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, isAuthenticated: !!user, initialized }}>
+    <AuthContext.Provider value={{ user, login, register, logout, isAuthenticated: !!user, initialized }}>
       {children}
     </AuthContext.Provider>
   );

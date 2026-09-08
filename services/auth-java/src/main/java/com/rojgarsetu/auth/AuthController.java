@@ -46,11 +46,19 @@ public class AuthController {
     public static class AuthRequest {
         private String email;
         private String password;
+        private String name;
+        private String full_name;
+        private String role;
 
         public String getEmail() { return email; }
         public void setEmail(String email) { this.email = email; }
         public String getPassword() { return password; }
         public void setPassword(String password) { this.password = password; }
+        public String getName() { return name != null ? name : full_name; }
+        public void setName(String name) { this.name = name; }
+        public void setFull_name(String full_name) { this.full_name = full_name; }
+        public String getRole() { return role; }
+        public void setRole(String role) { this.role = role; }
     }
 
     /**
@@ -73,13 +81,19 @@ public class AuthController {
             return ResponseEntity.badRequest().body(Map.of("error", "Email already exists"));
         }
 
+        String name = body.getName();
+        if (name == null || name.isEmpty()) {
+            name = "User"; // Fallback to avoid NotNull constraint
+        }
+
         String hashed = passwordEncoder.encode(password);
-        User user = new User(email, hashed, "CANDIDATE");
+        User user = new User(name, email, hashed, body.getRole() != null ? body.getRole() : "CANDIDATE");
         userRepository.save(user);
 
         return ResponseEntity.ok(Map.of(
+            "success", true,
             "message", "User registered successfully",
-            "userId", String.valueOf(user.getId())
+            "data", Map.of("userId", user.getId().toString())
         ));
     }
 
@@ -120,12 +134,23 @@ public class AuthController {
                 response.addCookie(jwtCookie);
 
                 return ResponseEntity.ok(Map.of(
-                    "token", token,
-                    "role", user.getRole() != null ? user.getRole() : "CANDIDATE"
+                    "success", true,
+                    "data", Map.of(
+                        "token", token,
+                        "user", Map.of(
+                            "id", user.getId().toString(),
+                            "email", user.getEmail(),
+                            "name", user.getName(),
+                            "role", user.getRole() != null ? user.getRole() : "CANDIDATE"
+                        )
+                    )
                 ));
             }
         }
 
-        return ResponseEntity.status(401).body(Map.of("error", "Invalid credentials"));
+        return ResponseEntity.status(401).body(Map.of(
+            "success", false,
+            "error", "Invalid credentials"
+        ));
     }
 }

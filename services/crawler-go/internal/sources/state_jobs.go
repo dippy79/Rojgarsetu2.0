@@ -30,6 +30,10 @@ var statePortals = []StatePortal{
 	{Name: "BPSC", URL: "https://www.bpsc.bih.nic.in", StateName: "Bihar"},
 	{Name: "MPSC", URL: "https://mpsc.gov.in", StateName: "Maharashtra"},
 	{Name: "RPSC", URL: "https://rpsc.rajasthan.gov.in", StateName: "Rajasthan"},
+	{Name: "HPSC", URL: "https://hpsc.gov.in", StateName: "Haryana"},
+	{Name: "OPSC", URL: "https://www.opsc.gov.in", StateName: "Odisha"},
+	{Name: "GPSC", URL: "https://gpsc.gujarat.gov.in", StateName: "Gujarat"},
+	{Name: "UKPSC", URL: "https://psc.uk.gov.in", StateName: "Uttarakhand"},
 }
 
 func (s *StateJobsSource) Fetch(ctx context.Context) ([]shared.GovJobSource, error) {

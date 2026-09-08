@@ -62,11 +62,10 @@ const Navbar = () => {
     let ws;
     if (isLoggedIn && typeof window !== 'undefined') {
       const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const host = process.env.NEXT_PUBLIC_WS_HOST;
-      if (!host) {
-        console.error('FATAL: NEXT_PUBLIC_WS_HOST environment variable is missing.');
-        return;
-      }
+      const host = process.env.NEXT_PUBLIC_WS_HOST || 'localhost:3001';
+    if (!process.env.NEXT_PUBLIC_WS_HOST) {
+        console.warn('WARNING: NEXT_PUBLIC_WS_HOST is missing. Using default: localhost:3001');
+    }
       ws = new WebSocket(`${protocol}//${host}/api/v1/ws`);
 
       ws.onmessage = (event) => {

@@ -20,26 +20,30 @@ function normalizeBase(base?: string) {
 }
 
 export function getApiBaseUrl(): string {
+  // Use a stable default for both client and server during SSR/Build
+  const defaultUrl = 'http://localhost:3001';
+
   if (typeof window !== 'undefined') {
+    // Client-side: try to find injected global configs
     // @ts-ignore
-    if (window.__ROJGAR_API__) return normalizeBase(window.__ROJGAR_API__) || '';
+    if (window.__ROJGAR_API__) return normalizeBase(window.__ROJGAR_API__) || defaultUrl;
     // @ts-ignore
-    if (window.__ROJGAR_API_ENV__) return normalizeBase(window.__ROJGAR_API_ENV__) || '';
+    if (window.__ROJGAR_API_ENV__) return normalizeBase(window.__ROJGAR_API_ENV__) || defaultUrl;
   }
 
+  // Check process.env (Next.js will replace these at build time for client,
+  // or use them at runtime for server-side)
   const envUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_BASE;
 
   if (!envUrl) {
-    // During build time (server-side), we can provide a fallback if it's not strictly required
-    // for the build itself. This prevents FATAL errors during 'next build' in CI.
     if (typeof window === 'undefined') {
-      console.warn('WARNING: NEXT_PUBLIC_API_URL is missing during build time. Using fallback.');
-      return 'http://localhost:3001';
+        // This is normal during build if .env is missing
+        return defaultUrl;
     }
-    throw new Error('FATAL: NEXT_PUBLIC_API_URL environment variable is missing.');
+    return defaultUrl;
   }
 
-  return normalizeBase(envUrl) || '';
+  return normalizeBase(envUrl) || defaultUrl;
 }
 
 const API_BASE = getApiBaseUrl();

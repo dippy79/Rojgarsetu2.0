@@ -1,0 +1,6 @@
+-- Migration 27: Fix crawler_logs schema to match code expectations
+ALTER TABLE crawler_logs ADD COLUMN IF NOT EXISTS source VARCHAR(100);
+ALTER TABLE crawler_logs ADD COLUMN IF NOT EXISTS errors TEXT;
+ALTER TABLE crawler_logs ADD COLUMN IF NOT EXISTS jobs_saved INTEGER DEFAULT 0;
+ALTER TABLE crawler_logs ADD COLUMN IF NOT EXISTS started_at TIMESTAMP WITH TIME ZONE DEFAULT NOW();
+ALTER TABLE crawler_logs ADD COLUMN IF NOT EXISTS completed_at TIMESTAMP WITH TIME ZONE DEFAULT NOW();

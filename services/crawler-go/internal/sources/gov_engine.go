@@ -25,10 +25,12 @@ func NewHeuristicGovEngine(pool *browser.Pool) *HeuristicGovEngine {
 
 var govJobKeywords = []string{
 	"recruitment", "notification", "vacancy", "apply", "exam", "admit", "post", "job", "bharti", "counseling", "direct recruitment", "advertisement",
+	"current vacancies", "opening", "opportunity", "hiring", "engaging", "appointment",
 }
 
 var formKeywords = []string{
 	"form", "admit card", "hall ticket", "result", "answer key", "application form", "certificate download", "written result",
+	"score card", "cut-off", "marks", "selection list", "verification",
 }
 
 func (e *HeuristicGovEngine) ScrapePortal(ctx context.Context, targetURL, sourceName, category, stateName string) ([]shared.GovJobSource, []shared.GovFormSource) {
