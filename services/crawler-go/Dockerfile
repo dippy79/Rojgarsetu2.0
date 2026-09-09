@@ -1,9 +1,12 @@
 # ==========================================
 # Stage 1: Builder Stage
 # ==========================================
-FROM golang:1.25-bookworm AS builder
+FROM golang:1.26-bookworm AS builder
 
 WORKDIR /app
+
+# Set Go proxy for better reliability
+ENV GOPROXY=https://proxy.golang.org,direct
 
 # Install build dependencies
 RUN apt-get update && apt-get install -y git curl && rm -rf /var/lib/apt/lists/*
