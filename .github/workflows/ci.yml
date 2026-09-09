@@ -23,6 +23,8 @@ jobs:
           cache: true
       - name: Mod tidy + build
         working-directory: backend_go
+        env:
+          GOPROXY: "https://proxy.golang.org,direct"
         run: |
           go mod tidy
           go build ./...

@@ -24,6 +24,8 @@ jobs:
 
       - name: Backend — tidy + build + test
         working-directory: backend_go
+        env:
+          GOPROXY: "https://proxy.golang.org,direct"
         run: |
           go mod tidy
           go build ./...
@@ -31,6 +33,8 @@ jobs:
 
       - name: Crawler — tidy + build + test
         working-directory: services/crawler-go
+        env:
+          GOPROXY: "https://proxy.golang.org,direct"
         run: |
           go mod tidy
           go mod vendor

@@ -9,6 +9,7 @@ env:
   NODE_VERSION: '22'
   PYTHON_VERSION: '3.11'
   ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
+  GOPROXY: "https://proxy.golang.org,direct"
   NEXT_PUBLIC_API_URL: "http://localhost:3001"
   NEXT_PUBLIC_WS_HOST: "localhost:3001"
   POSTGRES_USER: "postgres"
