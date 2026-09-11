@@ -153,7 +153,7 @@ app.get('/api/csrf-token', csrfProtection, (req, res) => {
 app.use('/api', (req, res, next) => {
   // Skip CSRF for auth routes as they are the entry point
   // We check both req.path (relative to /api) and req.originalUrl
-  const isAuth = req.path.startsWith('/auth') || req.originalUrl.startsWith('/api/auth');
+  const isAuth = req.path.startsWith('/auth') || req.originalUrl.startsWith('auth');
 
   if (isAuth) {
     console.log(`[API Gateway] Skipping CSRF for auth route: ${req.originalUrl}`);
