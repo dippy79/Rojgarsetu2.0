@@ -18,7 +18,7 @@ COPY . .
 
 # Build the crawler binary
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
-    go build -ldflags="-s -w" -o /app/bin/crawler ./cmd/scheduler
+    go build -mod=vendor -ldflags="-s -w" -o /app/bin/crawler ./cmd/scheduler
 
 # Install playwright dependencies for browser installation
 RUN apt-get update && apt-get install -y \

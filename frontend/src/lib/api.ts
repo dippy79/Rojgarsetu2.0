@@ -86,7 +86,7 @@ export const authAPI = {
 
     logout: () => api.post<ApiResponse<any>>('/api/auth/logout'),
 
-    getProfile: () => api.get<ApiResponse<UserProfile>>('/api/v1/candidates/me'),
+    getProfile: () => api.get<ApiResponse<UserProfile>>('/api/auth/me'),
 
     updateProfile: (data: Partial<UserProfile>) =>
         api.put<ApiResponse<any>>('/api/v1/candidates/me', data),

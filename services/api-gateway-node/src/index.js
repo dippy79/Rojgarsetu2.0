@@ -206,6 +206,7 @@ const proxyOptions = {
   proxyTimeout: 30000,
   onProxyReq: (proxyReq, req) => {
     if (req.headers.authorization) proxyReq.setHeader('Authorization', req.headers.authorization);
+    else if (req.cookies?.access_token) proxyReq.setHeader('Authorization', `Bearer ${req.cookies.access_token}`);
     proxyReq.setHeader('X-Forwarded-For', req.ip);
 
     // Fix for body-parser + http-proxy-middleware
@@ -232,6 +233,7 @@ app.use('/api/auth', createProxyMiddleware({
 
 app.use('/api/v1', createProxyMiddleware({
   target: BACKEND_TARGET,
+  pathRewrite: { '^/api/v1': '/api/v1' },
   ...proxyOptions,
 }));
 

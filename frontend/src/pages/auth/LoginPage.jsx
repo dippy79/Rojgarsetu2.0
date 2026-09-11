@@ -3,6 +3,17 @@ import { useRouter } from 'next/router';
 import Link from 'next/link';
 import { useAuth } from '../../context/AuthContext';
 
+const validateEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+
+const validatePassword = (password) => {
+  if (password.length < 12) return 'Password must be at least 12 characters.';
+  if (!/[A-Z]/.test(password)) return 'Password must include an uppercase letter.';
+  if (!/[a-z]/.test(password)) return 'Password must include a lowercase letter.';
+  if (!/\d/.test(password)) return 'Password must include a number.';
+  if (!/[^A-Za-z0-9]/.test(password)) return 'Password must include a special character.';
+  return '';
+};
+
 const LoginPage = () => {
   const [activeTab, setActiveTab] = useState('login'); // 'login' or 'register'
   const router = useRouter();
@@ -33,10 +44,18 @@ const LoginPage = () => {
   const handleLoginSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    if (!validateEmail(loginForm.email.trim())) {
+      setError('Enter a valid email address.');
+      return;
+    }
+    if (!loginForm.password) {
+      setError('Enter your password.');
+      return;
+    }
     setLoading(true);
     try {
       if (login) {
-        await login(loginForm.email, loginForm.password, loginForm.role);
+        await login(loginForm.email.trim(), loginForm.password);
       }
       router.push(`/dashboard/${loginForm.role.toLowerCase()}`);
     } catch (err) {
@@ -54,13 +73,28 @@ const LoginPage = () => {
       setError('Passwords do not match');
       return;
     }
+    if (!validateEmail(registerForm.email.trim())) {
+      setError('Enter a valid email address.');
+      return;
+    }
+    const passwordError = validatePassword(registerForm.password);
+    if (passwordError) {
+      setError(passwordError);
+      return;
+    }
 
     setLoading(true);
     try {
       if (register) {
-        await register(registerForm);
+        await register({
+          name: registerForm.full_name.trim(),
+          email: registerForm.email.trim(),
+          phone: registerForm.phone.trim(),
+          password: registerForm.password,
+          role: registerForm.role,
+        });
       } else if (login) {
-        await login(registerForm.email, registerForm.password, registerForm.role);
+        await login(registerForm.email.trim(), registerForm.password);
       }
       router.push(`/dashboard/${registerForm.role.toLowerCase()}`);
     } catch (err) {

@@ -10,9 +10,16 @@
     "web-vitals": "^2.1.4"
   },
   "devDependencies": {
-    "autoprefixer": "^10.4.18",
-    "postcss": "^8.4.35",
-    "tailwindcss": "^3.4.1"
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.5.3",
+    "tailwindcss": "^3.4.10"
+  },
+  "overrides": {
+    "postcss": "8.5.28",
+    "nth-check": "2.0.1",
+    "svgo": "2.8.4",
+    "serialize-javascript": "7.0.3",
+    "underscore": "1.13.8"
   },
   "scripts": {
     "start": "react-scripts start",

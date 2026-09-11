@@ -1,4 +1,7 @@
-FROM golang:alpine AS builder
+FROM --platform=$BUILDPLATFORM golang:alpine AS builder
+
+ARG TARGETOS
+ARG TARGETARCH
 
 WORKDIR /app
 # Install build essentials
@@ -12,9 +15,11 @@ RUN go mod download
 
 COPY . .
 # Build the Go binary (Static, No C bindings)
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o rojgar_api ./cmd/server
+RUN test -n "$TARGETOS" && test -n "$TARGETARCH" \
+  && CGO_ENABLED=0 GOOS="$TARGETOS" GOARCH="$TARGETARCH" \
+  go build -mod=vendor -a -installsuffix cgo -o rojgar_api ./cmd/server
 
-FROM alpine:latest
+FROM --platform=$TARGETPLATFORM alpine:latest
 RUN apk --no-cache add ca-certificates tzdata wget
 WORKDIR /app
 # Copy ONLY the compiled binary and required assets

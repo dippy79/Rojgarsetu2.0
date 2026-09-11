@@ -43,13 +43,9 @@ export const AuthProvider = ({ children }) => {
     try {
       const response = await authAPI.register(registerData);
       if (response.data && response.data.success) {
-        // Auto-login after registration if token is provided, or just return success
-        if (response.data.data.token && response.data.data.user) {
-            setUser(response.data.data.user);
-        }
-        return response.data.data;
+        return login(registerData.email, registerData.password);
       }
-      throw new Error(response.data?.message || "Registration failed");
+      throw new Error(response.data?.error || response.data?.message || "Registration failed");
     } catch (err) {
       console.error("Registration Error:", err);
       throw err;
