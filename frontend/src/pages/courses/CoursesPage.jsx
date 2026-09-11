@@ -7,6 +7,7 @@ import { Search, GraduationCap, Clock, BookOpen, Filter, ArrowRight, Loader2 } f
 export const CoursesPage = () => {
   const { isAuthenticated } = useAuth();
   const [courses, setCourses] = useState([]);
+  const [providers, setProviders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [filters, setFilters] = useState({
@@ -14,6 +15,15 @@ export const CoursesPage = () => {
     mode: '',
     level: '',
   });
+
+  const fetchInitialData = useCallback(async () => {
+    try {
+      const provRes = await api.get('/api/v1/courses/providers');
+      setProviders(provRes.data.data || []);
+    } catch (err) {
+      console.error("Failed to fetch providers:", err);
+    }
+  }, []);
 
   const fetchCourses = useCallback(async () => {
     setLoading(true);
@@ -28,6 +38,10 @@ export const CoursesPage = () => {
       setLoading(false);
     }
   }, [filters]);
+
+  useEffect(() => {
+    fetchInitialData();
+  }, [fetchInitialData]);
 
   useEffect(() => {
     fetchCourses();
@@ -71,6 +85,27 @@ export const CoursesPage = () => {
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-black uppercase tracking-widest text-slate-900">Filters</h3>
                 <Filter className="w-4 h-4 text-slate-400" />
+              </div>
+
+              <div className="space-y-4">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Platform</label>
+                <div className="grid grid-cols-1 gap-2 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
+                  <button
+                    onClick={() => setFilters(f => ({ ...f, provider: '' }))}
+                    className={`w-full text-left px-4 py-3 rounded-xl border text-xs font-bold transition-all ${!filters.provider ? 'bg-purple-600 text-white border-purple-600' : 'border-slate-100 text-slate-600 hover:border-purple-200'}`}
+                  >
+                    All Platforms
+                  </button>
+                  {providers.map(p => (
+                    <button
+                      key={p.name}
+                      onClick={() => setFilters(f => ({ ...f, provider: p.name }))}
+                      className={`w-full text-left px-4 py-3 rounded-xl border text-xs font-bold transition-all ${filters.provider === p.name ? 'bg-purple-600 text-white border-purple-600' : 'border-slate-100 text-slate-600 hover:border-purple-200'}`}
+                    >
+                      {p.name}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               <div className="space-y-4">
@@ -130,9 +165,12 @@ export const CoursesPage = () => {
 
                     <div className="pt-6 border-t border-slate-100 flex items-center justify-between">
                       <span className="text-xl font-black text-slate-900">
-                        {course.fees_amount === 0 ? 'FREE' : `₹${course.fees_amount?.toLocaleString()}`}
+                        {course.price === '0' || course.is_free ? 'FREE' : `₹${course.price}`}
                       </span>
-                      <button className="flex items-center gap-2 px-6 py-3 bg-slate-900 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-purple-600 transition-all shadow-xl shadow-slate-900/10 group">
+                      <button
+                        onClick={() => window.open(course.url, '_blank')}
+                        className="flex items-center gap-2 px-6 py-3 bg-slate-900 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-purple-600 transition-all shadow-xl shadow-slate-900/10 group"
+                      >
                         Explore Syllabus <ArrowRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
                       </button>
                     </div>

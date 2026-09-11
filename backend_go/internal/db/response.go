@@ -14,8 +14,9 @@ func ErrorResponse(code int, message string) map[string]interface{} {
 // SuccessResponse creates a standardized success map for API responses.
 func SuccessResponse(data interface{}, pagination *Pagination) map[string]interface{} {
 	resp := map[string]interface{}{
-		"status": "success",
-		"data":   data,
+		"success": true,
+		"status":  "success",
+		"data":    data,
 	}
 	if pagination != nil {
 		resp["pagination"] = pagination
