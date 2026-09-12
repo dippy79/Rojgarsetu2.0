@@ -79,20 +79,20 @@ export const fetcher = async (url: string) => {
 // Auth API
 export const authAPI = {
     register: (data: { email: string; password: string; role: string; firstName?: string; lastName?: string; companyName?: string }) =>
-        api.post<ApiResponse<{ user: User }>>('/api/auth/register', data),
+        api.post<ApiResponse<{ user: User }>>('/api/v1/auth/register', data),
 
     login: (data: { email: string; password: string }) =>
-        api.post<ApiResponse<{ user: User }>>('/api/auth/login', data),
+        api.post<ApiResponse<{ user: User; token?: string }>>('/api/v1/auth/login', data),
 
-    logout: () => api.post<ApiResponse<any>>('/api/auth/logout'),
+    logout: () => api.post<ApiResponse<any>>('/api/v1/auth/logout'),
 
-    getProfile: () => api.get<ApiResponse<UserProfile>>('/api/auth/me'),
+    getProfile: () => api.get<ApiResponse<UserProfile>>('/api/v1/auth/me'),
 
     updateProfile: (data: Partial<UserProfile>) =>
         api.put<ApiResponse<any>>('/api/v1/candidates/me', data),
 
     refreshToken: () =>
-        api.post<ApiResponse<any>>('/api/auth/refresh')
+        api.post<ApiResponse<any>>('/api/v1/auth/refresh')
 };
 
 // Jobs API

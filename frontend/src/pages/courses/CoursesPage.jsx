@@ -30,7 +30,8 @@ export const CoursesPage = () => {
     setError(null);
     try {
       const res = await api.get('/api/v1/courses', { params: filters });
-      setCourses(res.data.data || []);
+      const data = res.data.data || res.data || [];
+      setCourses(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error(err);
       setError("Unable to sync courses. Please try again later.");
@@ -47,8 +48,15 @@ export const CoursesPage = () => {
     fetchCourses();
   }, [fetchCourses]);
 
+  const dynamicProviders = [
+    ...new Set([
+      ...providers.map(p => p.name || p),
+      ...courses.map(c => c.provider_name || c.provider || c.platform)
+    ])
+  ].filter(Boolean).sort();
+
   return (
-    <div className="min-h-screen bg-[#FAFAFA]">
+    <div className="min-h-screen bg-slate-50">
       {/* Academy Hero */}
       <section className="bg-white border-b border-slate-200 pt-24 pb-16">
         <div className="max-w-7xl mx-auto px-6">
@@ -92,17 +100,17 @@ export const CoursesPage = () => {
                 <div className="grid grid-cols-1 gap-2 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
                   <button
                     onClick={() => setFilters(f => ({ ...f, provider: '' }))}
-                    className={`w-full text-left px-4 py-3 rounded-xl border text-xs font-bold transition-all ${!filters.provider ? 'bg-purple-600 text-white border-purple-600' : 'border-slate-100 text-slate-600 hover:border-purple-200'}`}
+                    className={`w-full text-left px-4 py-3 rounded-xl border text-xs font-bold transition-all ${!filters.provider ? 'bg-purple-600 text-white border-purple-600 shadow-md' : 'bg-white border-slate-100 text-slate-600 hover:border-purple-200'}`}
                   >
                     All Platforms
                   </button>
-                  {providers.map(p => (
+                  {dynamicProviders.map(provider => (
                     <button
-                      key={p.name}
-                      onClick={() => setFilters(f => ({ ...f, provider: p.name }))}
-                      className={`w-full text-left px-4 py-3 rounded-xl border text-xs font-bold transition-all ${filters.provider === p.name ? 'bg-purple-600 text-white border-purple-600' : 'border-slate-100 text-slate-600 hover:border-purple-200'}`}
+                      key={provider}
+                      onClick={() => setFilters(f => ({ ...f, provider: provider }))}
+                      className={`w-full text-left px-4 py-3 rounded-xl border text-xs font-bold transition-all ${filters.provider === provider ? 'bg-purple-600 text-white border-purple-600 shadow-md' : 'bg-white border-slate-100 text-slate-600 hover:border-purple-200'}`}
                     >
-                      {p.name}
+                      {provider}
                     </button>
                   ))}
                 </div>
@@ -165,10 +173,13 @@ export const CoursesPage = () => {
 
                     <div className="pt-6 border-t border-slate-100 flex items-center justify-between">
                       <span className="text-xl font-black text-slate-900">
-                        {course.price === '0' || course.is_free ? 'FREE' : `₹${course.price}`}
+                        {course.price === '0' || course.is_free ? 'FREE' : `₹${course.price || course.fees_amount || 'Free'}`}
                       </span>
                       <button
-                        onClick={() => window.open(course.url, '_blank')}
+                        onClick={() => {
+                          const url = course.url || course.apply_link || course.course_url;
+                          if (url) window.open(url, '_blank', 'noopener,noreferrer');
+                        }}
                         className="flex items-center gap-2 px-6 py-3 bg-slate-900 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-purple-600 transition-all shadow-xl shadow-slate-900/10 group"
                       >
                         Explore Syllabus <ArrowRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />

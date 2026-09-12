@@ -29,7 +29,8 @@ export const PrivateJobsPage = () => {
       };
 
       const res = await api.get('/api/v1/priv-jobs', { params: queryParams });
-      setJobs(res.data.data || []);
+      const data = res.data.data || res.data || [];
+      setJobs(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error("Fetch error:", err);
       setError("AI-aggregator offline. Please try again later.");

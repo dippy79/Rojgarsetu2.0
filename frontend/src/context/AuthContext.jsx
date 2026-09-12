@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { authAPI } from '../lib/api';
+import { toast } from 'react-hot-toast';
 
 export const AuthContext = createContext(null);
 
@@ -28,27 +29,40 @@ export const AuthProvider = ({ children }) => {
   const login = async (email, password) => {
     try {
       const response = await authAPI.login({ email, password });
-      if (response.data && response.data.success && response.data.data) {
-        setUser(response.data.data.user);
-        return response.data.data.user;
+      const { success, data, message } = response.data;
+
+      if (success && data) {
+        setUser(data.user);
+        if (data.token) {
+          localStorage.setItem('access_token', data.token);
+        }
+        toast.success("Welcome back!");
+        return data.user;
       }
-      throw new Error(response.data?.message || "Login failed");
+      throw new Error(message || "Login failed");
     } catch (err) {
-      console.error("Login Error:", err);
-      throw err;
+      const errMsg = err.response?.data?.message || err.message || "An unexpected error occurred during login";
+      console.error("Login Error:", errMsg);
+      toast.error(errMsg);
+      throw new Error(errMsg);
     }
   };
 
   const register = async (registerData) => {
     try {
       const response = await authAPI.register(registerData);
-      if (response.data && response.data.success) {
+      const { success, message, error: apiError } = response.data;
+
+      if (success) {
+        toast.success("Account created successfully!");
         return login(registerData.email, registerData.password);
       }
-      throw new Error(response.data?.error || response.data?.message || "Registration failed");
+      throw new Error(apiError || message || "Registration failed");
     } catch (err) {
-      console.error("Registration Error:", err);
-      throw err;
+      const errMsg = err.response?.data?.error || err.response?.data?.message || err.message || "Registration failed";
+      console.error("Registration Error:", errMsg);
+      toast.error(errMsg);
+      throw new Error(errMsg);
     }
   };
 
@@ -59,6 +73,7 @@ export const AuthProvider = ({ children }) => {
       console.error("Logout failed:", err);
     } finally {
       setUser(null);
+      localStorage.removeItem('access_token');
       if (typeof window !== 'undefined') {
         window.location.href = '/login';
       }

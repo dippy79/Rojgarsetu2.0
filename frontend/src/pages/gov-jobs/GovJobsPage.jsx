@@ -30,7 +30,8 @@ export const GovJobsPage = () => {
       };
 
       const res = await api.get('/api/v1/gov-jobs', { params: queryParams });
-      setJobs(res.data.data || []);
+      const data = res.data.data || res.data || [];
+      setJobs(Array.isArray(data) ? data : []);
       setPagination(res.data.pagination);
     } catch (err) {
       console.error("Fetch error:", err);

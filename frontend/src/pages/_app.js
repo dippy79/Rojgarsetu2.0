@@ -14,6 +14,7 @@ import './videos/Videos.css'
 import { AuthProvider } from '../context/AuthContext'
 import Navbar from '../components/Navbar'
 import { useRouter } from 'next/router'
+import { Toaster } from 'react-hot-toast'
 
 function MyApp({ Component, pageProps }) {
   const router = useRouter()
@@ -21,6 +22,7 @@ function MyApp({ Component, pageProps }) {
 
   return (
     <AuthProvider>
+      <Toaster position="top-center" reverseOrder={false} />
       {!hideNavbar && <Navbar />}
       <Component {...pageProps} />
     </AuthProvider>

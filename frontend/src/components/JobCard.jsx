@@ -1,10 +1,22 @@
 import React from 'react';
-import { MapPin, Building2, Calendar, Briefcase, ArrowUpRight, ShieldCheck, Zap } from 'lucide-react';
+import { MapPin, Building2, Calendar, Briefcase, ArrowUpRight, ShieldCheck, Zap, Bookmark } from 'lucide-react';
 import Link from 'next/link';
 
 const JobCard = ({ job, type = 'government' }) => {
   const isGov = type === 'government';
   const displayCompany = isGov ? job.dept || job.department : job.company || job.company_name;
+
+  const handleApplyClick = (e) => {
+    const applyUrl = isGov
+      ? (job.apply_url || job.apply_link || job.url)
+      : (job.url || job.apply_url || job.apply_link);
+
+    if (applyUrl) {
+      window.open(applyUrl, '_blank', 'noopener,noreferrer');
+    } else {
+      console.warn("No apply URL found for job:", job.id);
+    }
+  };
 
   return (
     <div className="group bg-white border border-slate-200/60 rounded-[2rem] p-8 hover:border-blue-400 hover:shadow-2xl hover:shadow-blue-500/5 transition-all relative overflow-hidden">
@@ -87,14 +99,12 @@ const JobCard = ({ job, type = 'government' }) => {
           </Link>
 
           <div className="flex gap-2">
-            <a
-              href={isGov ? job.apply_url : job.url}
-              target="_blank"
-              rel="noreferrer"
+            <button
+              onClick={handleApplyClick}
               className="flex-1 block text-center py-3.5 bg-white border border-slate-200 text-slate-900 font-black rounded-xl hover:bg-slate-50 hover:border-slate-300 transition-all text-[10px] uppercase tracking-widest"
             >
               Direct Apply
-            </a>
+            </button>
             {isGov && (
               <button
                 title="Track Results"
