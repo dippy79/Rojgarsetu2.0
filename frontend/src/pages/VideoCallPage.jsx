@@ -31,7 +31,7 @@ export default function VideoCallPage() {
       <div className="h-20 bg-slate-800 flex items-center justify-center gap-6">
         <button className="p-4 bg-slate-700 hover:bg-slate-600 rounded-full text-white"><Mic className="w-5 h-5" /></button>
         <button className="p-4 bg-slate-700 hover:bg-slate-600 rounded-full text-white"><Video className="w-5 h-5" /></button>
-        <button onClick={() => router.back()} className="p-4 bg-rose-600 hover:bg-rose-700 rounded-full text-white">
+        <button onClick={() => router.back()} className="p-4 bg-stone-600 hover:bg-stone-700 rounded-full text-white">
           <PhoneOff className="w-5 h-5" />
         </button>
       </div>

@@ -40,7 +40,7 @@ export const CandidateProfile = () => {
   const [showExpForm, setShowExpForm] = useState(false);
   const [newExp, setNewExp] = useState({ company: '', role: '', years: '', description: '' });
 
-  const API_BASE = process.env.REACT_APP_BACKEND_URL || 'http://localhost:3001';
+  const API_BASE = process.env.NEXT_PUBLIC_API_URL || '';
 
   const showToast = useCallback((message, type = 'success') => {
     setToast({ message, type });
@@ -138,10 +138,10 @@ export const CandidateProfile = () => {
       `}>
         <div className="flex items-center justify-between mb-12">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-blue-600 rounded-2xl">
+            <div className="p-2.5 bg-stone-800 rounded-2xl">
               <Briefcase className="w-6 h-6 text-white" />
             </div>
-            <span className="font-black text-2xl tracking-tighter uppercase">Rojgar<span className="text-blue-500">Setu</span></span>
+            <span className="font-black text-2xl tracking-tighter uppercase">Rojgar<span className="text-stone-700">Setu</span></span>
           </div>
         </div>
 
@@ -153,13 +153,13 @@ export const CandidateProfile = () => {
             { label: 'Saved Jobs', path: '/candidate/saved-jobs', icon: Bookmark },
             { label: 'AI Matches', path: '/candidate/ai-matches', icon: Sparkles },
           ].map((item) => (
-            <Link key={item.path} href={item.path} className={`flex items-center gap-4 px-6 py-4 rounded-2xl text-sm font-bold transition-all ${router.pathname === item.path ? 'bg-blue-600 text-white' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}>
+            <Link key={item.path} href={item.path} className={`flex items-center gap-4 px-6 py-4 rounded-2xl text-sm font-bold transition-all ${router.pathname === item.path ? 'bg-stone-800 text-white' : 'text-slate-400 hover:text-white hover:bg-white/5'}`}>
               <item.icon className="w-5 h-5" /> {item.label}
             </Link>
           ))}
         </nav>
 
-        <button onClick={() => { logout(); router.push('/login'); }} className="flex items-center gap-4 w-full px-6 py-4 text-sm font-bold text-rose-400 hover:bg-rose-500/10 rounded-2xl transition-all mt-auto border border-rose-500/10">
+        <button onClick={() => { logout(); router.push('/login'); }} className="flex items-center gap-4 w-full px-6 py-4 text-sm font-bold text-stone-400 hover:bg-stone-500/10 rounded-2xl transition-all mt-auto border border-stone-500/10">
           <LogOut className="w-5 h-5" /> Logout
         </button>
       </aside>
@@ -168,7 +168,7 @@ export const CandidateProfile = () => {
         <header className="flex flex-col md:flex-row md:items-center justify-between gap-8 mb-16">
            <div className="space-y-2">
               <h1 className="text-4xl font-black text-slate-900 tracking-tight">Identity Settings.</h1>
-              <p className="text-slate-400 text-lg font-medium">Refining your professional metadata for <span className="text-blue-600 font-bold">AI Ingestion.</span></p>
+              <p className="text-slate-400 text-lg font-medium">Refining your professional metadata for <span className="text-stone-800 font-bold">AI Ingestion.</span></p>
            </div>
 
            <div className="flex items-center gap-8">
@@ -176,7 +176,7 @@ export const CandidateProfile = () => {
                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Profile Strength</p>
                  <div className="flex items-center gap-3">
                     <div className="w-48 h-2.5 bg-slate-100 rounded-full overflow-hidden border border-slate-200">
-                       <div className="h-full bg-blue-600 transition-all duration-1000 shadow-[0_0_10px_rgba(37,99,235,0.4)]" style={{width: `${completionPercentage}%`}}></div>
+                       <div className="h-full bg-stone-800 transition-all duration-1000 shadow-[0_0_10px_rgba(37,99,235,0.4)]" style={{width: `${completionPercentage}%`}}></div>
                     </div>
                     <span className="text-sm font-black text-slate-900">{completionPercentage}%</span>
                  </div>
@@ -195,13 +195,13 @@ export const CandidateProfile = () => {
                 {/* Basic Intel Section */}
                 <div className="bg-white border border-slate-200 rounded-[3.5rem] p-12 shadow-sm space-y-10">
                    <h3 className="text-xl font-black text-slate-900 tracking-tight flex items-center gap-3">
-                      <div className="w-2 h-2 rounded-full bg-blue-600"></div> Core Meta
+                      <div className="w-2 h-2 rounded-full bg-stone-800"></div> Core Meta
                    </h3>
 
                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                       <div className="space-y-3">
                          <label htmlFor="full_name" className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Legal Name</label>
-                         <input id="full_name" name="full_name" type="text" value={profile.full_name} onChange={e => setProfile({...profile, full_name: e.target.value})} className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl text-sm font-bold focus:ring-4 focus:ring-blue-500/10 transition-all outline-none" placeholder="Simranjeet Singh" autocomplete="name" />
+                         <input id="full_name" name="full_name" type="text" value={profile.full_name} onChange={e => setProfile({...profile, full_name: e.target.value})} className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl text-sm font-bold focus:ring-4 focus:ring-stone-700/10 transition-all outline-none" placeholder="Simranjeet Singh" autocomplete="name" />
                       </div>
                       <div className="space-y-3">
                          <label htmlFor="email" className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Sync Address</label>
@@ -211,19 +211,19 @@ export const CandidateProfile = () => {
 
                    <div className="space-y-3">
                       <label htmlFor="title" className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Professional Header</label>
-                      <input id="title" name="title" type="text" value={profile.title} onChange={e => setProfile({...profile, title: e.target.value})} className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl text-sm font-bold focus:ring-4 focus:ring-blue-500/10 transition-all outline-none" placeholder="Senior DevOps Architect" autocomplete="organization-title" />
+                      <input id="title" name="title" type="text" value={profile.title} onChange={e => setProfile({...profile, title: e.target.value})} className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl text-sm font-bold focus:ring-4 focus:ring-stone-700/10 transition-all outline-none" placeholder="Senior DevOps Architect" autocomplete="organization-title" />
                    </div>
 
                    <div className="space-y-3">
                       <label htmlFor="bio" className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Executive Summary</label>
-                      <textarea id="bio" name="bio" rows={5} value={profile.bio} onChange={e => setProfile({...profile, bio: e.target.value})} className="w-full px-6 py-4 bg-slate-50 border-none rounded-[2rem] text-sm font-bold focus:ring-4 focus:ring-blue-500/10 transition-all outline-none resize-none" placeholder="Deep-dive into your trajectory..." autocomplete="off" />
+                      <textarea id="bio" name="bio" rows={5} value={profile.bio} onChange={e => setProfile({...profile, bio: e.target.value})} className="w-full px-6 py-4 bg-slate-50 border-none rounded-[2rem] text-sm font-bold focus:ring-4 focus:ring-stone-700/10 transition-all outline-none resize-none" placeholder="Deep-dive into your trajectory..." autocomplete="off" />
                    </div>
                 </div>
 
                 {/* Skill Graph Section */}
                 <div className="bg-white border border-slate-200 rounded-[3.5rem] p-12 shadow-sm space-y-10">
                    <h3 className="text-xl font-black text-slate-900 tracking-tight flex items-center gap-3">
-                      <div className="w-2 h-2 rounded-full bg-emerald-500"></div> Neural Skills
+                      <div className="w-2 h-2 rounded-full bg-stone-500"></div> Neural Skills
                    </h3>
 
                    <div className="space-y-6">
@@ -231,7 +231,7 @@ export const CandidateProfile = () => {
                          {profile.skills.map(s => (
                            <div key={s.id} className="flex items-center gap-3 px-5 py-2.5 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest border border-slate-800 shadow-xl shadow-slate-900/10 transition-all hover:scale-105">
                               {s.name}
-                              <button onClick={() => setProfile({...profile, skills: profile.skills.filter(sk => sk.id !== s.id)})} className="hover:text-rose-400 transition-colors"><X className="w-3 h-3" /></button>
+                              <button onClick={() => setProfile({...profile, skills: profile.skills.filter(sk => sk.id !== s.id)})} className="hover:text-stone-400 transition-colors"><X className="w-3 h-3" /></button>
                            </div>
                          ))}
                       </div>
@@ -244,7 +244,7 @@ export const CandidateProfile = () => {
                            value={newSkill.name}
                            onChange={e => setNewSkill({...newSkill, name: e.target.value})}
                            onKeyDown={handleAddSkill}
-                           className="w-full pl-14 pr-6 py-5 bg-slate-50 border-none rounded-3xl text-sm font-bold focus:ring-4 focus:ring-emerald-500/10 transition-all outline-none"
+                           className="w-full pl-14 pr-6 py-5 bg-slate-50 border-none rounded-3xl text-sm font-bold focus:ring-4 focus:ring-stone-500/10 transition-all outline-none"
                          />
                       </div>
                    </div>
@@ -254,14 +254,14 @@ export const CandidateProfile = () => {
              <div className="lg:col-span-4 space-y-8">
                 {/* Logistics Bento */}
                 <div className="bg-slate-900 rounded-[3rem] p-10 text-white space-y-8 shadow-2xl shadow-blue-900/20 relative overflow-hidden">
-                   <div className="absolute top-0 right-0 w-32 h-32 bg-blue-600/10 rounded-full -mr-16 -mt-16 blur-3xl"></div>
+                   <div className="absolute top-0 right-0 w-32 h-32 bg-stone-800/10 rounded-full -mr-16 -mt-16 blur-3xl"></div>
 
                    <div className="space-y-6 relative z-10">
                       <div className="space-y-3">
                          <label htmlFor="location" className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Current Hub</label>
                          <div className="relative group">
-                            <MapPin className="absolute left-4 top-4 w-4 h-4 text-slate-600 group-focus-within:text-blue-400 transition-colors" />
-                            <input id="location" name="location" type="text" value={profile.location} onChange={e => setProfile({...profile, location: e.target.value})} className="w-full pl-12 pr-6 py-4 bg-white/5 border border-white/10 rounded-2xl text-xs font-bold outline-none focus:border-blue-500 transition-all" placeholder="Dubai, UAE" autocomplete="address-level2" />
+                            <MapPin className="absolute left-4 top-4 w-4 h-4 text-slate-600 group-focus-within:text-stone-400 transition-colors" />
+                            <input id="location" name="location" type="text" value={profile.location} onChange={e => setProfile({...profile, location: e.target.value})} className="w-full pl-12 pr-6 py-4 bg-white/5 border border-white/10 rounded-2xl text-xs font-bold outline-none focus:border-stone-700 transition-all" placeholder="Dubai, UAE" autocomplete="address-level2" />
                          </div>
                       </div>
 
@@ -269,7 +269,7 @@ export const CandidateProfile = () => {
                          <label htmlFor="phone" className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Direct Line</label>
                          <div className="relative">
                             <Phone className="absolute left-4 top-4 w-4 h-4 text-slate-600" />
-                            <input id="phone" name="phone" type="tel" value={profile.phone} onChange={e => setProfile({...profile, phone: e.target.value})} className="w-full pl-12 pr-6 py-4 bg-white/5 border border-white/10 rounded-2xl text-xs font-bold outline-none focus:border-blue-500 transition-all" placeholder="+971 50 123 4567" autocomplete="tel" />
+                            <input id="phone" name="phone" type="tel" value={profile.phone} onChange={e => setProfile({...profile, phone: e.target.value})} className="w-full pl-12 pr-6 py-4 bg-white/5 border border-white/10 rounded-2xl text-xs font-bold outline-none focus:border-stone-700 transition-all" placeholder="+971 50 123 4567" autocomplete="tel" />
                          </div>
                       </div>
                    </div>
@@ -277,7 +277,7 @@ export const CandidateProfile = () => {
                    <button
                      type="submit"
                      disabled={saving}
-                     className="w-full flex items-center justify-center gap-3 py-6 bg-blue-600 text-white font-black rounded-[2rem] hover:bg-blue-700 transition-all shadow-2xl shadow-blue-600/30 uppercase text-[10px] tracking-[0.3em]"
+                     className="w-full flex items-center justify-center gap-3 py-6 bg-stone-800 text-white font-black rounded-[2rem] hover:bg-stone-900 transition-all shadow-2xl shadow-stone-800/30 uppercase text-[10px] tracking-[0.3em]"
                    >
                      {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Save className="w-4 h-4" /> Commit Profile</>}
                    </button>
@@ -291,8 +291,8 @@ export const CandidateProfile = () => {
                          <Github className="w-5 h-5 text-slate-400 group-hover:text-slate-900 transition-colors" />
                          <input type="url" value={profile.portfolio_links.github} onChange={e => setProfile({...profile, portfolio_links: {...profile.portfolio_links, github: e.target.value}})} className="bg-transparent border-none text-xs font-bold outline-none w-full" placeholder="github.com/username" autocomplete="off" />
                       </div>
-                      <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-2xl border border-slate-100 group transition-all hover:border-blue-600">
-                         <Linkedin className="w-5 h-5 text-slate-400 group-hover:text-blue-600 transition-colors" />
+                      <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-2xl border border-slate-100 group transition-all hover:border-stone-800">
+                         <Linkedin className="w-5 h-5 text-slate-400 group-hover:text-stone-800 transition-colors" />
                          <input type="url" value={profile.portfolio_links.linkedin} onChange={e => setProfile({...profile, portfolio_links: {...profile.portfolio_links, linkedin: e.target.value}})} className="bg-transparent border-none text-xs font-bold outline-none w-full" placeholder="linkedin.com/in/user" autocomplete="off" />
                       </div>
                    </div>

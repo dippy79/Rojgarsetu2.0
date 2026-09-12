@@ -30,7 +30,7 @@ export function Header() {
           {/* Logo */}
           <div className="flex items-center">
             <Link href="/" className="flex items-center gap-2">
-              <div className="p-2 bg-gradient-to-br from-cyan-500 to-emerald-500 rounded-lg">
+              <div className="p-2 bg-gradient-to-br from-cyan-500 to-stone-500 rounded-lg">
                 <Zap className="w-5 h-5 text-white" />
               </div>
               <span className="text-xl font-bold text-slate-900 dark:text-white">
@@ -78,7 +78,7 @@ export function Header() {
             {/* Notifications */}
             <button className="relative p-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
               <Bell className="w-5 h-5" />
-              <span className="absolute top-1 right-1 w-2 h-2 bg-amber-500 rounded-full"></span>
+              <span className="absolute top-1 right-1 w-2 h-2 bg-stone-500 rounded-full"></span>
             </button>
 
             {/* Theme Toggle */}

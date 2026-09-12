@@ -29,9 +29,9 @@ const GovtFormsDashboard = () => {
   };
 
   const getPriorityInfo = (days) => {
-    if (days <= 3) return { label: 'Ending Soon', color: 'text-rose-600', bg: 'bg-rose-50', icon: ShieldAlert };
-    if (days <= 14) return { label: 'Limited Time', color: 'text-amber-600', bg: 'bg-amber-50', icon: Clock };
-    return { label: 'Active', color: 'text-emerald-600', bg: 'bg-emerald-50', icon: CheckCircle2 };
+    if (days <= 3) return { label: 'Ending Soon', color: 'text-stone-600', bg: 'bg-stone-50', icon: ShieldAlert };
+    if (days <= 14) return { label: 'Limited Time', color: 'text-stone-600', bg: 'bg-stone-50', icon: Clock };
+    return { label: 'Active', color: 'text-stone-600', bg: 'bg-stone-50', icon: CheckCircle2 };
   };
 
   const sortedForms = [...forms].sort((a, b) => new Date(a.last_date) - new Date(b.last_date));
@@ -59,7 +59,7 @@ const GovtFormsDashboard = () => {
             <Search className="absolute left-4 top-3.5 w-5 h-5 text-slate-400 group-focus-within:text-slate-900 transition-colors" />
             <input type="text" placeholder="Filter by examination or board..." className="w-full pl-12 pr-4 py-3 bg-slate-50 border-none rounded-xl text-sm font-bold outline-none" />
           </div>
-          <div className="px-6 py-3 bg-indigo-50 text-indigo-700 rounded-xl text-[10px] font-black uppercase tracking-widest">
+          <div className="px-6 py-3 bg-stone-50 text-stone-700 rounded-xl text-[10px] font-black uppercase tracking-widest">
             {forms.length} Dynamic Forms Detected
           </div>
         </div>
@@ -87,7 +87,7 @@ const GovtFormsDashboard = () => {
                       <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">ID: {form.id?.slice(0, 8)}</span>
                     </div>
 
-                    <h3 className="text-2xl font-black text-slate-900 group-hover:text-indigo-600 transition-colors mb-2 leading-tight">
+                    <h3 className="text-2xl font-black text-slate-900 group-hover:text-stone-600 transition-colors mb-2 leading-tight">
                       {form.title}
                     </h3>
                     <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-8">{form.department || 'Official Board'}</p>
@@ -106,7 +106,7 @@ const GovtFormsDashboard = () => {
                       href={form.apply_url}
                       target="_blank"
                       rel="noreferrer"
-                      className="w-full flex items-center justify-center gap-3 py-5 bg-slate-900 text-white font-black rounded-2xl hover:bg-indigo-600 transition-all shadow-xl shadow-slate-900/10 uppercase text-xs tracking-widest"
+                      className="w-full flex items-center justify-center gap-3 py-5 bg-slate-900 text-white font-black rounded-2xl hover:bg-stone-600 transition-all shadow-xl shadow-slate-900/10 uppercase text-xs tracking-widest"
                     >
                       Official Apply <ArrowRight className="w-4 h-4" />
                     </a>

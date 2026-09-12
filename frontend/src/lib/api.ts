@@ -20,30 +20,27 @@ function normalizeBase(base?: string) {
 }
 
 export function getApiBaseUrl(): string {
-  // Use a stable default for both client and server during SSR/Build
-  const defaultUrl = 'http://localhost:3001';
-
-  if (typeof window !== 'undefined') {
-    // Client-side: try to find injected global configs
-    // @ts-ignore
-    if (window.__ROJGAR_API__) return normalizeBase(window.__ROJGAR_API__) || defaultUrl;
-    // @ts-ignore
-    if (window.__ROJGAR_API_ENV__) return normalizeBase(window.__ROJGAR_API_ENV__) || defaultUrl;
-  }
-
-  // Check process.env (Next.js will replace these at build time for client,
-  // or use them at runtime for server-side)
+  // Enforce environment variable requirement for production safety
   const envUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_BASE;
 
   if (!envUrl) {
     if (typeof window === 'undefined') {
-        // This is normal during build if .env is missing
-        return defaultUrl;
+      // Server-side during build: return empty string (will be handled by build process)
+      return '';
     }
-    return defaultUrl;
+    // Client-side: throw error if no API URL configured
+    throw new Error('NEXT_PUBLIC_API_URL environment variable is required. Please configure it in your environment.');
   }
 
-  return normalizeBase(envUrl) || defaultUrl;
+  if (typeof window !== 'undefined') {
+    // Client-side: try to find injected global configs
+    // @ts-ignore
+    if (window.__ROJGAR_API__) return normalizeBase(window.__ROJGAR_API__) || envUrl;
+    // @ts-ignore
+    if (window.__ROJGAR_API_ENV__) return normalizeBase(window.__ROJGAR_API_ENV__) || envUrl;
+  }
+
+  return normalizeBase(envUrl) || envUrl;
 }
 
 const API_BASE = getApiBaseUrl();

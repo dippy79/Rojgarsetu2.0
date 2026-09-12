@@ -56,7 +56,7 @@ export const JobSearch = () => {
         <div className="max-w-7xl mx-auto px-6">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
             <div className="space-y-4">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 text-blue-600 text-[10px] font-black uppercase tracking-widest">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-stone-100 text-stone-800 text-[10px] font-black uppercase tracking-widest">
                 <Sparkles className="w-3 h-3" /> AI Discovery Engine
               </div>
               <h1 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tight">Explore Opportunities.</h1>
@@ -65,11 +65,11 @@ export const JobSearch = () => {
 
             <div className="flex-1 max-w-2xl w-full">
               <div className="relative group">
-                <Search className="absolute left-5 top-5 w-5 h-5 text-slate-400 group-focus-within:text-blue-600 transition-colors" />
+                <Search className="absolute left-5 top-5 w-5 h-5 text-slate-400 group-focus-within:text-stone-800 transition-colors" />
                 <input
                   type="text"
                   placeholder="Search by role, company, or keyword..."
-                  className="w-full pl-14 pr-6 py-5 bg-slate-50 border-2 border-transparent focus:border-blue-500/20 focus:bg-white rounded-[2rem] text-sm font-bold shadow-sm transition-all outline-none"
+                  className="w-full pl-14 pr-6 py-5 bg-slate-50 border-2 border-transparent focus:border-stone-700/20 focus:bg-white rounded-[2rem] text-sm font-bold shadow-sm transition-all outline-none"
                 />
               </div>
             </div>
@@ -96,7 +96,7 @@ export const JobSearch = () => {
           <div className="lg:col-span-9 space-y-8">
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-black text-slate-900 tracking-tight uppercase tracking-[0.1em]">
-                Available Positions <span className="text-blue-600 ml-2">({jobs.length})</span>
+                Available Positions <span className="text-stone-800 ml-2">({jobs.length})</span>
               </h2>
             </div>
 

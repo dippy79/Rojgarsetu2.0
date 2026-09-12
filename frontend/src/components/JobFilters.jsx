@@ -62,12 +62,12 @@ const JobFilters = ({ onFilterChange, type = 'government' }) => {
     <div className="bg-white/90 backdrop-blur-xl border border-slate-200/60 rounded-[2.5rem] p-8 shadow-2xl shadow-slate-200/30 sticky top-24 space-y-8 transition-all duration-500">
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-black text-slate-900 flex items-center gap-3">
-          <SlidersHorizontal className="w-5 h-5 text-indigo-600" />
+          <SlidersHorizontal className="w-5 h-5 text-stone-600" />
           Refine Feed
         </h2>
         <button
           onClick={clearFilters}
-          className="text-[10px] font-black text-slate-400 hover:text-rose-500 transition-colors uppercase tracking-[0.2em]"
+          className="text-[10px] font-black text-slate-400 hover:text-stone-500 transition-colors uppercase tracking-[0.2em]"
         >
           Reset All
         </button>
@@ -77,11 +77,11 @@ const JobFilters = ({ onFilterChange, type = 'government' }) => {
       <div className="space-y-3">
         <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Region / State</label>
         <div className="relative group">
-          <MapPin className="absolute left-4 top-4 w-4 h-4 text-slate-400 group-focus-within:text-indigo-600 transition-colors z-10" />
+          <MapPin className="absolute left-4 top-4 w-4 h-4 text-slate-400 group-focus-within:text-stone-600 transition-colors z-10" />
           <select
             value={filters.location}
             onChange={(e) => handleFilterChange('location', e.target.value)}
-            className="w-full pl-12 pr-10 py-4 bg-slate-50 border-2 border-transparent focus:border-indigo-500/20 rounded-2xl text-sm font-bold text-slate-900 appearance-none cursor-pointer hover:bg-slate-100 transition-all outline-none"
+            className="w-full pl-12 pr-10 py-4 bg-slate-50 border-2 border-transparent focus:border-stone-500/20 rounded-2xl text-sm font-bold text-slate-900 appearance-none cursor-pointer hover:bg-slate-100 transition-all outline-none"
           >
             {INDIAN_STATES.map(state => (
               <option key={state} value={state === 'All India' ? '' : state}>{state}</option>
@@ -103,7 +103,7 @@ const JobFilters = ({ onFilterChange, type = 'government' }) => {
                 className={`px-4 py-2.5 rounded-xl border-2 text-xs font-bold transition-all ${
                   filters.jobType === t.id
                     ? 'bg-slate-900 border-slate-900 text-white shadow-lg'
-                    : 'bg-white border-slate-100 text-slate-600 hover:border-indigo-200'
+                    : 'bg-white border-slate-100 text-slate-600 hover:border-stone-200'
                 }`}
               >
                 {t.label}
@@ -119,13 +119,13 @@ const JobFilters = ({ onFilterChange, type = 'government' }) => {
           {type === 'government' ? 'Department / Body' : 'Company Name'}
         </label>
         <div className="relative group">
-          <Building2 className="absolute left-4 top-4 w-4 h-4 text-slate-400 group-focus-within:text-indigo-600 transition-colors z-10" />
+          <Building2 className="absolute left-4 top-4 w-4 h-4 text-slate-400 group-focus-within:text-stone-600 transition-colors z-10" />
           <input
             type="text"
             placeholder={type === 'government' ? 'e.g. SSC, UPSC...' : 'e.g. Google, Razorpay...'}
             value={type === 'government' ? filters.department : filters.company}
             onChange={(e) => handleFilterChange(type === 'government' ? 'department' : 'company', e.target.value)}
-            className="w-full pl-12 pr-4 py-4 bg-slate-50 border-2 border-transparent focus:border-indigo-500/20 rounded-2xl text-sm font-bold text-slate-900 outline-none transition-all placeholder:text-slate-300"
+            className="w-full pl-12 pr-4 py-4 bg-slate-50 border-2 border-transparent focus:border-stone-500/20 rounded-2xl text-sm font-bold text-slate-900 outline-none transition-all placeholder:text-slate-300"
           />
         </div>
       </div>
@@ -143,12 +143,12 @@ const JobFilters = ({ onFilterChange, type = 'government' }) => {
                 onClick={() => handleFilterChange('category', active ? '' : cat.id)}
                 className={`flex flex-col items-center gap-3 p-4 rounded-3xl border-2 transition-all ${
                   active
-                    ? 'bg-indigo-50 border-indigo-600 shadow-inner'
+                    ? 'bg-stone-50 border-stone-600 shadow-inner'
                     : 'bg-white border-slate-100 hover:border-slate-200 hover:bg-slate-50'
                 }`}
               >
-                <Icon className={`w-5 h-5 ${active ? 'text-indigo-600' : 'text-slate-400'}`} />
-                <span className={`text-[10px] font-black uppercase tracking-tighter ${active ? 'text-indigo-700' : 'text-slate-500'}`}>
+                <Icon className={`w-5 h-5 ${active ? 'text-stone-600' : 'text-slate-400'}`} />
+                <span className={`text-[10px] font-black uppercase tracking-tighter ${active ? 'text-stone-700' : 'text-slate-500'}`}>
                   {cat.label}
                 </span>
               </button>
@@ -159,12 +159,12 @@ const JobFilters = ({ onFilterChange, type = 'government' }) => {
 
       {/* Premium International Toggle */}
       <div className="pt-6 border-t border-slate-100">
-        <div className="flex items-center justify-between p-4 bg-emerald-50 rounded-2xl border border-emerald-100 group cursor-pointer hover:bg-emerald-100 transition-colors">
+        <div className="flex items-center justify-between p-4 bg-stone-50 rounded-2xl border border-stone-100 group cursor-pointer hover:bg-stone-100 transition-colors">
           <div className="flex items-center gap-3">
-            <Globe className="w-5 h-5 text-emerald-600" />
+            <Globe className="w-5 h-5 text-stone-600" />
             <div>
-              <p className="text-xs font-black text-emerald-900">International</p>
-              <p className="text-[9px] text-emerald-600 font-bold uppercase">UAE • Europe • US</p>
+              <p className="text-xs font-black text-stone-900">International</p>
+              <p className="text-[9px] text-stone-600 font-bold uppercase">UAE • Europe • US</p>
             </div>
           </div>
           <div className="w-10 h-6 bg-slate-200 rounded-full relative">

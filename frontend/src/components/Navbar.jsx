@@ -50,8 +50,8 @@ const Navbar = () => {
   const navLinkStyle = (path) => {
     const isActive = router.pathname === path;
     return isActive
-      ? 'text-blue-600 font-semibold border-b-2 border-blue-600 pb-1 transition-all'
-      : 'text-slate-600 hover:text-slate-900 font-medium transition-all';
+      ? 'text-stone-900 font-bold border-b-2 border-stone-800 pb-1 transition-all'
+      : 'text-stone-500 hover:text-stone-800 font-medium transition-all';
   }
 
   const userRole = (currentUser.role || 'candidate').toLowerCase();
@@ -62,11 +62,10 @@ const Navbar = () => {
     let ws;
     if (isLoggedIn && typeof window !== 'undefined') {
       const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const host = process.env.NEXT_PUBLIC_WS_HOST || 'localhost:3001';
-    if (!process.env.NEXT_PUBLIC_WS_HOST) {
-        console.warn('WARNING: NEXT_PUBLIC_WS_HOST is missing. Using default: localhost:3001');
-    }
-      ws = new WebSocket(`${protocol}//${host}/api/v1/ws`);
+      const wsHost = process.env.NEXT_PUBLIC_WS_HOST || (typeof window !== 'undefined' ? window.location.host : null);
+      if (!wsHost) return;
+
+      ws = new WebSocket(`${protocol}//${wsHost}/api/v1/ws`);
 
       ws.onmessage = (event) => {
         try {
@@ -82,13 +81,13 @@ const Navbar = () => {
   }, [isLoggedIn]);
 
   return (
-    <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-slate-200 h-16 flex items-center justify-between px-6 shadow-sm">
+    <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-stone-200 h-16 flex items-center justify-between px-6 shadow-sm">
       {/* Brand Logo */}
-      <Link href="/" className="flex items-center gap-2 text-xl font-bold text-slate-900">
-        <div className="bg-slate-900 text-white p-2 rounded-xl">
-          <Briefcase className="w-5 h-5 text-blue-400" />
+      <Link href="/" className="flex items-center gap-2 text-xl font-bold text-stone-900 tracking-tight uppercase">
+        <div className="bg-stone-800 text-white p-2 rounded-lg">
+          <Briefcase className="w-5 h-5" />
         </div>
-        <span>Rojgar<span className="text-blue-600">Setu</span></span>
+        <span>Rojgar<span className="text-stone-500 font-light">Setu</span></span>
       </Link>
 
       {/* Existing Nav Links Preserved Exactly */}
@@ -121,13 +120,13 @@ const Navbar = () => {
           <div className="flex items-center gap-3">
             <Link
               href="/login"
-              className="text-slate-700 hover:text-slate-900 text-sm font-semibold px-4 py-2 rounded-xl hover:bg-slate-100 transition-all"
+              className="text-stone-700 hover:text-stone-900 text-sm font-semibold px-4 py-2 rounded-xl hover:bg-stone-100 transition-all"
             >
               Login
             </Link>
             <Link
               href="/register"
-              className="bg-slate-900 hover:bg-slate-800 text-white px-4 py-2 rounded-xl text-sm font-semibold shadow-md transition-all"
+              className="bg-stone-800 hover:bg-stone-900 text-white px-4 py-2 rounded-xl text-sm font-semibold shadow-md transition-all"
             >
               Register
             </Link>
@@ -149,7 +148,7 @@ const Navbar = () => {
                 <span className="text-sm font-semibold text-slate-900 leading-tight">
                   {currentUser.name}
                 </span>
-                <span className="text-[10px] uppercase tracking-wider font-semibold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded w-fit mt-0.5">
+                <span className="text-[10px] uppercase tracking-wider font-semibold text-stone-500 bg-stone-100 px-1.5 py-0.5 rounded w-fit mt-0.5">
                   {currentUser.role}
                 </span>
               </div>
@@ -167,7 +166,7 @@ const Navbar = () => {
                 <Link
                   href={dashboardPath}
                   onClick={() => setDropdownOpen(false)}
-                  className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 hover:text-blue-600 transition-all font-medium"
+                  className="flex items-center gap-3 px-4 py-2.5 text-sm text-stone-700 hover:bg-stone-50 hover:text-stone-900 transition-all font-medium"
                 >
                   <LayoutDashboard className="w-4 h-4" />
                   Dashboard
@@ -176,7 +175,7 @@ const Navbar = () => {
                 <Link
                   href={profilePath}
                   onClick={() => setDropdownOpen(false)}
-                  className="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 hover:text-blue-600 transition-all font-medium"
+                  className="flex items-center gap-3 px-4 py-2.5 text-sm text-stone-700 hover:bg-stone-50 hover:text-stone-900 transition-all font-medium"
                 >
                   <User className="w-4 h-4" />
                   Profile
@@ -186,7 +185,7 @@ const Navbar = () => {
 
                 <button
                   onClick={handleLogout}
-                  className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-all font-medium text-left cursor-pointer"
+                  className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-stone-600 hover:bg-stone-50 transition-all font-medium text-left cursor-pointer"
                 >
                   <LogOut className="w-4 h-4" />
                   Logout

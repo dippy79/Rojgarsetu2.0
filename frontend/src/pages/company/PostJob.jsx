@@ -55,7 +55,7 @@ export default function PostJob() {
               </div>
            </div>
 
-           <div className="hidden md:flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-600 rounded-2xl border border-indigo-100 text-[10px] font-black uppercase tracking-widest">
+           <div className="hidden md:flex items-center gap-2 px-4 py-2 bg-stone-50 text-stone-600 rounded-2xl border border-stone-100 text-[10px] font-black uppercase tracking-widest">
               <Sparkles className="w-3.5 h-3.5" /> AI Ranking Enabled
            </div>
         </div>
@@ -67,35 +67,35 @@ export default function PostJob() {
                  <div className="space-y-4">
                     <label htmlFor="title" className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Position Title</label>
                     <div className="relative group">
-                       <Briefcase className="absolute left-4 top-4 w-5 h-5 text-slate-300 group-focus-within:text-indigo-600 transition-colors" />
-                       <input id="title" name="title" value={formData.title} onChange={handleChange} required placeholder="e.g. Senior Systems Architect" className="w-full pl-12 pr-6 py-4 bg-slate-50 border-none rounded-2xl text-sm font-bold outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all" />
+                       <Briefcase className="absolute left-4 top-4 w-5 h-5 text-slate-300 group-focus-within:text-stone-600 transition-colors" />
+                       <input id="title" name="title" value={formData.title} onChange={handleChange} required placeholder="e.g. Senior Systems Architect" className="w-full pl-12 pr-6 py-4 bg-slate-50 border-none rounded-2xl text-sm font-bold outline-none focus:ring-4 focus:ring-stone-500/10 transition-all" />
                     </div>
                  </div>
 
                  <div className="space-y-4">
                     <label htmlFor="description" className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Role Description</label>
-                    <textarea id="description" name="description" rows={6} value={formData.description} onChange={handleChange} required placeholder="Detail the core responsibilities and team culture..." className="w-full px-6 py-4 bg-slate-50 border-none rounded-3xl text-sm font-bold outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all resize-none" />
+                    <textarea id="description" name="description" rows={6} value={formData.description} onChange={handleChange} required placeholder="Detail the core responsibilities and team culture..." className="w-full px-6 py-4 bg-slate-50 border-none rounded-3xl text-sm font-bold outline-none focus:ring-4 focus:ring-stone-500/10 transition-all resize-none" />
                  </div>
 
                  <div className="space-y-4">
                     <label htmlFor="requirements" className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Core Requirements</label>
-                    <textarea id="requirements" name="requirements" rows={4} value={formData.requirements} onChange={handleChange} placeholder="Technical stacks, education, and specific traits..." className="w-full px-6 py-4 bg-slate-50 border-none rounded-3xl text-sm font-bold outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all resize-none" />
+                    <textarea id="requirements" name="requirements" rows={4} value={formData.requirements} onChange={handleChange} placeholder="Technical stacks, education, and specific traits..." className="w-full px-6 py-4 bg-slate-50 border-none rounded-3xl text-sm font-bold outline-none focus:ring-4 focus:ring-stone-500/10 transition-all resize-none" />
                  </div>
               </div>
 
               <div className="bg-white border border-slate-200 rounded-[2.5rem] p-10 shadow-sm space-y-8">
                  <h3 className="text-sm font-black text-slate-900 uppercase tracking-widest flex items-center gap-2">
-                    <Sparkles className="w-4 h-4 text-indigo-600" /> Professional Fit
+                    <Sparkles className="w-4 h-4 text-stone-600" /> Professional Fit
                  </h3>
 
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     <div className="space-y-4">
                        <label htmlFor="skills_required" className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Skills (Comma Separated)</label>
-                       <input id="skills_required" name="skills_required" value={formData.skills_required} onChange={handleChange} placeholder="Next.js, Python, AWS" className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl text-sm font-bold outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all" />
+                       <input id="skills_required" name="skills_required" value={formData.skills_required} onChange={handleChange} placeholder="Next.js, Python, AWS" className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl text-sm font-bold outline-none focus:ring-4 focus:ring-stone-500/10 transition-all" />
                     </div>
                     <div className="space-y-4">
                        <label htmlFor="experience_years" className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Min. Experience (Years)</label>
-                       <input id="experience_years" name="experience_years" type="number" value={formData.experience_years} onChange={handleChange} className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl text-sm font-bold outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all" />
+                       <input id="experience_years" name="experience_years" type="number" value={formData.experience_years} onChange={handleChange} className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl text-sm font-bold outline-none focus:ring-4 focus:ring-stone-500/10 transition-all" />
                     </div>
                  </div>
               </div>
@@ -103,15 +103,15 @@ export default function PostJob() {
 
            {/* Right Section: Metadata */}
            <div className="md:col-span-4 space-y-8">
-              <div className="bg-slate-900 rounded-[2.5rem] p-8 text-white space-y-8 shadow-2xl shadow-indigo-900/20">
-                 <h3 className="text-xs font-black uppercase tracking-[0.2em] text-indigo-400">Logistics</h3>
+              <div className="bg-slate-900 rounded-[2.5rem] p-8 text-white space-y-8 shadow-2xl shadow-stone-900/20">
+                 <h3 className="text-xs font-black uppercase tracking-[0.2em] text-stone-400">Logistics</h3>
 
                  <div className="space-y-6">
                     <div className="space-y-3">
                        <label htmlFor="location" className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Office Hub</label>
                        <div className="relative group">
                           <MapPin className="absolute left-3 top-3 w-4 h-4 text-slate-600" />
-                          <input id="location" name="location" value={formData.location} onChange={handleChange} required placeholder="e.g. Dubai, UAE" className="w-full pl-10 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl text-xs font-bold outline-none focus:border-indigo-500 transition-all" />
+                          <input id="location" name="location" value={formData.location} onChange={handleChange} required placeholder="e.g. Dubai, UAE" className="w-full pl-10 pr-4 py-3 bg-white/5 border border-white/10 rounded-xl text-xs font-bold outline-none focus:border-stone-500 transition-all" />
                        </div>
                     </div>
 
@@ -127,10 +127,10 @@ export default function PostJob() {
 
                     <div className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/5">
                        <div className="flex items-center gap-3">
-                          <Laptop className="w-4 h-4 text-indigo-400" />
+                          <Laptop className="w-4 h-4 text-stone-400" />
                           <span className="text-[10px] font-black uppercase tracking-widest">Remote Friendly</span>
                        </div>
-                       <input id="is_remote" name="is_remote" type="checkbox" checked={formData.is_remote} onChange={handleChange} className="w-5 h-5 rounded-lg border-none bg-white/10 text-indigo-600 focus:ring-0 cursor-pointer" />
+                       <input id="is_remote" name="is_remote" type="checkbox" checked={formData.is_remote} onChange={handleChange} className="w-5 h-5 rounded-lg border-none bg-white/10 text-stone-600 focus:ring-0 cursor-pointer" />
                     </div>
                  </div>
 
@@ -158,7 +158,7 @@ export default function PostJob() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full flex items-center justify-center gap-3 py-6 bg-indigo-600 text-white font-black rounded-[2rem] hover:bg-indigo-700 transition-all shadow-2xl shadow-indigo-600/30 uppercase text-xs tracking-[0.2em] group"
+                className="w-full flex items-center justify-center gap-3 py-6 bg-stone-600 text-white font-black rounded-[2rem] hover:bg-stone-700 transition-all shadow-2xl shadow-stone-600/30 uppercase text-xs tracking-[0.2em] group"
               >
                 {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <>Publish Opening <Send className="w-4 h-4 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" /></>}
               </button>

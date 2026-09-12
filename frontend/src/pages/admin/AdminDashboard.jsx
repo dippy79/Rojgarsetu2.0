@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import api from '../../lib/api';
+import ProtectedRoute from '../../components/ProtectedRoute';
 
 export default function AdminDashboard() {
   const [tab, setTab] = useState('overview');
@@ -51,13 +52,14 @@ export default function AdminDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-[#FBFBFB] font-sans">
+    <ProtectedRoute allowedRoles={['admin']}>
+      <div className="min-h-screen bg-slate-50 font-sans">
       <header className="bg-white border-b border-slate-200 pt-16 pb-8 px-10 sticky top-0 z-40">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-8">
            <div>
               <div className="flex items-center gap-3">
                  <div className="p-2.5 bg-slate-900 rounded-2xl shadow-xl">
-                    <Cpu className="w-6 h-6 text-indigo-400" />
+                    <Cpu className="w-6 h-6 text-stone-400" />
                  </div>
                  <h1 className="text-3xl font-black text-slate-900 tracking-tight">System Node.</h1>
               </div>
@@ -70,7 +72,7 @@ export default function AdminDashboard() {
                   key={t}
                   onClick={() => setTab(t)}
                   className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
-                    tab === t ? 'bg-white text-indigo-600 shadow-sm border border-slate-200' : 'text-slate-400 hover:text-slate-600'
+                    tab === t ? 'bg-white text-stone-600 shadow-sm border border-slate-200' : 'text-slate-400 hover:text-slate-600'
                   }`}
                 >
                   {t}
@@ -92,16 +94,16 @@ export default function AdminDashboard() {
               <div className="space-y-12 animate-in fade-in duration-500">
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
                   {[
-                    { label: 'Cloud Nodes', val: (stats?.total_candidates || 0) + (stats?.total_companies || 0), icon: Users, color: 'blue' },
-                    { label: 'Active Jobs', val: stats?.total_jobs || 0, icon: Briefcase, color: 'indigo' },
-                    { label: 'Deployments', val: stats?.total_placements || 0, icon: Zap, color: 'emerald' },
-                    { label: 'Partners', val: stats?.total_companies || 0, icon: Globe, color: 'amber' },
+                    { label: 'Cloud Nodes', val: (stats?.total_candidates || 0) + (stats?.total_companies || 0), icon: Users, color: 'stone' },
+                    { label: 'Active Jobs', val: stats?.total_jobs || 0, icon: Briefcase, color: 'stone' },
+                    { label: 'Deployments', val: stats?.total_placements || 0, icon: Zap, color: 'stone' },
+                    { label: 'Partners', val: stats?.total_companies || 0, icon: Globe, color: 'stone' },
                   ].map(s => (
-                    <div key={s.label} className="bg-white border border-slate-200 p-8 rounded-[2.5rem] shadow-sm relative overflow-hidden group">
-                       <div className={`absolute top-0 right-0 w-24 h-24 bg-${s.color}-500/5 rounded-full -mr-12 -mt-12 blur-2xl transition-transform group-hover:scale-150`}></div>
-                       <s.icon className={`w-5 h-5 text-${s.color}-500 mb-6`} />
-                       <p className="text-4xl font-black text-slate-900 tracking-tighter">{s.val}</p>
-                       <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-2">{s.label}</p>
+                    <div key={s.label} className="bg-white border border-stone-200 p-8 rounded-[2.5rem] shadow-sm relative overflow-hidden group">
+                       <div className={`absolute top-0 right-0 w-24 h-24 bg-stone-500/5 rounded-full -mr-12 -mt-12 blur-2xl transition-transform group-hover:scale-150`}></div>
+                       <s.icon className={`w-5 h-5 text-stone-800 mb-6`} />
+                       <p className="text-4xl font-black text-stone-900 tracking-tighter">{s.val}</p>
+                       <p className="text-[10px] font-black text-stone-500 uppercase tracking-widest mt-2">{s.label}</p>
                     </div>
                   ))}
                 </div>
@@ -110,7 +112,7 @@ export default function AdminDashboard() {
                    <div className="lg:col-span-8 bg-white border border-slate-200 rounded-[3rem] p-10 shadow-sm">
                       <div className="flex items-center justify-between mb-10">
                          <h3 className="text-xl font-black text-slate-900 tracking-tight flex items-center gap-3">
-                            <Activity className="w-5 h-5 text-indigo-600" />
+                            <Activity className="w-5 h-5 text-stone-600" />
                             Throughput Analytics
                          </h3>
                          <div className="px-3 py-1 bg-slate-50 text-slate-400 rounded-lg text-[9px] font-black uppercase">Live: 7D Window</div>
@@ -134,7 +136,7 @@ export default function AdminDashboard() {
                    </div>
 
                    <div className="lg:col-span-4 bg-slate-900 rounded-[3rem] p-10 text-white relative overflow-hidden flex flex-col justify-between">
-                      <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/10 rounded-full -mr-32 -mt-32 blur-[100px]"></div>
+                      <div className="absolute top-0 right-0 w-64 h-64 bg-stone-500/10 rounded-full -mr-32 -mt-32 blur-[100px]"></div>
                       <div className="relative z-10">
                          <h3 className="text-xl font-black tracking-tight">System Status</h3>
                          <p className="text-slate-500 text-xs font-bold uppercase tracking-widest mt-2">All Nodes Operational</p>
@@ -143,11 +145,11 @@ export default function AdminDashboard() {
                       <div className="relative z-10 space-y-6">
                          <div className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/5">
                             <span className="text-[10px] font-black uppercase text-slate-400">Database Latency</span>
-                            <span className="text-xs font-black text-emerald-400">12ms</span>
+                            <span className="text-xs font-black text-stone-400">12ms</span>
                          </div>
                          <div className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/5">
                             <span className="text-[10px] font-black uppercase text-slate-400">AI Cache Hit</span>
-                            <span className="text-xs font-black text-blue-400">94.2%</span>
+                            <span className="text-xs font-black text-stone-400">94.2%</span>
                          </div>
                       </div>
                    </div>
@@ -161,7 +163,7 @@ export default function AdminDashboard() {
                    <h2 className="text-2xl font-black text-slate-900 tracking-tight">Node Directory</h2>
                    <div className="relative">
                       <Search className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" />
-                      <input type="text" placeholder="Search user hash..." className="pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold outline-none focus:ring-2 focus:ring-indigo-500/20 w-64" />
+                      <input type="text" placeholder="Search user hash..." className="pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold outline-none focus:ring-2 focus:ring-stone-500/20 w-64" />
                    </div>
                 </div>
                 <div className="overflow-x-auto">
@@ -186,8 +188,8 @@ export default function AdminDashboard() {
                             </td>
                             <td className="px-8 py-6 text-slate-400 font-mono text-xs">{new Date(u.created_at).toLocaleDateString()}</td>
                             <td className="px-8 py-6 text-right space-x-2">
-                              <button className="px-4 py-2 bg-rose-50 text-rose-600 rounded-xl text-[10px] uppercase tracking-tighter hover:bg-rose-600 hover:text-white transition-all">Revoke</button>
-                              <button className="px-4 py-2 bg-emerald-50 text-emerald-600 rounded-xl text-[10px] uppercase tracking-tighter hover:bg-emerald-600 hover:text-white transition-all">Validate</button>
+                              <button className="px-4 py-2 bg-stone-50 text-stone-600 rounded-xl text-[10px] uppercase tracking-tighter hover:bg-stone-600 hover:text-white transition-all">Revoke</button>
+                              <button className="px-4 py-2 bg-stone-50 text-stone-600 rounded-xl text-[10px] uppercase tracking-tighter hover:bg-stone-600 hover:text-white transition-all">Validate</button>
                             </td>
                           </tr>
                         ))
@@ -202,21 +204,21 @@ export default function AdminDashboard() {
               <div className="space-y-8 animate-in zoom-in-95 duration-500">
                 <div className="bg-white border border-slate-200 p-10 rounded-[3rem] shadow-sm flex items-center justify-between">
                   <div className="flex items-center gap-6">
-                    <div className={`w-4 h-4 rounded-full ${crawlerStats.health === 'RUNNING' ? 'bg-emerald-500 animate-pulse' : 'bg-slate-300 shadow-inner shadow-slate-400'}`}></div>
+                    <div className={`w-4 h-4 rounded-full ${crawlerStats.health === 'RUNNING' ? 'bg-stone-500 animate-pulse' : 'bg-slate-300 shadow-inner shadow-slate-400'}`}></div>
                     <div>
                        <h3 className="text-2xl font-black text-slate-900 tracking-tight">Aggregator Core</h3>
                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Status: {crawlerStats.health}</p>
                     </div>
                   </div>
-                  <button onClick={triggerCrawl} className="flex items-center gap-3 bg-slate-900 text-white px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-indigo-600 transition-all shadow-xl shadow-slate-900/10">
+                  <button onClick={triggerCrawl} className="flex items-center gap-3 bg-slate-900 text-white px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-stone-600 transition-all shadow-xl shadow-slate-900/10">
                     <Play className="w-4 h-4 fill-current" /> Initialize Sequence
                   </button>
                 </div>
 
                 <div className="bg-slate-950 rounded-[3rem] p-10 shadow-2xl relative overflow-hidden">
-                   <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-indigo-500 to-transparent"></div>
+                   <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-stone-500 to-transparent"></div>
                    <div className="flex items-center justify-between mb-6">
-                      <h4 className="text-indigo-400 text-xs font-black uppercase tracking-[0.2em]">Kernel Logs</h4>
+                      <h4 className="text-stone-400 text-xs font-black uppercase tracking-[0.2em]">Kernel Logs</h4>
                       <button className="text-[9px] font-black text-slate-600 uppercase hover:text-white transition-colors">Clear Buffer</button>
                    </div>
                    <div className="font-mono text-[11px] text-slate-300 h-96 overflow-y-auto space-y-2 custom-scrollbar">
@@ -255,11 +257,11 @@ export default function AdminDashboard() {
                             <td className="px-8 py-6">{e.subject}</td>
                             <td className="px-8 py-6">
                               <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-tighter ${
-                                e.status === 'SENT' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' :
-                                e.status === 'PENDING' ? 'bg-amber-50 text-amber-600 border border-amber-100' :
-                                'bg-rose-50 text-rose-600 border border-rose-100'
+                                e.status === 'SENT' ? 'bg-stone-50 text-stone-600 border border-stone-100' :
+                                e.status === 'PENDING' ? 'bg-stone-50 text-stone-600 border border-stone-100' :
+                                'bg-stone-50 text-stone-600 border border-stone-100'
                               }`}>
-                                <div className={`w-1.5 h-1.5 rounded-full ${e.status === 'SENT' ? 'bg-emerald-500' : e.status === 'PENDING' ? 'bg-amber-500' : 'bg-rose-500'}`}></div>
+                                <div className={`w-1.5 h-1.5 rounded-full ${e.status === 'SENT' ? 'bg-stone-500' : e.status === 'PENDING' ? 'bg-stone-500' : 'bg-stone-500'}`}></div>
                                 {e.status}
                               </div>
                             </td>
@@ -276,5 +278,6 @@ export default function AdminDashboard() {
         )}
       </main>
     </div>
+    </ProtectedRoute>
   );
 }

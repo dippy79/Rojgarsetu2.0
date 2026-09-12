@@ -33,9 +33,6 @@ export const AuthProvider = ({ children }) => {
 
       if (success && data) {
         setUser(data.user);
-        if (data.token) {
-          localStorage.setItem('access_token', data.token);
-        }
         toast.success("Welcome back!");
         return data.user;
       }
@@ -73,8 +70,8 @@ export const AuthProvider = ({ children }) => {
       console.error("Logout failed:", err);
     } finally {
       setUser(null);
-      localStorage.removeItem('access_token');
       if (typeof window !== 'undefined') {
+        localStorage.removeItem('rojgar_user');
         window.location.href = '/login';
       }
     }

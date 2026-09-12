@@ -29,7 +29,7 @@ export default function JobPage(){
            href={job.apply_link || job.data?.apply_link}
            target="_blank"
            rel="noreferrer"
-           className="inline-block px-10 py-4 bg-slate-900 text-white font-black rounded-2xl hover:bg-indigo-600 transition-all uppercase text-xs tracking-widest"
+           className="inline-block px-10 py-4 bg-slate-900 text-white font-black rounded-2xl hover:bg-stone-600 transition-all uppercase text-xs tracking-widest"
          >
            Apply Now
          </a>

@@ -10,7 +10,8 @@ const PublicCounter = () => {
   });
 
   useEffect(() => {
-    fetch('http://localhost:3001/api/v1/stats')
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
+    fetch(`${baseUrl}/api/v1/stats`)
       .then(res => res.ok ? res.json() : {})
       .then(data => {
         if (data) setStats(data);
@@ -19,13 +20,13 @@ const PublicCounter = () => {
   }, []);
 
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 py-12 px-6 bg-slate-900 rounded-[3rem] shadow-2xl shadow-indigo-900/20 relative overflow-hidden">
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 py-12 px-6 bg-slate-900 rounded-[3rem] shadow-2xl shadow-stone-900/20 relative overflow-hidden">
       <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(#ffffff0a_1px,transparent_1px)] [background-size:24px_24px]"></div>
 
-      <StatItem icon={<Briefcase className="w-6 h-6 text-blue-400" />} label="Live Jobs" value={stats.total_jobs} color="blue" />
-      <StatItem icon={<Users className="w-6 h-6 text-emerald-400" />} label="Candidates" value={stats.total_candidates} color="emerald" />
-      <StatItem icon={<Building2 className="w-6 h-6 text-indigo-400" />} label="Companies" value={stats.total_companies} color="indigo" />
-      <StatItem icon={<Zap className="w-6 h-6 text-amber-400" />} label="Placements" value={stats.total_placements} color="amber" />
+      <StatItem icon={<Briefcase className="w-6 h-6 text-stone-400" />} label="Live Jobs" value={stats.total_jobs} color="blue" />
+      <StatItem icon={<Users className="w-6 h-6 text-stone-400" />} label="Candidates" value={stats.total_candidates} color="emerald" />
+      <StatItem icon={<Building2 className="w-6 h-6 text-stone-400" />} label="Companies" value={stats.total_companies} color="indigo" />
+      <StatItem icon={<Zap className="w-6 h-6 text-stone-400" />} label="Placements" value={stats.total_placements} color="amber" />
     </div>
   );
 };

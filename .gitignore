@@ -40,4 +40,4 @@ frontend/build/
 frontend/out/
 
 # Python Venv
-services/ai-engine-python/.venv/
+services/ai-engine-python/.venv/".env" 

@@ -29,7 +29,7 @@ const DashboardAnalytics = ({ applicationStats = [], skillMatch = 75 }) => {
             <h3 className="text-xl font-black text-slate-900 tracking-tight">Application Velocity</h3>
             <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mt-1">Activity past 7 days</p>
           </div>
-          <div className="p-3 bg-emerald-50 text-emerald-600 rounded-2xl border border-emerald-100 flex items-center gap-2">
+          <div className="p-3 bg-stone-50 text-stone-600 rounded-2xl border border-stone-100 flex items-center gap-2">
             <TrendingUp className="w-4 h-4" />
             <span className="text-xs font-black">+24% Increase</span>
           </div>
@@ -64,24 +64,24 @@ const DashboardAnalytics = ({ applicationStats = [], skillMatch = 75 }) => {
       {/* Profile Score Widget */}
       <div className="lg:col-span-4 space-y-6">
         <div className="bg-slate-900 rounded-[2rem] p-8 text-white relative overflow-hidden group">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/20 rounded-full -mr-16 -mt-16 blur-3xl group-hover:bg-blue-500/40 transition-all duration-700"></div>
+          <div className="absolute top-0 right-0 w-32 h-32 bg-stone-700/20 rounded-full -mr-16 -mt-16 blur-3xl group-hover:bg-stone-700/40 transition-all duration-700"></div>
 
           <div className="relative z-10 space-y-6">
             <div className="flex items-center gap-3">
               <div className="p-3 bg-white/10 backdrop-blur-md rounded-2xl border border-white/10">
-                <Award className="w-6 h-6 text-blue-400" />
+                <Award className="w-6 h-6 text-stone-400" />
               </div>
               <h3 className="font-black text-lg">AI Match Score</h3>
             </div>
 
             <div className="flex items-end gap-2">
-              <span className="text-6xl font-black tracking-tighter text-blue-400">{skillMatch}%</span>
-              <span className="text-blue-100/50 font-bold mb-2">Overall Fit</span>
+              <span className="text-6xl font-black tracking-tighter text-stone-400">{skillMatch}%</span>
+              <span className="text-stone-200/50 font-bold mb-2">Overall Fit</span>
             </div>
 
             <div className="w-full bg-white/10 h-3 rounded-full overflow-hidden">
               <div
-                className="h-full bg-gradient-to-r from-blue-600 to-indigo-400 rounded-full transition-all duration-1000 ease-out shadow-[0_0_20px_rgba(59,130,246,0.5)]"
+                className="h-full bg-gradient-to-r from-stone-800 to-stone-400 rounded-full transition-all duration-1000 ease-out shadow-[0_0_20px_rgba(59,130,246,0.5)]"
                 style={{ width: `${skillMatch}%` }}
               ></div>
             </div>

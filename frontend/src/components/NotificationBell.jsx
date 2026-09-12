@@ -28,7 +28,7 @@ export default function NotificationBell() {
       <button onClick={() => setOpen(!open)} className="relative p-2 text-slate-600 hover:bg-slate-100 rounded-full">
         <Bell className="w-5 h-5" />
         {unreadCount > 0 && (
-          <span className="absolute top-1 right-1 w-4 h-4 bg-rose-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+          <span className="absolute top-1 right-1 w-4 h-4 bg-stone-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
             {unreadCount}
           </span>
         )}
@@ -42,7 +42,7 @@ export default function NotificationBell() {
               <p className="text-xs text-slate-400 py-2">No notifications yet.</p>
             ) : (
               notifications.slice(0, 5).map(n => (
-                <div key={n.id} className={`p-2.5 rounded-xl text-xs border ${n.is_read ? 'bg-slate-50 border-slate-100' : 'bg-indigo-50/50 border-indigo-100'}`}>
+                <div key={n.id} className={`p-2.5 rounded-xl text-xs border ${n.is_read ? 'bg-slate-50 border-slate-100' : 'bg-stone-50/50 border-stone-100'}`}>
                   <p className="font-semibold text-slate-800">{n.title}</p>
                   <p className="text-slate-600">{n.body}</p>
                 </div>

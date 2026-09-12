@@ -14,9 +14,9 @@ export const ProgressBar = React.forwardRef<HTMLDivElement, ProgressBarProps>(
     
     const variants = {
       cyan: "bg-cyan-500",
-      emerald: "bg-emerald-500",
-      amber: "bg-amber-500",
-      gradient: "bg-gradient-to-r from-cyan-500 to-emerald-400"
+      emerald: "bg-stone-500",
+      amber: "bg-stone-500",
+      gradient: "bg-gradient-to-r from-cyan-500 to-stone-400"
     };
     
     const sizes = {
