@@ -1,7 +1,16 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: 'export',
-  turbopack: {},
+  // Silencing workspace root warning
+  experimental: {
+    // optimizePackageImports: ['lucide-react'],
+  },
+  // In Next.js 15+, turbopack root can be set here or inferred.
+  // The warning suggests setting it directly.
+  // @ts-ignore
+  turbopack: {
+    root: '..',
+  },
   images: {
     unoptimized: true,
     remotePatterns: [
@@ -10,12 +19,7 @@ const nextConfig = {
       { protocol: 'https', hostname: '**' },
     ],
   },
-  // Disabling optimizePackageImports for stability in CI
-  experimental: {
-    // optimizePackageImports: ['lucide-react'],
-  },
   webpack: (config) => {
-    // Optimize memory usage for webpack in CI
     config.cache = false;
     return config;
   },

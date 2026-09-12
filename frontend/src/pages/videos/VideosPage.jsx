@@ -138,4 +138,3 @@ export const VideosPage = () => {
 
 export default VideosPage;
 
-export default VideosPage;
