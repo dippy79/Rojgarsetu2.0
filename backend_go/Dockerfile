@@ -14,7 +14,7 @@ COPY . .
 # Build the Go binary (Static, No C bindings) using the synchronized vendor directory
 RUN test -n "$TARGETOS" && test -n "$TARGETARCH" \
   && CGO_ENABLED=0 GOOS="$TARGETOS" GOARCH="$TARGETARCH" \
-  go build -mod=vendor -a -installsuffix cgo -o rojgar_api ./cmd/server
+  go build -mod=mod -a -installsuffix cgo -o rojgar_api ./cmd/server
 
 FROM --platform=$TARGETPLATFORM alpine:latest
 RUN apk --no-cache add ca-certificates tzdata wget
