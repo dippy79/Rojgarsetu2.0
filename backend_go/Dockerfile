@@ -10,11 +10,8 @@ RUN apk add --no-cache git build-base
 # Set Go proxy for better reliability
 ENV GOPROXY=https://proxy.golang.org,direct
 
-COPY go.mod go.sum ./
-RUN go mod download
-
 COPY . .
-# Build the Go binary (Static, No C bindings)
+# Build the Go binary (Static, No C bindings) using the synchronized vendor directory
 RUN test -n "$TARGETOS" && test -n "$TARGETARCH" \
   && CGO_ENABLED=0 GOOS="$TARGETOS" GOARCH="$TARGETARCH" \
   go build -mod=vendor -a -installsuffix cgo -o rojgar_api ./cmd/server

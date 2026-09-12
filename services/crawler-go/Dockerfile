@@ -11,12 +11,9 @@ ENV GOPROXY=https://proxy.golang.org,direct
 # Install build dependencies
 RUN apt-get update && apt-get install -y git curl && rm -rf /var/lib/apt/lists/*
 
-COPY go.mod go.sum ./
-RUN go mod download
-
 COPY . .
 
-# Build the crawler binary
+# Build the crawler binary using the synchronized vendor directory
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
     go build -mod=vendor -ldflags="-s -w" -o /app/bin/crawler ./cmd/scheduler
 
