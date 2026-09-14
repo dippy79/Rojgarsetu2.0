@@ -1,5 +1,5 @@
 # --- Stage 1: Builder Stage ---
-FROM golang:1.23-bookworm AS builder
+FROM golang:1.24-alpine AS builder
 WORKDIR /app
 ENV GOPROXY=https://proxy.golang.org,direct
 RUN apt-get update && apt-get install -y git curl && rm -rf /var/lib/apt/lists/*
