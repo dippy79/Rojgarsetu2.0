@@ -1,7 +1,8 @@
 # --- Stage 1: Builder Stage ---
-FROM golang:1.24-bookworm AS builder
+FROM golang:1.26-bookworm AS builder
 WORKDIR /app
 ENV GOPROXY=https://proxy.golang.org,direct
+ENV GOTOOLCHAIN=auto
 RUN apt-get update && apt-get install -y git curl && rm -rf /var/lib/apt/lists/*
 
 COPY go.mod go.sum ./

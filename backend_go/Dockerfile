@@ -1,5 +1,5 @@
 # --- Stage 1: Build Stage ---
-FROM golang:1.24-alpine AS builder
+FROM golang:1.26-alpine AS builder
 
 ARG TARGETOS
 ARG TARGETARCH
@@ -7,6 +7,7 @@ ARG TARGETARCH
 WORKDIR /app
 RUN apk add --no-cache git build-base
 ENV GOPROXY=https://proxy.golang.org,direct
+ENV GOTOOLCHAIN=auto
 
 COPY go.mod go.sum ./
 RUN go mod download
