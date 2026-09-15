@@ -24,25 +24,30 @@ type Claims struct {
 func AuthMiddleware(cfg *config.Config) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		authHeader := c.GetHeader("Authorization")
-		if authHeader == "" {
-			c.JSON(http.StatusUnauthorized, gin.H{
-				"status": "error",
-				"error": gin.H{
-					"code":    401,
-					"message": "Authorization header required",
-				},
-			})
-			c.Abort()
-			return
+		tokenString := ""
+		if authHeader != "" {
+			tokenString = strings.TrimPrefix(authHeader, "Bearer ")
+			if tokenString == authHeader {
+				c.JSON(http.StatusUnauthorized, gin.H{
+					"status": "error",
+					"error": gin.H{
+						"code":    401,
+						"message": "Bearer token required",
+					},
+				})
+				c.Abort()
+				return
+			}
+		} else {
+			tokenString, _ = c.Cookie("access_token")
 		}
 
-		tokenString := strings.TrimPrefix(authHeader, "Bearer ")
-		if tokenString == authHeader {
+		if tokenString == "" {
 			c.JSON(http.StatusUnauthorized, gin.H{
 				"status": "error",
 				"error": gin.H{
 					"code":    401,
-					"message": "Bearer token required",
+					"message": "Authentication required",
 				},
 			})
 			c.Abort()

@@ -50,7 +50,7 @@ export const CoursesPage = () => {
   }, [fetchCourses]);
 
   const dynamicProviders = React.useMemo(() => {
-    const fromApi = providers.map(p => p.name || p);
+    const fromApi = providers.map(p => p.name || p.provider || p);
     const fromCourses = courses.map(c => c.provider_name || c.provider || c.source || c.platform);
     return [...new Set([...fromApi, ...fromCourses])].filter(Boolean).sort();
   }, [providers, courses]);
@@ -159,8 +159,8 @@ export const CoursesPage = () => {
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    {courses.map((course) => (
-                      <div key={course.id} className="group bg-white border border-stone-200 rounded-2xl p-8 hover:border-stone-400 hover:shadow-2xl transition-all">
+                    {courses.map((course, index) => (
+                      <div key={course.id || course.url || `${course.name || course.title || 'course'}-${index}`} className="group bg-white border border-stone-200 rounded-2xl p-8 hover:border-stone-400 hover:shadow-2xl transition-all">
                         <div className="flex items-center justify-between mb-6">
                           <span className="px-3 py-1 bg-stone-50 text-stone-600 text-[10px] font-black uppercase tracking-widest rounded-lg border border-stone-100">
                             {course.provider_name || 'Premium Academy'}

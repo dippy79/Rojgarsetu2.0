@@ -1,7 +1,10 @@
 package handlers
 
 import (
+	"net/http"
+
 	"github.com/gin-gonic/gin"
+	"github.com/rojgarsetu/backend/internal/middleware"
 	"github.com/rojgarsetu/backend/internal/services"
 )
 
@@ -41,4 +44,19 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 
 func (h *AuthHandler) Register(c *gin.Context) {
 	h.authSvc.Register(c)
+}
+
+func (h *AuthHandler) Me(c *gin.Context) {
+	userID := middleware.GetUserID(c)
+	if userID == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	user, err := h.authSvc.GetUser(c, userID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"success": true, "data": gin.H{"user": user}})
 }

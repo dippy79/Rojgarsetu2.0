@@ -28,10 +28,11 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
-      const response = await authAPI.login({ email, password });
-      const { success, data, message } = response.data;
+      await authAPI.login({ email, password });
+      const profileResponse = await authAPI.getProfile();
+      const { success, data, message } = profileResponse.data;
 
-      if (success && data) {
+      if (success && data?.user) {
         setUser(data.user);
         toast.success("Welcome back!");
         return data.user;

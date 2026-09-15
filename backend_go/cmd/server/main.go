@@ -45,6 +45,7 @@ var (
 
 // AppHandlers holds references to all route handlers
 type AppHandlers struct {
+	AuthHandler      *handlers.AuthHandler
 	GovJobHandler    *handlers.GovJobHandler
 	PrivJobHandler   *handlers.PrivJobHandler
 	CourseHandler    *handlers.CourseHandler
@@ -343,6 +344,13 @@ func run(cfg *config.Config) error {
 		}
 
 		// Uncached endpoints
+		authRoutes := api.Group("/auth")
+		authRoutes.POST("/login", safeHandler(func(h *AppHandlers, c *gin.Context) { h.AuthHandler.Login(c) }))
+		authRoutes.POST("/register", safeHandler(func(h *AppHandlers, c *gin.Context) { h.AuthHandler.Register(c) }))
+		authRoutes.POST("/refresh", safeHandler(func(h *AppHandlers, c *gin.Context) { h.AuthHandler.Refresh(c) }))
+		authRoutes.GET("/me", middleware.AuthMiddleware(cfg), safeHandler(func(h *AppHandlers, c *gin.Context) { h.AuthHandler.Me(c) }))
+		authRoutes.POST("/logout", middleware.AuthMiddleware(cfg), safeHandler(func(h *AppHandlers, c *gin.Context) { h.AuthHandler.Logout(c) }))
+
 		api.GET("/gov-jobs/:id", safeHandler(func(h *AppHandlers, c *gin.Context) { h.GovJobHandler.GetGovJobByID(c) }))
 		api.GET("/private-jobs/:id", safeHandler(func(h *AppHandlers, c *gin.Context) { h.PrivJobHandler.GetPrivJobByID(c) }))
 		api.GET("/priv-jobs/:id", safeHandler(func(h *AppHandlers, c *gin.Context) { h.PrivJobHandler.GetPrivJobByID(c) }))
@@ -420,6 +428,9 @@ func run(cfg *config.Config) error {
 				logger.Info().Msg("Database connected")
 
 				// Initialize services
+				userService := services.NewUserService(database)
+				tokenService := services.NewTokenService(database)
+				authService := services.NewAuthService(userService, tokenService, cfg)
 				govJobService := services.NewGovJobService(database)
 				privJobService := services.NewPrivJobService(database)
 				courseService := services.NewCourseService(database)
@@ -436,6 +447,7 @@ func run(cfg *config.Config) error {
 
 				// Atomically store initialized handlers
 				initialized := &AppHandlers{
+					AuthHandler:      handlers.NewAuthHandler(authService),
 					GovJobHandler:    handlers.NewGovJobHandler(govJobService),
 					PrivJobHandler:   handlers.NewPrivJobHandler(privJobService),
 					CourseHandler:    handlers.NewCourseHandler(courseService),

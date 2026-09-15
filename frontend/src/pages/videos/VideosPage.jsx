@@ -85,9 +85,9 @@ export const VideosPage = () => {
         {/* Video Grid */}
         <div className="space-y-12">
           <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-black text-stone-900 tracking-tight uppercase tracking-widest">Featured Series</h2>
+            <h2 className="text-2xl font-black text-stone-900 uppercase tracking-widest">Featured Series</h2>
             <div className="h-px flex-1 mx-8 bg-stone-200 hidden md:block"></div>
-            <Link href="#" className="text-xs font-black text-stone-600 hover:underline uppercase tracking-[0.2em]">View All Stream →</Link>
+                            <Link href="/videos" className="text-xs font-black text-stone-600 hover:underline uppercase tracking-[0.2em]">View All Stream →</Link>
           </div>
 
           {loading ? (

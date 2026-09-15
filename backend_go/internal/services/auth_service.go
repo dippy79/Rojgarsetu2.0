@@ -75,7 +75,11 @@ func (s *AuthService) Register(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusCreated, gin.H{"data": user})
+	c.JSON(http.StatusCreated, gin.H{"success": true, "data": gin.H{"user": user}})
+}
+
+func (s *AuthService) GetUser(c *gin.Context, userID string) (*db.User, error) {
+	return s.userSvc.GetUserByID(c, userID)
 }
 
 func (s *AuthService) Login(c *gin.Context) {
