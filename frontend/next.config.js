@@ -1,3 +1,5 @@
+const path = require('path');
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: 'export',
@@ -5,12 +7,10 @@ const nextConfig = {
   experimental: {
     // optimizePackageImports: ['lucide-react'],
   },
-  // In Next.js 15+, turbopack root can be set here or inferred.
-  // The warning suggests setting it directly.
-  // @ts-ignore
   turbopack: {
-    root: '..',
+    root: path.resolve(__dirname, '..'),
   },
+  allowedDevOrigins: ['169.254.148.199'],
   images: {
     unoptimized: true,
     remotePatterns: [
