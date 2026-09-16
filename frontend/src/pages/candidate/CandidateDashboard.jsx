@@ -83,24 +83,24 @@ export const CandidateDashboard = () => {
   };
 
   const MetricCardSkeleton = () => (
-    <div className="bg-white border border-slate-200/60 rounded-[2.5rem] p-8 shadow-sm animate-pulse">
-       <div className="w-12 h-12 bg-slate-100 rounded-2xl mb-6"></div>
-       <div className="h-8 bg-slate-100 rounded-lg w-16 mb-2"></div>
-       <div className="h-3 bg-slate-50 rounded-lg w-24"></div>
+    <div className="bg-white border border-stone-200/60 rounded-[2.5rem] p-8 shadow-sm animate-pulse">
+       <div className="w-12 h-12 bg-stone-100 rounded-2xl mb-6"></div>
+       <div className="h-8 bg-stone-100 rounded-lg w-16 mb-2"></div>
+       <div className="h-3 bg-stone-50 rounded-lg w-24"></div>
     </div>
   );
 
   return (
     <ProtectedRoute allowedRoles={['candidate']}>
-      <div className="flex min-h-screen bg-slate-50 font-sans">
+      <div className="flex min-h-screen bg-stone-50 font-sans">
       {/* Mobile Sidebar Overlay */}
       {sidebarOpen && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] md:hidden transition-opacity duration-500" onClick={() => setSidebarOpen(false)}></div>
+        <div className="fixed inset-0 bg-stone-900/60 backdrop-blur-sm z-[60] md:hidden transition-opacity duration-500" onClick={() => setSidebarOpen(false)}></div>
       )}
 
       {/* Sidebar - International Premium Style */}
       <aside className={`
-        fixed inset-y-0 left-0 z-[70] w-72 bg-slate-950 text-white transform transition-transform duration-500 ease-[cubic-bezier(0.2,0,0,1)]
+        fixed inset-y-0 left-0 z-[70] w-72 bg-stone-950 text-white transform transition-transform duration-500 ease-[cubic-bezier(0.2,0,0,1)]
         md:translate-x-0 md:static md:h-screen sticky top-0
         ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
         flex flex-col p-8 shadow-[20px_0_60px_-15px_rgba(0,0,0,0.3)]
@@ -112,7 +112,7 @@ export const CandidateDashboard = () => {
             </div>
             <span className="font-black text-2xl tracking-tighter">ROJGAR<span className="text-stone-700">SETU</span></span>
           </div>
-          <button onClick={() => setSidebarOpen(false)} className="p-2 text-slate-400 hover:text-white md:hidden">
+          <button onClick={() => setSidebarOpen(false)} className="p-2 text-stone-400 hover:text-white md:hidden">
             <X className="w-6 h-6" />
           </button>
         </div>
@@ -125,7 +125,7 @@ export const CandidateDashboard = () => {
             </div>
             <div className="overflow-hidden">
               <h2 className="font-bold text-white truncate text-sm">{candidateProfile?.full_name ?? user?.name ?? 'Premium Member'}</h2>
-              <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-0.5">Candidate Pro</p>
+              <p className="text-[10px] text-stone-500 font-bold uppercase tracking-widest mt-0.5">Candidate Pro</p>
             </div>
           </div>
         </div>
@@ -145,7 +145,7 @@ export const CandidateDashboard = () => {
                 key={item.path}
                 href={item.path}
                 className={`flex items-center gap-4 px-6 py-4 rounded-2xl text-sm font-bold transition-all ${
-                  isActive ? 'bg-stone-800 text-white shadow-xl shadow-stone-800/20' : 'text-slate-400 hover:text-white hover:bg-white/5'
+                  isActive ? 'bg-stone-800 text-white shadow-xl shadow-stone-800/20' : 'text-stone-400 hover:text-white hover:bg-white/5'
                 }`}
               >
                 <Icon className="w-5 h-5" />
@@ -176,23 +176,23 @@ export const CandidateDashboard = () => {
         <header className="flex flex-col md:flex-row md:items-center justify-between gap-8 mb-16">
           <div className="space-y-2">
             <div className="flex items-center gap-4">
-              <button onClick={() => setSidebarOpen(true)} className="p-3 bg-white border border-slate-200 rounded-2xl md:hidden shadow-sm">
+              <button onClick={() => setSidebarOpen(true)} className="p-3 bg-white border border-stone-200 rounded-2xl md:hidden shadow-sm">
                 <Menu className="w-5 h-5" />
               </button>
-              <h1 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tight">
+              <h1 className="text-4xl md:text-5xl font-black text-stone-900 tracking-tight">
                 Hey, {(candidateProfile?.full_name ?? user?.name ?? 'Candidate').split(' ')[0]}!
               </h1>
             </div>
-            <p className="text-slate-400 text-lg font-medium">Your career dashboard is looking <span className="text-stone-800 font-bold">solid today.</span></p>
+            <p className="text-stone-400 text-lg font-medium">Your career dashboard is looking <span className="text-stone-800 font-bold">solid today.</span></p>
           </div>
 
           <div className="flex items-center gap-4">
             <div className="hidden lg:flex flex-col items-end mr-4">
-              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Active Search</span>
-              <span className="text-sm font-bold text-slate-900">United Arab Emirates • UK</span>
+              <span className="text-[10px] font-black text-stone-400 uppercase tracking-widest">Active Search</span>
+              <span className="text-sm font-bold text-stone-900">United Arab Emirates • UK</span>
             </div>
-            <div className="w-14 h-14 bg-white border border-slate-200 rounded-2xl flex items-center justify-center relative group cursor-pointer hover:border-stone-400 transition-all shadow-sm">
-              <Bell className="w-6 h-6 text-slate-600 group-hover:text-stone-800" />
+            <div className="w-14 h-14 bg-white border border-stone-200 rounded-2xl flex items-center justify-center relative group cursor-pointer hover:border-stone-400 transition-all shadow-sm">
+              <Bell className="w-6 h-6 text-stone-600 group-hover:text-stone-800" />
               <div className="absolute top-3 right-3 w-2.5 h-2.5 bg-stone-800 rounded-full border-2 border-white shadow-[0_0_10px_rgba(37,99,235,0.5)]"></div>
             </div>
           </div>
@@ -213,9 +213,9 @@ export const CandidateDashboard = () => {
                     <m.icon className="w-6 h-6" />
                   </div>
                   <div className="flex items-baseline gap-2">
-                    <span className="text-4xl font-black text-slate-900 tracking-tighter font-mono">{m.val}</span>
+                    <span className="text-4xl font-black text-stone-900 tracking-tighter font-mono">{m.val}</span>
                   </div>
-                  <p className="text-xs font-black text-slate-400 uppercase tracking-widest mt-2">{m.label}</p>
+                  <p className="text-xs font-black text-stone-400 uppercase tracking-widest mt-2">{m.label}</p>
                 </div>
               ))}
             </>
@@ -225,7 +225,7 @@ export const CandidateDashboard = () => {
         {/* Analytics Section */}
         <section className="mb-12">
           {loading ? (
-            <div className="h-96 w-full bg-white border border-slate-200 rounded-[3rem] animate-pulse"></div>
+            <div className="h-96 w-full bg-white border border-stone-200 rounded-[3rem] animate-pulse"></div>
           ) : (
             <DashboardAnalytics skillMatch={profileCompletion} />
           )}
@@ -234,31 +234,31 @@ export const CandidateDashboard = () => {
         {/* Bento Section: Applications & AI Matches */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           {/* Recent Apps */}
-          <div className="lg:col-span-7 bg-white border border-slate-200/60 rounded-[2.5rem] p-10 shadow-sm overflow-hidden flex flex-col relative">
+          <div className="lg:col-span-7 bg-white border border-stone-200/60 rounded-[2.5rem] p-10 shadow-sm overflow-hidden flex flex-col relative">
             <div className="flex items-center justify-between mb-10">
-              <h3 className="text-2xl font-black text-slate-900 tracking-tight">Recent Pipelines</h3>
+              <h3 className="text-2xl font-black text-stone-900 tracking-tight">Recent Pipelines</h3>
               <Link href="/candidate/applications" className="text-xs font-black text-stone-800 hover:underline uppercase tracking-widest">Manage All</Link>
             </div>
 
             <div className="space-y-4 flex-1">
               {loading ? [1,2,3].map(i => (
-                <div key={i} className="h-24 w-full bg-slate-50 border border-slate-100 rounded-[1.5rem] animate-pulse"></div>
+                <div key={i} className="h-24 w-full bg-stone-50 border border-stone-100 rounded-[1.5rem] animate-pulse"></div>
               )) : (recentApps || []).map((app, i) => (
-                <div key={i} className="flex items-center justify-between p-6 rounded-[1.5rem] bg-slate-50/50 border border-slate-100 hover:bg-white hover:border-stone-200 hover:shadow-xl hover:shadow-stone-700/5 transition-all group cursor-pointer">
+                <div key={i} className="flex items-center justify-between p-6 rounded-[1.5rem] bg-stone-50/50 border border-stone-100 hover:bg-white hover:border-stone-200 hover:shadow-xl hover:shadow-stone-700/5 transition-all group cursor-pointer">
                   <div className="flex items-center gap-5">
-                    <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center border border-slate-200 font-black text-slate-300 group-hover:text-stone-700 transition-colors">
+                    <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center border border-stone-200 font-black text-stone-300 group-hover:text-stone-700 transition-colors">
                       {(app?.company_name || app?.company || 'C')[0]}
                     </div>
                     <div>
-                      <h4 className="font-black text-slate-900 text-sm">{app?.job_title || 'Lead Architect'}</h4>
-                      <p className="text-[11px] text-slate-400 font-bold uppercase tracking-widest">{app?.company_name || 'InnovateGlobal'}</p>
+                      <h4 className="font-black text-stone-900 text-sm">{app?.job_title || 'Lead Architect'}</h4>
+                      <p className="text-[11px] text-stone-400 font-bold uppercase tracking-widest">{app?.company_name || 'InnovateGlobal'}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-6">
-                    <span className="px-3 py-1 bg-white border border-slate-200 rounded-lg text-[10px] font-black uppercase text-slate-500 tracking-tighter">
+                    <span className="px-3 py-1 bg-white border border-stone-200 rounded-lg text-[10px] font-black uppercase text-stone-500 tracking-tighter">
                       {app?.status || 'Active'}
                     </span>
-                    <ArrowUpRight className="w-5 h-5 text-slate-300 group-hover:text-stone-700 group-hover:translate-x-1 group-hover:-translate-y-1 transition-all" />
+                    <ArrowUpRight className="w-5 h-5 text-stone-300 group-hover:text-stone-700 group-hover:translate-x-1 group-hover:-translate-y-1 transition-all" />
                   </div>
                 </div>
               ))}
@@ -267,17 +267,17 @@ export const CandidateDashboard = () => {
                 <div className="flex flex-col items-center justify-center py-10 space-y-4">
                    <div className="text-4xl">🔍</div>
                    <div className="text-center">
-                      <p className="text-slate-900 font-black">No Applications Yet</p>
-                      <p className="text-slate-400 text-xs font-medium">Start applying to jobs to track them here.</p>
+                      <p className="text-stone-900 font-black">No Applications Yet</p>
+                      <p className="text-stone-400 text-xs font-medium">Start applying to jobs to track them here.</p>
                    </div>
-                   <Link href="/gov-jobs" className="px-8 py-3 bg-slate-900 text-white font-black rounded-2xl text-[10px] uppercase tracking-widest hover:bg-stone-800 transition-all">Browse Jobs →</Link>
+                   <Link href="/gov-jobs" className="px-8 py-3 bg-stone-900 text-white font-black rounded-2xl text-[10px] uppercase tracking-widest hover:bg-stone-800 transition-all">Browse Jobs →</Link>
                 </div>
               )}
             </div>
           </div>
 
           {/* AI Matches */}
-          <div className="lg:col-span-5 bg-slate-900 rounded-[2.5rem] p-10 shadow-2xl relative overflow-hidden flex flex-col">
+          <div className="lg:col-span-5 bg-stone-900 rounded-[2.5rem] p-10 shadow-2xl relative overflow-hidden flex flex-col">
             <div className="absolute top-0 right-0 w-64 h-64 bg-stone-800/10 rounded-full -mr-32 -mt-32 blur-[100px]"></div>
 
             <div className="relative z-10 flex items-center justify-between mb-10">
@@ -297,7 +297,7 @@ export const CandidateDashboard = () => {
                       <span className="text-[10px] font-black text-stone-400 uppercase tracking-widest">{job.fit} Fit</span>
                       <h4 className="font-bold text-white text-sm">{job.title}</h4>
                     </div>
-                    <p className="text-[10px] text-slate-500 font-bold uppercase">{job.company}</p>
+                    <p className="text-[10px] text-stone-500 font-bold uppercase">{job.company}</p>
                   </div>
                   <button className="p-3 bg-stone-800 rounded-xl text-white opacity-0 group-hover:opacity-100 transition-opacity">
                     <ArrowUpRight className="w-4 h-4" />

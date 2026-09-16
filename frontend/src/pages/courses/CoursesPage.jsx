@@ -7,6 +7,7 @@ import { Search, GraduationCap, Clock, BookOpen, Filter, ArrowRight, Loader2 } f
 export const CoursesPage = () => {
   const { isAuthenticated } = useAuth();
   const [courses, setCourses] = useState([]);
+  const [totalItems, setTotalItems] = useState(0);
   const [providers, setProviders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -33,6 +34,7 @@ export const CoursesPage = () => {
       const data = res.data?.data || res.data || [];
       const safeData = Array.isArray(data) ? data : [];
       setCourses(safeData);
+      setTotalItems(res.data?.pagination?.total || safeData.length);
     } catch (err) {
       console.error(err);
       setError("Unable to sync courses. Please try again later.");

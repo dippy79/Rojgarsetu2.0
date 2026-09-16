@@ -52,17 +52,17 @@ export default function CompanyProfile() {
   if (loading) return <div className="flex h-screen items-center justify-center">Loading Profile...</div>;
 
   return (
-    <div className="flex min-h-screen bg-slate-50">
-      <aside className="w-64 bg-white border-r border-slate-200 p-6">
-        <h2 className="text-xl font-bold text-slate-800 mb-8">RojgarSetu <span className="text-xs bg-stone-100 text-stone-700 px-2 py-0.5 rounded">Recruiter</span></h2>
+    <div className="flex min-h-screen bg-stone-50">
+      <aside className="w-64 bg-white border-r border-stone-200 p-6">
+        <h2 className="text-xl font-bold text-stone-800 mb-8">RojgarSetu <span className="text-xs bg-stone-100 text-stone-700 px-2 py-0.5 rounded">Recruiter</span></h2>
         <nav className="space-y-2">
-          <Link href="/dashboard/company" className="flex items-center gap-3 px-4 py-3 text-slate-600 hover:bg-slate-50 rounded-xl font-medium">
+          <Link href="/dashboard/company" className="flex items-center gap-3 px-4 py-3 text-stone-600 hover:bg-stone-50 rounded-xl font-medium">
             <Building2 className="w-5 h-5" /> Dashboard
           </Link>
           <Link href="/company/profile" className="flex items-center gap-3 px-4 py-3 bg-stone-50 text-stone-600 rounded-xl font-medium">
             <Settings className="w-5 h-5" /> Profile Settings
           </Link>
-          <Link href="/company/applicants" className="flex items-center gap-3 px-4 py-3 text-slate-600 hover:bg-slate-50 rounded-xl font-medium">
+          <Link href="/company/applicants" className="flex items-center gap-3 px-4 py-3 text-stone-600 hover:bg-stone-50 rounded-xl font-medium">
             <Users className="w-5 h-5" /> Applicants
           </Link>
         </nav>
@@ -73,14 +73,14 @@ export default function CompanyProfile() {
           <header className="flex justify-between items-start mb-8">
             <div>
               <div className="flex items-center gap-3 mb-1">
-                <h1 className="text-3xl font-bold text-slate-900">{profile.name}</h1>
+                <h1 className="text-3xl font-bold text-stone-900">{profile.name}</h1>
                 {profile.employer_badge === 'gold' && (
                   <span className="flex items-center gap-1 bg-stone-100 text-stone-700 px-3 py-1 rounded-full text-xs font-bold border border-stone-200">
                     <BadgeCheck className="w-3.5 h-3.5" /> GOLD PARTNER
                   </span>
                 )}
               </div>
-              <p className="text-slate-500">Manage your company presence and recruiter branding.</p>
+              <p className="text-stone-500">Manage your company presence and recruiter branding.</p>
             </div>
             <button form="profile-form" disabled={saving} className="bg-stone-600 hover:bg-stone-700 text-white px-8 py-2.5 rounded-xl font-bold transition shadow-lg shadow-stone-500/20 disabled:opacity-50">
               {saving ? 'Saving...' : 'Save Changes'}
@@ -89,37 +89,37 @@ export default function CompanyProfile() {
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2 space-y-6">
-              <form id="profile-form" onSubmit={handleSave} className="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm space-y-6">
+              <form id="profile-form" onSubmit={handleSave} className="bg-white p-8 rounded-2xl border border-stone-200 shadow-sm space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-700 uppercase">Industry</label>
-                    <input type="text" value={profile.industry} onChange={e => setProfile({...profile, industry: e.target.value})} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-stone-500/20 outline-none" />
+                    <label className="text-xs font-bold text-stone-700 uppercase">Industry</label>
+                    <input type="text" value={profile.industry} onChange={e => setProfile({...profile, industry: e.target.value})} className="w-full px-4 py-2.5 rounded-xl border border-stone-200 focus:ring-2 focus:ring-stone-500/20 outline-none" />
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-700 uppercase">Website</label>
+                    <label className="text-xs font-bold text-stone-700 uppercase">Website</label>
                     <div className="relative">
-                      <Globe className="absolute left-3 top-3 w-4 h-4 text-slate-400" />
-                      <input type="url" value={profile.website} onChange={e => setProfile({...profile, website: e.target.value})} className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-stone-500/20 outline-none" />
+                      <Globe className="absolute left-3 top-3 w-4 h-4 text-stone-400" />
+                      <input type="url" value={profile.website} onChange={e => setProfile({...profile, website: e.target.value})} className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-stone-200 focus:ring-2 focus:ring-stone-500/20 outline-none" />
                     </div>
                   </div>
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-700 uppercase">About Company</label>
-                  <textarea rows="4" value={profile.description} onChange={e => setProfile({...profile, description: e.target.value})} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-stone-500/20 outline-none resize-none" />
+                  <label className="text-xs font-bold text-stone-700 uppercase">About Company</label>
+                  <textarea rows="4" value={profile.description} onChange={e => setProfile({...profile, description: e.target.value})} className="w-full px-4 py-2.5 rounded-xl border border-stone-200 focus:ring-2 focus:ring-stone-500/20 outline-none resize-none" />
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-700 uppercase">Headquarters</label>
+                    <label className="text-xs font-bold text-stone-700 uppercase">Headquarters</label>
                     <div className="relative">
-                      <MapPin className="absolute left-3 top-3 w-4 h-4 text-slate-400" />
-                      <input type="text" value={profile.headquarters} onChange={e => setProfile({...profile, headquarters: e.target.value})} className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-stone-500/20 outline-none" />
+                      <MapPin className="absolute left-3 top-3 w-4 h-4 text-stone-400" />
+                      <input type="text" value={profile.headquarters} onChange={e => setProfile({...profile, headquarters: e.target.value})} className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-stone-200 focus:ring-2 focus:ring-stone-500/20 outline-none" />
                     </div>
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-700 uppercase">Company Size</label>
-                    <select value={profile.company_size} onChange={e => setProfile({...profile, company_size: e.target.value})} className="w-full px-4 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-stone-500/20 outline-none appearance-none bg-white">
+                    <label className="text-xs font-bold text-stone-700 uppercase">Company Size</label>
+                    <select value={profile.company_size} onChange={e => setProfile({...profile, company_size: e.target.value})} className="w-full px-4 py-2.5 rounded-xl border border-stone-200 focus:ring-2 focus:ring-stone-500/20 outline-none appearance-none bg-white">
                       <option value="1-10">1-10 employees</option>
                       <option value="11-50">11-50 employees</option>
                       <option value="51-200">51-200 employees</option>
@@ -129,31 +129,31 @@ export default function CompanyProfile() {
                   </div>
                 </div>
 
-                <div className="pt-6 border-t border-slate-100">
-                  <h3 className="text-sm font-bold text-slate-800 mb-4 flex items-center gap-2">
+                <div className="pt-6 border-t border-stone-100">
+                  <h3 className="text-sm font-bold text-stone-800 mb-4 flex items-center gap-2">
                     <ImageIcon className="w-4 h-4" /> Company Gallery
                   </h3>
                   <div className="flex gap-4">
-                    <div className="w-24 h-24 rounded-xl bg-slate-100 border-2 border-dashed border-slate-300 flex items-center justify-center text-slate-400 cursor-pointer hover:bg-slate-200 transition">
+                    <div className="w-24 h-24 rounded-xl bg-stone-100 border-2 border-dashed border-stone-300 flex items-center justify-center text-stone-400 cursor-pointer hover:bg-stone-200 transition">
                       <ImageIcon className="w-6 h-6" />
                     </div>
-                    <p className="text-xs text-slate-500 mt-2">Upload workspace photos to attract talent.</p>
+                    <p className="text-xs text-stone-500 mt-2">Upload workspace photos to attract talent.</p>
                   </div>
                 </div>
               </form>
             </div>
 
             <div className="space-y-6">
-              <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-                <h3 className="text-sm font-bold text-slate-800 mb-4 flex items-center gap-2">
+              <div className="bg-white p-6 rounded-2xl border border-stone-200 shadow-sm">
+                <h3 className="text-sm font-bold text-stone-800 mb-4 flex items-center gap-2">
                   <LinkIcon className="w-4 h-4" /> ATS Integration
                 </h3>
-                <div className={`p-4 rounded-xl border ${profile.ats_integration_meta.status === 'connected' ? 'bg-stone-50 border-stone-100' : 'bg-slate-50 border-slate-100'}`}>
-                  <p className="text-xs font-bold text-slate-500 uppercase mb-1">Status</p>
-                  <p className={`text-sm font-bold ${profile.ats_integration_meta.status === 'connected' ? 'text-stone-700' : 'text-slate-700'}`}>
+                <div className={`p-4 rounded-xl border ${profile.ats_integration_meta.status === 'connected' ? 'bg-stone-50 border-stone-100' : 'bg-stone-50 border-stone-100'}`}>
+                  <p className="text-xs font-bold text-stone-500 uppercase mb-1">Status</p>
+                  <p className={`text-sm font-bold ${profile.ats_integration_meta.status === 'connected' ? 'text-stone-700' : 'text-stone-700'}`}>
                     {profile.ats_integration_meta.status === 'connected' ? `Connected to ${profile.ats_integration_meta.provider}` : 'Disconnected'}
                   </p>
-                  <button className="mt-4 w-full bg-white border border-slate-200 py-2 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-50">
+                  <button className="mt-4 w-full bg-white border border-stone-200 py-2 rounded-lg text-xs font-bold text-stone-700 hover:bg-stone-50">
                     Manage Integration
                   </button>
                 </div>

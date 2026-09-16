@@ -29,7 +29,7 @@ export const ProgressBar = React.forwardRef<HTMLDivElement, ProgressBarProps>(
       <div
         ref={ref}
         className={cn(
-          "w-full bg-slate-700 rounded-full overflow-hidden",
+          "w-full bg-stone-700 rounded-full overflow-hidden",
           sizes[size],
           className
         )}

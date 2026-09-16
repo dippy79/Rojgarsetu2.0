@@ -11,7 +11,7 @@ export const Badge = React.forwardRef<HTMLDivElement, BadgeProps>(
       emerald: "bg-stone-500/10 text-stone-500 border-stone-500/20",
       amber: "bg-stone-500/10 text-stone-500 border-stone-500/20",
       cyan: "bg-cyan-500/10 text-cyan-500 border-cyan-500/20",
-      slate: "bg-slate-500/10 text-slate-500 border-slate-500/20"
+      slate: "bg-stone-500/10 text-stone-500 border-stone-500/20"
     };
 
     return (

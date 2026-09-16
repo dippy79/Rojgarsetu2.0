@@ -136,16 +136,16 @@ const Navbar = () => {
           <div className="relative" ref={dropdownRef}>
             <button
               onClick={() => setDropdownOpen(!dropdownOpen)}
-              className="flex items-center gap-3 p-1.5 rounded-xl hover:bg-slate-100 transition-all cursor-pointer border border-transparent hover:border-slate-200"
+              className="flex items-center gap-3 p-1.5 rounded-xl hover:bg-stone-100 transition-all cursor-pointer border border-transparent hover:border-stone-200"
             >
               {/* Avatar Circle */}
-              <div className="w-9 h-9 rounded-full bg-slate-900 text-white font-bold flex items-center justify-center text-xs tracking-wider shadow-sm">
+              <div className="w-9 h-9 rounded-full bg-stone-900 text-white font-bold flex items-center justify-center text-xs tracking-wider shadow-sm">
                 {getInitials(currentUser.name)}
               </div>
 
               {/* User Name & Role */}
               <div className="hidden sm:flex flex-col text-left">
-                <span className="text-sm font-semibold text-slate-900 leading-tight">
+                <span className="text-sm font-semibold text-stone-900 leading-tight">
                   {currentUser.name}
                 </span>
                 <span className="text-[10px] uppercase tracking-wider font-semibold text-stone-500 bg-stone-100 px-1.5 py-0.5 rounded w-fit mt-0.5">
@@ -153,14 +153,14 @@ const Navbar = () => {
                 </span>
               </div>
 
-              <ChevronDown className={`w-4 h-4 text-slate-500 transition-transform duration-200 ${dropdownOpen ? 'rotate-180' : ''}`} />
+              <ChevronDown className={`w-4 h-4 text-stone-500 transition-transform duration-200 ${dropdownOpen ? 'rotate-180' : ''}`} />
             </button>
 
             {/* Dropdown Menu */}
             {dropdownOpen && (
-              <div className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-xl border border-slate-100 py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
-                <div className="px-4 py-2.5 border-b border-slate-100 sm:hidden">
-                  <p className="text-sm font-semibold text-slate-900">{currentUser.name}</p>
+              <div className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-xl border border-stone-100 py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
+                <div className="px-4 py-2.5 border-b border-stone-100 sm:hidden">
+                  <p className="text-sm font-semibold text-stone-900">{currentUser.name}</p>
                 </div>
 
                 <Link
@@ -181,7 +181,7 @@ const Navbar = () => {
                   Profile
                 </Link>
 
-                <div className="my-1 border-t border-slate-100"></div>
+                <div className="my-1 border-t border-stone-100"></div>
 
                 <button
                   onClick={handleLogout}

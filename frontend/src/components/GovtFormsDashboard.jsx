@@ -42,22 +42,22 @@ const GovtFormsDashboard = () => {
         {/* Page Header */}
         <header className="mb-16 space-y-4">
           <div className="flex items-center gap-3">
-            <div className="p-3 bg-slate-900 rounded-2xl shadow-xl shadow-slate-900/10">
+            <div className="p-3 bg-stone-900 rounded-2xl shadow-xl shadow-stone-900/10">
               <FileText className="w-6 h-6 text-white" />
             </div>
-            <h1 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tight">Official Registrations.</h1>
+            <h1 className="text-4xl md:text-5xl font-black text-stone-900 tracking-tight">Official Registrations.</h1>
           </div>
-          <p className="text-slate-500 font-medium text-lg max-w-2xl">
+          <p className="text-stone-500 font-medium text-lg max-w-2xl">
             Centralized tracking for government entrance exams, recruitment forms, and official gazette notifications.
             Sorted by deadline proximity.
           </p>
         </header>
 
         {/* Dynamic Search & Utility */}
-        <div className="bg-white border border-slate-200 p-4 rounded-[2rem] shadow-sm flex flex-col md:flex-row items-center gap-4 mb-12">
+        <div className="bg-white border border-stone-200 p-4 rounded-[2rem] shadow-sm flex flex-col md:flex-row items-center gap-4 mb-12">
           <div className="flex-1 relative w-full group">
-            <Search className="absolute left-4 top-3.5 w-5 h-5 text-slate-400 group-focus-within:text-slate-900 transition-colors" />
-            <input type="text" placeholder="Filter by examination or board..." className="w-full pl-12 pr-4 py-3 bg-slate-50 border-none rounded-xl text-sm font-bold outline-none" />
+            <Search className="absolute left-4 top-3.5 w-5 h-5 text-stone-400 group-focus-within:text-stone-900 transition-colors" />
+            <input type="text" placeholder="Filter by examination or board..." className="w-full pl-12 pr-4 py-3 bg-stone-50 border-none rounded-xl text-sm font-bold outline-none" />
           </div>
           <div className="px-6 py-3 bg-stone-50 text-stone-700 rounded-xl text-[10px] font-black uppercase tracking-widest">
             {forms.length} Dynamic Forms Detected
@@ -66,8 +66,8 @@ const GovtFormsDashboard = () => {
 
         {loading ? (
           <div className="flex flex-col items-center justify-center py-24 space-y-6">
-            <Loader2 className="w-12 h-12 text-slate-900 animate-spin" />
-            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Polling Official APIs...</span>
+            <Loader2 className="w-12 h-12 text-stone-900 animate-spin" />
+            <span className="text-[10px] font-black text-stone-400 uppercase tracking-widest">Polling Official APIs...</span>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -77,26 +77,26 @@ const GovtFormsDashboard = () => {
               const StatusIcon = p.icon;
 
               return (
-                <div key={form.id} className="group bg-white border border-slate-200 rounded-[2.5rem] p-8 hover:border-slate-900 hover:shadow-2xl transition-all flex flex-col justify-between">
+                <div key={form.id} className="group bg-white border border-stone-200 rounded-[2.5rem] p-8 hover:border-stone-900 hover:shadow-2xl transition-all flex flex-col justify-between">
                   <div>
                     <div className="flex items-center justify-between mb-8">
                       <div className={`px-4 py-1.5 ${p.bg} ${p.color} rounded-full flex items-center gap-2 text-[10px] font-black uppercase tracking-widest border border-current/10`}>
                         <StatusIcon className="w-3.5 h-3.5" />
                         {p.label}
                       </div>
-                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">ID: {form.id?.slice(0, 8)}</span>
+                      <span className="text-[10px] font-bold text-stone-400 uppercase tracking-tighter">ID: {form.id?.slice(0, 8)}</span>
                     </div>
 
-                    <h3 className="text-2xl font-black text-slate-900 group-hover:text-stone-600 transition-colors mb-2 leading-tight">
+                    <h3 className="text-2xl font-black text-stone-900 group-hover:text-stone-600 transition-colors mb-2 leading-tight">
                       {form.title}
                     </h3>
-                    <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-8">{form.department || 'Official Board'}</p>
+                    <p className="text-stone-400 text-xs font-bold uppercase tracking-widest mb-8">{form.department || 'Official Board'}</p>
                   </div>
 
                   <div className="space-y-6">
-                    <div className="p-5 bg-slate-50 rounded-2xl flex items-center justify-between group-hover:bg-slate-900 group-hover:text-white transition-all">
+                    <div className="p-5 bg-stone-50 rounded-2xl flex items-center justify-between group-hover:bg-stone-900 group-hover:text-white transition-all">
                       <div className="flex items-center gap-3">
-                        <Calendar className="w-5 h-5 text-slate-400" />
+                        <Calendar className="w-5 h-5 text-stone-400" />
                         <span className="text-xs font-black uppercase tracking-widest">Closing Date</span>
                       </div>
                       <span className="text-sm font-black">{new Date(form.last_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
@@ -106,7 +106,7 @@ const GovtFormsDashboard = () => {
                       href={form.apply_url}
                       target="_blank"
                       rel="noreferrer"
-                      className="w-full flex items-center justify-center gap-3 py-5 bg-slate-900 text-white font-black rounded-2xl hover:bg-stone-600 transition-all shadow-xl shadow-slate-900/10 uppercase text-xs tracking-widest"
+                      className="w-full flex items-center justify-center gap-3 py-5 bg-stone-900 text-white font-black rounded-2xl hover:bg-stone-600 transition-all shadow-xl shadow-stone-900/10 uppercase text-xs tracking-widest"
                     >
                       Official Apply <ArrowRight className="w-4 h-4" />
                     </a>

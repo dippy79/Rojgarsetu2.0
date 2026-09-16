@@ -73,7 +73,7 @@ export default function Home() {
             <div className="w-12 h-12 bg-stone-50 text-stone-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
               <PlayCircle className="w-6 h-6" />
             </div>
-            <h3 className="text-xl font-bold text-slate-900 mb-2">Video Prep</h3>
+            <h3 className="text-xl font-bold text-stone-900 mb-2">Video Prep</h3>
             <p className="text-sm text-stone-500 font-medium">Interview guides and exam preparation videos.</p>
           </Link>
         </div>

@@ -9,6 +9,7 @@ import { Search, Sparkles, Loader2, Info } from 'lucide-react';
 export const PrivateJobsPage = () => {
   const { isAuthenticated } = useAuth();
   const [jobs, setJobs] = useState([]);
+  const [totalItems, setTotalItems] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [filters, setFilters] = useState({
@@ -32,6 +33,7 @@ export const PrivateJobsPage = () => {
       const data = res.data?.data || res.data || [];
       const safeData = Array.isArray(data) ? data : [];
       setJobs(safeData);
+      setTotalItems(res.data?.pagination?.total || safeData.length);
     } catch (err) {
       console.error("Fetch error:", err);
       setError("AI-aggregator offline. Please try again later.");
@@ -102,7 +104,7 @@ export const PrivateJobsPage = () => {
 
             <div className="flex items-center justify-between border-b border-stone-100 pb-8">
               <h2 className="text-3xl font-black text-stone-800 tracking-tighter">
-                Global Openings <span className="text-stone-400 ml-2 font-medium">({jobs.length})</span>
+                Global Openings <span className="text-stone-400 ml-2 font-medium">({totalItems})</span>
               </h2>
             </div>
 

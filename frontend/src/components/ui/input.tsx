@@ -8,8 +8,8 @@ export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> 
 export const Input = React.forwardRef<HTMLInputElement, InputProps>(
   ({ className, variant = "default", ...props }, ref) => {
     const variants = {
-      default: "bg-white dark:bg-slate-950 border-slate-300 dark:border-slate-800 text-slate-900 dark:text-slate-100",
-      dark: "bg-slate-950 border-slate-800 text-slate-100"
+      default: "bg-white dark:bg-stone-950 border-stone-300 dark:border-stone-800 text-stone-900 dark:text-stone-100",
+      dark: "bg-stone-950 border-stone-800 text-stone-100"
     };
 
     return (

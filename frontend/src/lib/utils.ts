@@ -42,12 +42,12 @@ export function getMatchScoreColor(score: number): string {
   if (score >= 90) return 'text-stone-500';
   if (score >= 75) return 'text-cyan-500';
   if (score >= 60) return 'text-stone-500';
-  return 'text-slate-500';
+  return 'text-stone-500';
 }
 
 export function getMatchScoreBg(score: number): string {
   if (score >= 90) return 'bg-stone-500/10 border-stone-500/20';
   if (score >= 75) return 'bg-cyan-500/10 border-cyan-500/20';
   if (score >= 60) return 'bg-stone-500/10 border-stone-500/20';
-  return 'bg-slate-500/10 border-slate-500/20';
+  return 'bg-stone-500/10 border-stone-500/20';
 }

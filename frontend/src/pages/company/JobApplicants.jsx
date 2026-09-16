@@ -53,31 +53,31 @@ export default function JobApplicants() {
   return (
     <div className="min-h-screen bg-[#FBFBFB] font-sans">
       {/* Premium Header */}
-      <header className="bg-white border-b border-slate-200 pt-12 pb-8 px-10 sticky top-0 z-40">
+      <header className="bg-white border-b border-stone-200 pt-12 pb-8 px-10 sticky top-0 z-40">
         <div className="max-w-[1600px] mx-auto space-y-8">
            <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
-                 <Link href="/dashboard/company" className="p-3 bg-slate-50 border border-slate-200 rounded-2xl hover:bg-slate-100 transition-colors">
-                    <ArrowLeft className="w-5 h-5 text-slate-600" />
+                 <Link href="/dashboard/company" className="p-3 bg-stone-50 border border-stone-200 rounded-2xl hover:bg-stone-100 transition-colors">
+                    <ArrowLeft className="w-5 h-5 text-stone-600" />
                  </Link>
                  <div>
-                    <h1 className="text-3xl font-black text-slate-900 tracking-tight">Hiring Pipeline.</h1>
-                    <p className="text-slate-400 text-sm font-bold uppercase tracking-widest mt-1">Manage {applications.length} Active Applicants</p>
+                    <h1 className="text-3xl font-black text-stone-900 tracking-tight">Hiring Pipeline.</h1>
+                    <p className="text-stone-400 text-sm font-bold uppercase tracking-widest mt-1">Manage {applications.length} Active Applicants</p>
                  </div>
               </div>
 
               <div className="flex items-center gap-4">
                  <div className="relative group">
-                    <Search className="absolute left-4 top-3.5 w-4 h-4 text-slate-400 group-focus-within:text-stone-600 transition-colors" />
+                    <Search className="absolute left-4 top-3.5 w-4 h-4 text-stone-400 group-focus-within:text-stone-600 transition-colors" />
                     <input
                       type="text"
                       placeholder="Search candidates..."
                       value={searchTerm}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="pl-12 pr-6 py-3.5 bg-slate-50 border-none rounded-2xl text-sm font-bold w-72 focus:ring-4 focus:ring-stone-500/10 transition-all outline-none"
+                      className="pl-12 pr-6 py-3.5 bg-stone-50 border-none rounded-2xl text-sm font-bold w-72 focus:ring-4 focus:ring-stone-500/10 transition-all outline-none"
                     />
                  </div>
-                 <button className="p-3.5 bg-slate-900 text-white rounded-2xl hover:bg-slate-800 transition-all shadow-xl shadow-slate-900/10">
+                 <button className="p-3.5 bg-stone-900 text-white rounded-2xl hover:bg-stone-800 transition-all shadow-xl shadow-stone-900/10">
                     <Filter className="w-5 h-5" />
                  </button>
               </div>
@@ -90,7 +90,7 @@ export default function JobApplicants() {
           {loading ? (
             <div className="flex flex-col items-center justify-center py-40">
                <Loader2 className="w-12 h-12 text-stone-600 animate-spin mb-4" />
-               <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Hydrating Recruitment Data...</p>
+               <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest">Hydrating Recruitment Data...</p>
             </div>
           ) : (
             <div className="flex gap-8 overflow-x-auto pb-10 custom-scrollbar">
@@ -101,42 +101,42 @@ export default function JobApplicants() {
                     <div className="flex items-center justify-between px-2">
                        <div className="flex items-center gap-3">
                           <div className={`w-2 h-2 rounded-full ${getStatusColor(col)}`}></div>
-                          <h2 className="font-black text-slate-900 text-sm uppercase tracking-widest">{col}</h2>
+                          <h2 className="font-black text-stone-900 text-sm uppercase tracking-widest">{col}</h2>
                        </div>
-                       <span className="px-3 py-1 bg-slate-100 border border-slate-200 text-slate-400 rounded-lg text-[10px] font-black">
+                       <span className="px-3 py-1 bg-stone-100 border border-stone-200 text-stone-400 rounded-lg text-[10px] font-black">
                           {colApps.length}
                        </span>
                     </div>
 
                     <div className="flex-1 space-y-4 min-h-[600px]">
                       {colApps.map(app => (
-                        <div key={app.id} className="group bg-white border border-slate-200 rounded-[2rem] p-6 shadow-sm hover:shadow-2xl hover:border-stone-400 transition-all cursor-pointer relative overflow-hidden">
+                        <div key={app.id} className="group bg-white border border-stone-200 rounded-[2rem] p-6 shadow-sm hover:shadow-2xl hover:border-stone-400 transition-all cursor-pointer relative overflow-hidden">
                            <div className="absolute top-0 right-0 w-24 h-24 bg-stone-500/5 rounded-full -mr-12 -mt-12 blur-2xl group-hover:scale-150 transition-transform"></div>
 
                            <div className="relative z-10 space-y-4">
                               <div className="flex justify-between items-start">
                                  <div>
-                                    <h3 className="font-black text-slate-900 text-lg group-hover:text-stone-600 transition-colors leading-tight">{app.candidate_name || "Applicant"}</h3>
-                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-tighter mt-1">{app.job_title || 'General Application'}</p>
+                                    <h3 className="font-black text-stone-900 text-lg group-hover:text-stone-600 transition-colors leading-tight">{app.candidate_name || "Applicant"}</h3>
+                                    <p className="text-[10px] font-black text-stone-400 uppercase tracking-tighter mt-1">{app.job_title || 'General Application'}</p>
                                  </div>
-                                 <button className="p-2 hover:bg-slate-50 rounded-lg text-slate-300 hover:text-slate-900 transition-all"><MoreVertical className="w-4 h-4" /></button>
+                                 <button className="p-2 hover:bg-stone-50 rounded-lg text-stone-300 hover:text-stone-900 transition-all"><MoreVertical className="w-4 h-4" /></button>
                               </div>
 
                               <div className="flex items-center gap-1 text-stone-400">
                                  {[...Array(5)].map((_, i) => (
-                                    <Star key={i} className={`w-3.5 h-3.5 ${i < (app.star_rating || 3) ? 'fill-current' : 'text-slate-100 fill-slate-100'}`} />
+                                    <Star key={i} className={`w-3.5 h-3.5 ${i < (app.star_rating || 3) ? 'fill-current' : 'text-stone-100 fill-stone-100'}`} />
                                  ))}
                               </div>
 
                               <div className="flex flex-wrap gap-1.5">
                                  {(app.skills || ['Agile', 'React']).slice(0, 3).map(s => (
-                                    <span key={s} className="px-2 py-0.5 bg-slate-50 border border-slate-100 text-slate-500 text-[8px] font-black uppercase rounded-md">
+                                    <span key={s} className="px-2 py-0.5 bg-stone-50 border border-stone-100 text-stone-500 text-[8px] font-black uppercase rounded-md">
                                        {s}
                                     </span>
                                  ))}
                               </div>
 
-                              <div className="flex items-center justify-between pt-4 border-t border-slate-50 text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                              <div className="flex items-center justify-between pt-4 border-t border-stone-50 text-[9px] font-black text-stone-400 uppercase tracking-widest">
                                  <div className="flex items-center gap-1.5">
                                     <Calendar className="w-3 h-3" />
                                     {app.applied_date ? new Date(app.applied_date).toLocaleDateString() : 'Active'}
@@ -175,6 +175,6 @@ const getStatusColor = (col) => {
     case 'Interview': return 'bg-stone-500';
     case 'Hired': return 'bg-stone-500';
     case 'Rejected': return 'bg-stone-500';
-    default: return 'bg-slate-500';
+    default: return 'bg-stone-500';
   }
 };

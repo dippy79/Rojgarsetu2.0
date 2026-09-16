@@ -34,6 +34,9 @@ export const AuthProvider = ({ children }) => {
 
       if (success && data?.user) {
         setUser(data.user);
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('rojgar_user', JSON.stringify(data.user));
+        }
         toast.success("Welcome back!");
         return data.user;
       }

@@ -53,26 +53,26 @@ export default function AdminDashboard() {
 
   return (
     <ProtectedRoute allowedRoles={['admin']}>
-      <div className="min-h-screen bg-slate-50 font-sans">
-      <header className="bg-white border-b border-slate-200 pt-16 pb-8 px-10 sticky top-0 z-40">
+      <div className="min-h-screen bg-stone-50 font-sans">
+      <header className="bg-white border-b border-stone-200 pt-16 pb-8 px-10 sticky top-0 z-40">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-8">
            <div>
               <div className="flex items-center gap-3">
-                 <div className="p-2.5 bg-slate-900 rounded-2xl shadow-xl">
+                 <div className="p-2.5 bg-stone-900 rounded-2xl shadow-xl">
                     <Cpu className="w-6 h-6 text-stone-400" />
                  </div>
-                 <h1 className="text-3xl font-black text-slate-900 tracking-tight">System Node.</h1>
+                 <h1 className="text-3xl font-black text-stone-900 tracking-tight">System Node.</h1>
               </div>
-              <p className="text-slate-400 text-[10px] font-black uppercase tracking-[0.3em] mt-3 ml-1">Platform Orchestration Interface</p>
+              <p className="text-stone-400 text-[10px] font-black uppercase tracking-[0.3em] mt-3 ml-1">Platform Orchestration Interface</p>
            </div>
 
-           <div className="flex bg-slate-50 p-1.5 rounded-[1.5rem] border border-slate-100">
+           <div className="flex bg-stone-50 p-1.5 rounded-[1.5rem] border border-stone-100">
               {['overview', 'users', 'crawler', 'email'].map(t => (
                 <button
                   key={t}
                   onClick={() => setTab(t)}
                   className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
-                    tab === t ? 'bg-white text-stone-600 shadow-sm border border-slate-200' : 'text-slate-400 hover:text-slate-600'
+                    tab === t ? 'bg-white text-stone-600 shadow-sm border border-stone-200' : 'text-stone-400 hover:text-stone-600'
                   }`}
                 >
                   {t}
@@ -85,8 +85,8 @@ export default function AdminDashboard() {
       <main className="max-w-7xl mx-auto p-10">
         {loading ? (
           <div className="flex flex-col items-center justify-center py-40">
-             <Loader2 className="w-12 h-12 text-slate-900 animate-spin mb-4" />
-             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Polling System Metrics...</p>
+             <Loader2 className="w-12 h-12 text-stone-900 animate-spin mb-4" />
+             <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest">Polling System Metrics...</p>
           </div>
         ) : (
           <>
@@ -109,13 +109,13 @@ export default function AdminDashboard() {
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                   <div className="lg:col-span-8 bg-white border border-slate-200 rounded-[3rem] p-10 shadow-sm">
+                   <div className="lg:col-span-8 bg-white border border-stone-200 rounded-[3rem] p-10 shadow-sm">
                       <div className="flex items-center justify-between mb-10">
-                         <h3 className="text-xl font-black text-slate-900 tracking-tight flex items-center gap-3">
+                         <h3 className="text-xl font-black text-stone-900 tracking-tight flex items-center gap-3">
                             <Activity className="w-5 h-5 text-stone-600" />
                             Throughput Analytics
                          </h3>
-                         <div className="px-3 py-1 bg-slate-50 text-slate-400 rounded-lg text-[9px] font-black uppercase">Live: 7D Window</div>
+                         <div className="px-3 py-1 bg-stone-50 text-stone-400 rounded-lg text-[9px] font-black uppercase">Live: 7D Window</div>
                       </div>
                       <div className="h-80 w-full">
                         <ResponsiveContainer width="100%" height="100%">
@@ -135,20 +135,20 @@ export default function AdminDashboard() {
                       </div>
                    </div>
 
-                   <div className="lg:col-span-4 bg-slate-900 rounded-[3rem] p-10 text-white relative overflow-hidden flex flex-col justify-between">
+                   <div className="lg:col-span-4 bg-stone-900 rounded-[3rem] p-10 text-white relative overflow-hidden flex flex-col justify-between">
                       <div className="absolute top-0 right-0 w-64 h-64 bg-stone-500/10 rounded-full -mr-32 -mt-32 blur-[100px]"></div>
                       <div className="relative z-10">
                          <h3 className="text-xl font-black tracking-tight">System Status</h3>
-                         <p className="text-slate-500 text-xs font-bold uppercase tracking-widest mt-2">All Nodes Operational</p>
+                         <p className="text-stone-500 text-xs font-bold uppercase tracking-widest mt-2">All Nodes Operational</p>
                       </div>
 
                       <div className="relative z-10 space-y-6">
                          <div className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/5">
-                            <span className="text-[10px] font-black uppercase text-slate-400">Database Latency</span>
+                            <span className="text-[10px] font-black uppercase text-stone-400">Database Latency</span>
                             <span className="text-xs font-black text-stone-400">12ms</span>
                          </div>
                          <div className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/5">
-                            <span className="text-[10px] font-black uppercase text-slate-400">AI Cache Hit</span>
+                            <span className="text-[10px] font-black uppercase text-stone-400">AI Cache Hit</span>
                             <span className="text-xs font-black text-stone-400">94.2%</span>
                          </div>
                       </div>
@@ -158,35 +158,35 @@ export default function AdminDashboard() {
             )}
 
             {tab === 'users' && (
-              <div className="bg-white border border-slate-200 rounded-[2.5rem] overflow-hidden shadow-sm animate-in slide-in-from-bottom-4 duration-500">
-                <div className="p-8 border-b border-slate-100 flex items-center justify-between bg-slate-50/30">
-                   <h2 className="text-2xl font-black text-slate-900 tracking-tight">Node Directory</h2>
+              <div className="bg-white border border-stone-200 rounded-[2.5rem] overflow-hidden shadow-sm animate-in slide-in-from-bottom-4 duration-500">
+                <div className="p-8 border-b border-stone-100 flex items-center justify-between bg-stone-50/30">
+                   <h2 className="text-2xl font-black text-stone-900 tracking-tight">Node Directory</h2>
                    <div className="relative">
-                      <Search className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" />
-                      <input type="text" placeholder="Search user hash..." className="pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold outline-none focus:ring-2 focus:ring-stone-500/20 w-64" />
+                      <Search className="absolute left-3 top-2.5 w-4 h-4 text-stone-400" />
+                      <input type="text" placeholder="Search user hash..." className="pl-10 pr-4 py-2 bg-white border border-stone-200 rounded-xl text-xs font-bold outline-none focus:ring-2 focus:ring-stone-500/20 w-64" />
                    </div>
                 </div>
                 <div className="overflow-x-auto">
                   <table className="w-full text-left">
                     <thead>
-                      <tr className="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-50">
+                      <tr className="text-[10px] font-black text-stone-400 uppercase tracking-widest border-b border-stone-50">
                         <th className="px-8 py-6">Identity</th>
                         <th className="px-8 py-6">Privileges</th>
                         <th className="px-8 py-6">First Seen</th>
                         <th className="px-8 py-6 text-right">Ops</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-50 text-sm font-bold text-slate-600">
+                    <tbody className="divide-y divide-stone-50 text-sm font-bold text-stone-600">
                       {users.length === 0 ? (
-                        <tr><td colSpan="4" className="py-20 text-center uppercase tracking-widest text-[10px] text-slate-400">Registry is empty</td></tr>
+                        <tr><td colSpan="4" className="py-20 text-center uppercase tracking-widest text-[10px] text-stone-400">Registry is empty</td></tr>
                       ) : (
                         users.map(u => (
-                          <tr key={u.id} className="hover:bg-slate-50/50 transition-colors">
-                            <td className="px-8 py-6 text-slate-900 font-black">{u.email}</td>
+                          <tr key={u.id} className="hover:bg-stone-50/50 transition-colors">
+                            <td className="px-8 py-6 text-stone-900 font-black">{u.email}</td>
                             <td className="px-8 py-6">
-                              <span className="px-3 py-1 bg-slate-100 border border-slate-200 rounded-lg text-[10px] uppercase tracking-tighter">{u.role}</span>
+                              <span className="px-3 py-1 bg-stone-100 border border-stone-200 rounded-lg text-[10px] uppercase tracking-tighter">{u.role}</span>
                             </td>
-                            <td className="px-8 py-6 text-slate-400 font-mono text-xs">{new Date(u.created_at).toLocaleDateString()}</td>
+                            <td className="px-8 py-6 text-stone-400 font-mono text-xs">{new Date(u.created_at).toLocaleDateString()}</td>
                             <td className="px-8 py-6 text-right space-x-2">
                               <button className="px-4 py-2 bg-stone-50 text-stone-600 rounded-xl text-[10px] uppercase tracking-tighter hover:bg-stone-600 hover:text-white transition-all">Revoke</button>
                               <button className="px-4 py-2 bg-stone-50 text-stone-600 rounded-xl text-[10px] uppercase tracking-tighter hover:bg-stone-600 hover:text-white transition-all">Validate</button>
@@ -202,30 +202,30 @@ export default function AdminDashboard() {
 
             {tab === 'crawler' && (
               <div className="space-y-8 animate-in zoom-in-95 duration-500">
-                <div className="bg-white border border-slate-200 p-10 rounded-[3rem] shadow-sm flex items-center justify-between">
+                <div className="bg-white border border-stone-200 p-10 rounded-[3rem] shadow-sm flex items-center justify-between">
                   <div className="flex items-center gap-6">
-                    <div className={`w-4 h-4 rounded-full ${crawlerStats.health === 'RUNNING' ? 'bg-stone-500 animate-pulse' : 'bg-slate-300 shadow-inner shadow-slate-400'}`}></div>
+                    <div className={`w-4 h-4 rounded-full ${crawlerStats.health === 'RUNNING' ? 'bg-stone-500 animate-pulse' : 'bg-stone-300 shadow-inner shadow-stone-400'}`}></div>
                     <div>
-                       <h3 className="text-2xl font-black text-slate-900 tracking-tight">Aggregator Core</h3>
-                       <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Status: {crawlerStats.health}</p>
+                       <h3 className="text-2xl font-black text-stone-900 tracking-tight">Aggregator Core</h3>
+                       <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest mt-1">Status: {crawlerStats.health}</p>
                     </div>
                   </div>
-                  <button onClick={triggerCrawl} className="flex items-center gap-3 bg-slate-900 text-white px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-stone-600 transition-all shadow-xl shadow-slate-900/10">
+                  <button onClick={triggerCrawl} className="flex items-center gap-3 bg-stone-900 text-white px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-stone-600 transition-all shadow-xl shadow-stone-900/10">
                     <Play className="w-4 h-4 fill-current" /> Initialize Sequence
                   </button>
                 </div>
 
-                <div className="bg-slate-950 rounded-[3rem] p-10 shadow-2xl relative overflow-hidden">
+                <div className="bg-stone-950 rounded-[3rem] p-10 shadow-2xl relative overflow-hidden">
                    <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-stone-500 to-transparent"></div>
                    <div className="flex items-center justify-between mb-6">
                       <h4 className="text-stone-400 text-xs font-black uppercase tracking-[0.2em]">Kernel Logs</h4>
-                      <button className="text-[9px] font-black text-slate-600 uppercase hover:text-white transition-colors">Clear Buffer</button>
+                      <button className="text-[9px] font-black text-stone-600 uppercase hover:text-white transition-colors">Clear Buffer</button>
                    </div>
-                   <div className="font-mono text-[11px] text-slate-300 h-96 overflow-y-auto space-y-2 custom-scrollbar">
+                   <div className="font-mono text-[11px] text-stone-300 h-96 overflow-y-auto space-y-2 custom-scrollbar">
                      {crawlerStats.logs.length === 0 ? (
-                       <div className="text-slate-700 italic">// Awaiting input...</div>
+                       <div className="text-stone-700 italic">// Awaiting input...</div>
                      ) : (
-                       crawlerStats.logs.map((log, index) => <div key={index} className="flex gap-4 border-l border-white/5 pl-4"><span className="text-slate-700">{index+1}</span> {log}</div>)
+                       crawlerStats.logs.map((log, index) => <div key={index} className="flex gap-4 border-l border-white/5 pl-4"><span className="text-stone-700">{index+1}</span> {log}</div>)
                      )}
                    </div>
                 </div>
@@ -233,27 +233,27 @@ export default function AdminDashboard() {
             )}
 
             {tab === 'email' && (
-              <div className="bg-white border border-slate-200 rounded-[2.5rem] overflow-hidden shadow-sm animate-in slide-in-from-right-4 duration-500">
-                <div className="p-8 border-b border-slate-100 bg-slate-50/30">
-                   <h2 className="text-2xl font-black text-slate-900 tracking-tight">Signal Queue</h2>
+              <div className="bg-white border border-stone-200 rounded-[2.5rem] overflow-hidden shadow-sm animate-in slide-in-from-right-4 duration-500">
+                <div className="p-8 border-b border-stone-100 bg-stone-50/30">
+                   <h2 className="text-2xl font-black text-stone-900 tracking-tight">Signal Queue</h2>
                 </div>
                 <div className="overflow-x-auto">
                   <table className="w-full text-left">
                     <thead>
-                      <tr className="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-50">
+                      <tr className="text-[10px] font-black text-stone-400 uppercase tracking-widest border-b border-stone-50">
                         <th className="px-8 py-6">Target</th>
                         <th className="px-8 py-6">Signal Subject</th>
                         <th className="px-8 py-6">State</th>
                         <th className="px-8 py-6 text-right">Timestamp</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-50 text-sm font-bold text-slate-600">
+                    <tbody className="divide-y divide-stone-50 text-sm font-bold text-stone-600">
                       {emails.length === 0 ? (
-                         <tr><td colSpan="4" className="py-20 text-center uppercase tracking-widest text-[10px] text-slate-400">No outgoing signals in buffer</td></tr>
+                         <tr><td colSpan="4" className="py-20 text-center uppercase tracking-widest text-[10px] text-stone-400">No outgoing signals in buffer</td></tr>
                       ) : (
                         emails.map(e => (
-                          <tr key={e.id} className="hover:bg-slate-50/50 transition-colors">
-                            <td className="px-8 py-6 text-slate-900">{e.to_email}</td>
+                          <tr key={e.id} className="hover:bg-stone-50/50 transition-colors">
+                            <td className="px-8 py-6 text-stone-900">{e.to_email}</td>
                             <td className="px-8 py-6">{e.subject}</td>
                             <td className="px-8 py-6">
                               <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-tighter ${
@@ -265,7 +265,7 @@ export default function AdminDashboard() {
                                 {e.status}
                               </div>
                             </td>
-                            <td className="px-8 py-6 text-right text-slate-400 font-mono text-xs">{new Date(e.created_at).toLocaleString()}</td>
+                            <td className="px-8 py-6 text-right text-stone-400 font-mono text-xs">{new Date(e.created_at).toLocaleString()}</td>
                           </tr>
                         ))
                       )}

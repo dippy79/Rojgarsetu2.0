@@ -8,9 +8,9 @@ export interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
 export const Card = React.forwardRef<HTMLDivElement, CardProps>(
   ({ className, variant = "default", ...props }, ref) => {
     const variants = {
-      default: "bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800",
-      dark: "bg-slate-900/90 border border-slate-800 hover:border-slate-700",
-      gradient: "bg-gradient-to-br from-slate-900 to-slate-800 border border-slate-700"
+      default: "bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800",
+      dark: "bg-stone-900/90 border border-stone-800 hover:border-stone-700",
+      gradient: "bg-gradient-to-br from-stone-900 to-stone-800 border border-stone-700"
     };
 
     return (

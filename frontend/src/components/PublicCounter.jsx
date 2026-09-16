@@ -20,7 +20,7 @@ const PublicCounter = () => {
   }, []);
 
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 py-12 px-6 bg-slate-900 rounded-[3rem] shadow-2xl shadow-stone-900/20 relative overflow-hidden">
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 py-12 px-6 bg-stone-900 rounded-[3rem] shadow-2xl shadow-stone-900/20 relative overflow-hidden">
       <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(#ffffff0a_1px,transparent_1px)] [background-size:24px_24px]"></div>
 
       <StatItem icon={<Briefcase className="w-6 h-6 text-stone-400" />} label="Live Jobs" value={stats.total_jobs} color="blue" />
@@ -62,7 +62,7 @@ const StatItem = ({ icon, label, value, color }) => {
       </div>
       <div>
         <p className="text-4xl font-black text-white tracking-tighter font-mono">{displayValue.toLocaleString()}+</p>
-        <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mt-2">{label}</p>
+        <p className="text-[10px] font-black text-stone-500 uppercase tracking-[0.2em] mt-2">{label}</p>
       </div>
     </div>
   );

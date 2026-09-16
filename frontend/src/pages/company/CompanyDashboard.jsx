@@ -48,8 +48,8 @@ export default function CompanyDashboard() {
 
   return (
     <ProtectedRoute allowedRoles={['company', 'employer']}>
-      <div className="flex min-h-screen bg-slate-50 font-sans">
-      <aside className="w-64 bg-slate-900 text-white p-6 flex flex-col justify-between fixed h-full z-50">
+      <div className="flex min-h-screen bg-stone-50 font-sans">
+      <aside className="w-64 bg-stone-900 text-white p-6 flex flex-col justify-between fixed h-full z-50">
         <div className="space-y-8">
           <div className="flex items-center gap-3">
             <div className="bg-stone-600 p-2 rounded-xl">
@@ -67,7 +67,7 @@ export default function CompanyDashboard() {
                   key={item.path}
                   href={item.path}
                   className={`flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all ${
-                    isActive ? 'bg-stone-600 text-white' : 'text-slate-400 hover:text-white hover:bg-white/5'
+                    isActive ? 'bg-stone-600 text-white' : 'text-stone-400 hover:text-white hover:bg-white/5'
                   }`}
                 >
                   <Icon className="w-5 h-5" /> {item.label}
@@ -79,7 +79,7 @@ export default function CompanyDashboard() {
 
         <button
           onClick={() => { logout(); router.push('/login'); }}
-          className="flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-stone-400 hover:bg-stone-500/5 rounded-xl font-medium transition-all"
+          className="flex items-center gap-3 px-4 py-3 text-stone-400 hover:text-stone-400 hover:bg-stone-500/5 rounded-xl font-medium transition-all"
         >
           <LogOut className="w-5 h-5" /> Logout
         </button>
@@ -88,10 +88,10 @@ export default function CompanyDashboard() {
       <main className="flex-1 ml-64 p-8">
         <header className="flex justify-between items-center mb-10">
           <div>
-            <h1 className="text-3xl font-black text-slate-900 tracking-tight">Hiring Intelligence.</h1>
-            <p className="text-slate-500 font-medium mt-1 text-lg">Welcome back, <span className="text-stone-600 font-bold">{user?.name || 'Recruiter'}</span></p>
+            <h1 className="text-3xl font-black text-stone-900 tracking-tight">Hiring Intelligence.</h1>
+            <p className="text-stone-500 font-medium mt-1 text-lg">Welcome back, <span className="text-stone-600 font-bold">{user?.name || 'Recruiter'}</span></p>
           </div>
-          <Link href="/company/post-job" className="flex items-center gap-2 bg-slate-900 hover:bg-slate-800 text-white px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-widest transition shadow-xl shadow-slate-900/10">
+          <Link href="/company/post-job" className="flex items-center gap-2 bg-stone-900 hover:bg-stone-800 text-white px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-widest transition shadow-xl shadow-stone-900/10">
             <PlusCircle className="w-4 h-4" /> New Posting
           </Link>
         </header>
@@ -115,15 +115,15 @@ export default function CompanyDashboard() {
         </div>
 
         {/* Recent Applicants Bento */}
-        <div className="bg-white border border-slate-200 rounded-[2.5rem] shadow-sm overflow-hidden">
-          <div className="p-10 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-            <h2 className="text-2xl font-black text-slate-900 tracking-tight">Active Pipelines</h2>
+        <div className="bg-white border border-stone-200 rounded-[2.5rem] shadow-sm overflow-hidden">
+          <div className="p-10 border-b border-stone-100 flex items-center justify-between bg-stone-50/50">
+            <h2 className="text-2xl font-black text-stone-900 tracking-tight">Active Pipelines</h2>
             <Link href="/company/applicants" className="text-xs font-black text-stone-600 hover:underline uppercase tracking-widest">Manage All</Link>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-left">
               <thead>
-                <tr className="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-50">
+                <tr className="text-[10px] font-black text-stone-400 uppercase tracking-widest border-b border-stone-50">
                   <th className="px-10 py-6">Candidate</th>
                   <th className="px-10 py-6">Applied Job</th>
                   <th className="px-10 py-6">AI Fit</th>
@@ -131,21 +131,21 @@ export default function CompanyDashboard() {
                   <th className="px-10 py-6 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-50 text-sm">
+              <tbody className="divide-y divide-stone-50 text-sm">
                 {recentApplicants.length === 0 ? (
-                  <tr><td colSpan="5" className="py-20 text-center text-slate-400 font-bold uppercase text-[10px] tracking-widest">No active candidates to show</td></tr>
+                  <tr><td colSpan="5" className="py-20 text-center text-stone-400 font-bold uppercase text-[10px] tracking-widest">No active candidates to show</td></tr>
                 ) : (
                   recentApplicants.map((app) => (
-                    <tr key={app.id || app._id} className="group hover:bg-slate-50 transition-colors">
+                    <tr key={app.id || app._id} className="group hover:bg-stone-50 transition-colors">
                       <td className="px-10 py-8">
                         <div className="flex items-center gap-4">
-                          <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center font-black text-slate-400 group-hover:text-stone-600 transition-colors uppercase">
+                          <div className="w-10 h-10 rounded-full bg-stone-100 flex items-center justify-center font-black text-stone-400 group-hover:text-stone-600 transition-colors uppercase">
                             {app.candidate_name?.[0] || 'A'}
                           </div>
-                          <p className="font-black text-slate-900">{app.candidate_name || "Applicant"}</p>
+                          <p className="font-black text-stone-900">{app.candidate_name || "Applicant"}</p>
                         </div>
                       </td>
-                      <td className="px-10 py-8 text-slate-500 font-bold uppercase text-[10px]">{app.job_title || "N/A"}</td>
+                      <td className="px-10 py-8 text-stone-500 font-bold uppercase text-[10px]">{app.job_title || "N/A"}</td>
                       <td className="px-10 py-8">
                         <div className="px-3 py-1 bg-stone-50 text-stone-700 rounded-lg text-[10px] font-black uppercase tracking-tighter w-fit">
                           {app.score ? `${app.score}% Match` : 'Awaiting'}
@@ -154,11 +154,11 @@ export default function CompanyDashboard() {
                       <td className="px-10 py-8">
                         <div className="flex items-center gap-2">
                           <div className="w-2 h-2 rounded-full bg-stone-700"></div>
-                          <span className="text-[10px] font-black uppercase tracking-widest text-slate-900">{app.status || 'Applied'}</span>
+                          <span className="text-[10px] font-black uppercase tracking-widest text-stone-900">{app.status || 'Applied'}</span>
                         </div>
                       </td>
                       <td className="px-10 py-8 text-right">
-                        <Link href="/company/applicants" className="inline-flex items-center gap-2 px-5 py-2.5 bg-slate-900 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-stone-600 transition-all shadow-lg shadow-slate-900/5">
+                        <Link href="/company/applicants" className="inline-flex items-center gap-2 px-5 py-2.5 bg-stone-900 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-stone-600 transition-all shadow-lg shadow-stone-900/5">
                           Review <ArrowUpRight className="w-3.5 h-3.5" />
                         </Link>
                       </td>

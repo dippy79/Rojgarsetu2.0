@@ -23,11 +23,11 @@ const DashboardAnalytics = ({ applicationStats = [], skillMatch = 75 }) => {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
       {/* Activity Chart */}
-      <div className="lg:col-span-8 bg-white border border-slate-200/60 rounded-[2rem] p-8 shadow-sm overflow-hidden relative">
+      <div className="lg:col-span-8 bg-white border border-stone-200/60 rounded-[2rem] p-8 shadow-sm overflow-hidden relative">
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h3 className="text-xl font-black text-slate-900 tracking-tight">Application Velocity</h3>
-            <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mt-1">Activity past 7 days</p>
+            <h3 className="text-xl font-black text-stone-900 tracking-tight">Application Velocity</h3>
+            <p className="text-stone-400 text-xs font-bold uppercase tracking-widest mt-1">Activity past 7 days</p>
           </div>
           <div className="p-3 bg-stone-50 text-stone-600 rounded-2xl border border-stone-100 flex items-center gap-2">
             <TrendingUp className="w-4 h-4" />
@@ -63,7 +63,7 @@ const DashboardAnalytics = ({ applicationStats = [], skillMatch = 75 }) => {
 
       {/* Profile Score Widget */}
       <div className="lg:col-span-4 space-y-6">
-        <div className="bg-slate-900 rounded-[2rem] p-8 text-white relative overflow-hidden group">
+        <div className="bg-stone-900 rounded-[2rem] p-8 text-white relative overflow-hidden group">
           <div className="absolute top-0 right-0 w-32 h-32 bg-stone-700/20 rounded-full -mr-16 -mt-16 blur-3xl group-hover:bg-stone-700/40 transition-all duration-700"></div>
 
           <div className="relative z-10 space-y-6">
@@ -86,26 +86,26 @@ const DashboardAnalytics = ({ applicationStats = [], skillMatch = 75 }) => {
               ></div>
             </div>
 
-            <p className="text-xs font-medium text-slate-400 leading-relaxed">
+            <p className="text-xs font-medium text-stone-400 leading-relaxed">
               Your profile is stronger than <span className="text-white font-bold">82%</span> of other candidates in the Tech industry.
             </p>
           </div>
         </div>
 
         {/* Small Status breakdown */}
-        <div className="bg-white border border-slate-200/60 rounded-[2rem] p-6 shadow-sm">
+        <div className="bg-white border border-stone-200/60 rounded-[2rem] p-6 shadow-sm">
           <div className="flex items-center justify-between mb-4">
-            <h4 className="text-sm font-black text-slate-900 uppercase tracking-tighter">Status Mix</h4>
-            <Clock className="w-4 h-4 text-slate-400" />
+            <h4 className="text-sm font-black text-stone-900 uppercase tracking-tighter">Status Mix</h4>
+            <Clock className="w-4 h-4 text-stone-400" />
           </div>
           <div className="space-y-3">
             {pieData.map((item) => (
               <div key={item.name} className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-2 rounded-full" style={{ backgroundColor: item.color }}></div>
-                  <span className="text-xs font-bold text-slate-500">{item.name}</span>
+                  <span className="text-xs font-bold text-stone-500">{item.name}</span>
                 </div>
-                <span className="text-xs font-black text-slate-900">{item.value}</span>
+                <span className="text-xs font-black text-stone-900">{item.value}</span>
               </div>
             ))}
           </div>

@@ -50,8 +50,8 @@ export default function AIJobMatches() {
            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-stone-50 text-stone-600 text-[10px] font-black uppercase tracking-widest">
               <Sparkles className="w-3.5 h-3.5" /> Neural Engine v2.0
            </div>
-           <h1 className="text-4xl md:text-6xl font-black text-slate-900 tracking-tight leading-none">AI Recommendations.</h1>
-           <p className="text-slate-500 font-medium text-lg max-w-2xl">
+           <h1 className="text-4xl md:text-6xl font-black text-stone-900 tracking-tight leading-none">AI Recommendations.</h1>
+           <p className="text-stone-500 font-medium text-lg max-w-2xl">
              Hyper-personalized job matches based on your unique skill graph and professional trajectory.
            </p>
         </header>
@@ -59,21 +59,21 @@ export default function AIJobMatches() {
         {loading ? (
           <div className="flex flex-col items-center justify-center py-32 space-y-4">
              <Loader2 className="w-12 h-12 text-stone-600 animate-spin" />
-             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Running Match Algorithms...</p>
+             <p className="text-[10px] font-black text-stone-400 uppercase tracking-widest">Running Match Algorithms...</p>
           </div>
         ) : matches.length === 0 ? (
-          <div className="bg-white border border-slate-200 rounded-[3rem] p-20 text-center space-y-6 shadow-sm">
-             <div className="w-24 h-24 bg-slate-50 rounded-full flex items-center justify-center mx-auto text-4xl shadow-inner">🧠</div>
+          <div className="bg-white border border-stone-200 rounded-[3rem] p-20 text-center space-y-6 shadow-sm">
+             <div className="w-24 h-24 bg-stone-50 rounded-full flex items-center justify-center mx-auto text-4xl shadow-inner">🧠</div>
              <div>
-                <h3 className="text-xl font-bold text-slate-900">Neural Gap Detected</h3>
-                <p className="text-slate-400 text-sm font-medium mt-1">Complete your profile skills to enable deep matching.</p>
+                <h3 className="text-xl font-bold text-stone-900">Neural Gap Detected</h3>
+                <p className="text-stone-400 text-sm font-medium mt-1">Complete your profile skills to enable deep matching.</p>
              </div>
-             <button className="px-8 py-3 bg-slate-900 text-white font-black rounded-2xl text-[10px] uppercase tracking-widest hover:bg-stone-600 transition-all shadow-xl shadow-slate-900/10">Update Profile</button>
+             <button className="px-8 py-3 bg-stone-900 text-white font-black rounded-2xl text-[10px] uppercase tracking-widest hover:bg-stone-600 transition-all shadow-xl shadow-stone-900/10">Update Profile</button>
           </div>
         ) : (
           <div className="grid gap-6">
             {matches.map((m, idx) => (
-              <div key={m.job_id || idx} className="group bg-white border border-slate-200 rounded-[2.5rem] p-8 hover:border-stone-400 hover:shadow-2xl hover:shadow-stone-500/5 transition-all relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-8">
+              <div key={m.job_id || idx} className="group bg-white border border-stone-200 rounded-[2.5rem] p-8 hover:border-stone-400 hover:shadow-2xl hover:shadow-stone-500/5 transition-all relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-8">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-stone-500/5 rounded-full -mr-16 -mt-16 blur-3xl group-hover:scale-150 transition-transform duration-700"></div>
 
                 <div className="space-y-4 relative z-10 flex-1">
@@ -82,12 +82,12 @@ export default function AIJobMatches() {
                       <Zap className="w-3 h-3 fill-current" />
                       {Math.floor(m.match_score * 100)}% Match
                     </div>
-                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{m.source_table || 'Direct'}</span>
+                    <span className="text-[10px] font-black text-stone-400 uppercase tracking-widest">{m.source_table || 'Direct'}</span>
                   </div>
 
                   <div>
-                    <h3 className="text-2xl font-black text-slate-900 group-hover:text-stone-600 transition-colors tracking-tight">{m.title}</h3>
-                    <p className="text-sm font-bold text-slate-400 uppercase tracking-widest mt-1 flex items-center gap-2">
+                    <h3 className="text-2xl font-black text-stone-900 group-hover:text-stone-600 transition-colors tracking-tight">{m.title}</h3>
+                    <p className="text-sm font-bold text-stone-400 uppercase tracking-widest mt-1 flex items-center gap-2">
                        <Building className="w-3.5 h-3.5" /> {m.company || 'InnovateCorp'}
                     </p>
                   </div>
@@ -102,10 +102,10 @@ export default function AIJobMatches() {
                 </div>
 
                 <div className="flex flex-col items-center gap-4 relative z-10 shrink-0">
-                   <div className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">
+                   <div className="flex items-center gap-2 text-[10px] font-black text-stone-400 uppercase tracking-widest mb-2">
                       <MapPin className="w-3.5 h-3.5" /> {m.location || 'Global'}
                    </div>
-                   <button className="w-full md:w-48 py-4 bg-slate-900 text-white font-black rounded-2xl hover:bg-stone-600 transition-all shadow-xl shadow-slate-900/10 uppercase text-[10px] tracking-widest flex items-center justify-center gap-3 group">
+                   <button className="w-full md:w-48 py-4 bg-stone-900 text-white font-black rounded-2xl hover:bg-stone-600 transition-all shadow-xl shadow-stone-900/10 uppercase text-[10px] tracking-widest flex items-center justify-center gap-3 group">
                      Apply Now <ArrowUpRight className="w-4 h-4 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
                    </button>
                 </div>

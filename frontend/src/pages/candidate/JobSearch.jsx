@@ -52,24 +52,24 @@ export const JobSearch = () => {
   return (
     <div className="min-h-screen bg-[#FBFBFB]">
       {/* Search Header */}
-      <section className="bg-white border-b border-slate-100 pt-16 pb-12">
+      <section className="bg-white border-b border-stone-100 pt-16 pb-12">
         <div className="max-w-7xl mx-auto px-6">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
             <div className="space-y-4">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-stone-100 text-stone-800 text-[10px] font-black uppercase tracking-widest">
                 <Sparkles className="w-3 h-3" /> AI Discovery Engine
               </div>
-              <h1 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tight">Explore Opportunities.</h1>
-              <p className="text-slate-400 font-medium max-w-lg">Universal search across government registries and premium private boards.</p>
+              <h1 className="text-4xl md:text-5xl font-black text-stone-900 tracking-tight">Explore Opportunities.</h1>
+              <p className="text-stone-400 font-medium max-w-lg">Universal search across government registries and premium private boards.</p>
             </div>
 
             <div className="flex-1 max-w-2xl w-full">
               <div className="relative group">
-                <Search className="absolute left-5 top-5 w-5 h-5 text-slate-400 group-focus-within:text-stone-800 transition-colors" />
+                <Search className="absolute left-5 top-5 w-5 h-5 text-stone-400 group-focus-within:text-stone-800 transition-colors" />
                 <input
                   type="text"
                   placeholder="Search by role, company, or keyword..."
-                  className="w-full pl-14 pr-6 py-5 bg-slate-50 border-2 border-transparent focus:border-stone-700/20 focus:bg-white rounded-[2rem] text-sm font-bold shadow-sm transition-all outline-none"
+                  className="w-full pl-14 pr-6 py-5 bg-stone-50 border-2 border-transparent focus:border-stone-700/20 focus:bg-white rounded-[2rem] text-sm font-bold shadow-sm transition-all outline-none"
                 />
               </div>
             </div>
@@ -83,7 +83,7 @@ export const JobSearch = () => {
           {/* Filters Sidebar */}
           <aside className="lg:col-span-3">
             <div className="lg:hidden mb-6">
-              <button className="w-full py-4 bg-slate-900 text-white rounded-2xl font-black flex items-center justify-center gap-3">
+              <button className="w-full py-4 bg-stone-900 text-white rounded-2xl font-black flex items-center justify-center gap-3">
                 <Filter className="w-4 h-4" /> Show Filters
               </button>
             </div>
@@ -95,7 +95,7 @@ export const JobSearch = () => {
           {/* Results Area */}
           <div className="lg:col-span-9 space-y-8">
             <div className="flex items-center justify-between">
-              <h2 className="text-xl font-black text-slate-900 tracking-tight uppercase tracking-[0.1em]">
+              <h2 className="text-xl font-black text-stone-900 tracking-tight uppercase tracking-[0.1em]">
                 Available Positions <span className="text-stone-800 ml-2">({jobs.length})</span>
               </h2>
             </div>
@@ -103,7 +103,7 @@ export const JobSearch = () => {
             {loading ? (
               <div className="space-y-6">
                 {[1,2,3,4].map(i => (
-                  <div key={i} className="h-44 bg-slate-100 rounded-[2rem] animate-pulse"></div>
+                  <div key={i} className="h-44 bg-stone-100 rounded-[2rem] animate-pulse"></div>
                 ))}
               </div>
             ) : (

@@ -10,6 +10,7 @@ import { Search, MapPin, ShieldCheck, ArrowRight, Loader2, Info } from 'lucide-r
 export const GovJobsPage = () => {
   const { user, isAuthenticated } = useAuth();
   const [jobs, setJobs] = useState([]);
+  const [totalItems, setTotalItems] = useState(0);
   const [pagination, setPagination] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -33,6 +34,7 @@ export const GovJobsPage = () => {
       const data = res.data?.data || res.data || [];
       const safeData = Array.isArray(data) ? data : [];
       setJobs(safeData);
+      setTotalItems(res.data?.pagination?.total || safeData.length);
       setPagination(res.data?.pagination);
     } catch (err) {
       console.error("Fetch error:", err);
@@ -54,7 +56,7 @@ export const GovJobsPage = () => {
   return (
     <div className="min-h-screen bg-stone-50">
       {/* Premium Hero Section */}
-      <section className="relative pt-24 pb-20 overflow-hidden bg-white border-b border-slate-200/60">
+      <section className="relative pt-24 pb-20 overflow-hidden bg-white border-b border-stone-200/60">
         <div className="absolute inset-0 bg-[radial-gradient(#e2e8f0_1px,transparent_1px)] [background-size:24px_24px] opacity-40"></div>
         <div className="max-w-7xl mx-auto px-6 relative z-10">
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-16">
@@ -81,15 +83,15 @@ export const GovJobsPage = () => {
               )}
             </div>
 
-            <div className="flex-1 max-w-md bg-white border border-slate-200 p-10 rounded-2xl shadow-2xl shadow-slate-200/50 relative">
+            <div className="flex-1 max-w-md bg-white border border-stone-200 p-10 rounded-2xl shadow-2xl shadow-stone-200/50 relative">
                <div className="absolute -top-6 -right-6 w-24 h-24 bg-stone-800 rounded-full flex items-center justify-center text-white font-black text-xs rotate-12 shadow-xl border-4 border-white">
                   LIVE<br/>AGGREGATOR
                </div>
                <h3 className="text-xl font-black text-stone-800 mb-8">Instant Search</h3>
                <div className="space-y-5">
                   <div className="relative group">
-                    <Search className="absolute left-4 top-4 w-5 h-5 text-slate-400 group-focus-within:text-stone-800 transition-colors" />
-                    <input type="text" placeholder="Job title or Department..." className="w-full pl-12 pr-4 py-4 bg-slate-50 border-none rounded-2xl text-sm font-bold focus:ring-4 focus:ring-stone-700/10 transition-all outline-none" />
+                    <Search className="absolute left-4 top-4 w-5 h-5 text-stone-400 group-focus-within:text-stone-800 transition-colors" />
+                    <input type="text" placeholder="Job title or Department..." className="w-full pl-12 pr-4 py-4 bg-stone-50 border-none rounded-2xl text-sm font-bold focus:ring-4 focus:ring-stone-700/10 transition-all outline-none" />
                   </div>
                   <button className="w-full py-4 bg-stone-800 text-white font-black rounded-2xl hover:bg-stone-900 transition-all shadow-xl shadow-blue-900/20 uppercase tracking-widest text-xs">
                     Fetch Opportunities
@@ -119,7 +121,7 @@ export const GovJobsPage = () => {
 
             <div className="flex items-center justify-between">
               <h2 className="text-2xl font-black text-stone-800 tracking-tight">
-                Active Notifications <span className="text-stone-800 ml-1">({jobs.length})</span>
+                Active Notifications <span className="text-stone-400 ml-1 font-medium">({totalItems})</span>
               </h2>
             </div>
 
