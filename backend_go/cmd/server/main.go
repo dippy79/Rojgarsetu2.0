@@ -21,6 +21,7 @@ import (
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	_ "github.com/lib/pq"
 	"github.com/redis/go-redis/v9"
+	"github.com/joho/godotenv"
 	"github.com/rojgarsetu/backend/config"
 	_ "github.com/rojgarsetu/backend/docs" // swagger docs
 	"github.com/rojgarsetu/backend/internal/crawler"
@@ -115,6 +116,20 @@ func safeHandler(fn func(h *AppHandlers, c *gin.Context)) gin.HandlerFunc {
 func main() {
 	// Initialize logger
 	logger = zerolog.New(os.Stderr).Output(zerolog.ConsoleWriter{Out: os.Stderr, TimeFormat: time.RFC3339}).With().Timestamp().Caller().Logger()
+
+	// Load .env file from common locations
+	envPaths := []string{".env", "../.env", "../../.env"}
+	loaded := false
+	for _, p := range envPaths {
+		if err := godotenv.Load(p); err == nil {
+			logger.Info().Str("path", p).Msg("Loaded environment variables from file")
+			loaded = true
+			break
+		}
+	}
+	if !loaded {
+		logger.Warn().Msg("No .env file found in standard locations, relying on system environment variables")
+	}
 
 	// Load config
 	cfg := config.Load()

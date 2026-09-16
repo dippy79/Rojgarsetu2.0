@@ -75,7 +75,7 @@ export const fetcher = async (url: string) => {
 
 // Auth API
 export const authAPI = {
-    register: (data: { email: string; password: string; role: string; firstName?: string; lastName?: string; companyName?: string }) =>
+    register: (data: { name: string; email: string; password: string; role: string; phone?: string; companyName?: string }) =>
         api.post<ApiResponse<{ user: User }>>('/api/v1/auth/register', data),
 
     login: (data: { email: string; password: string }) =>

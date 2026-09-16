@@ -2,36 +2,72 @@ package sources
 
 import (
 	"log"
+	"net/http"
+	"strings"
+	"time"
+
+	"github.com/PuerkitoBio/goquery"
 )
 
 // SSCScraper scrapes SSC official portal
 type SSCScraper struct {
-	client interface{} // interface{} to avoid import cycle
+	client *http.Client
 }
 
 // NewSSCScraper creates a new SSC scraper
-func NewSSCScraper(client interface{}) *SSCScraper {
-	return &SSCScraper{client: client}
+func NewSSCScraper(client any) *SSCScraper {
+	return &SSCScraper{
+		client: &http.Client{
+			Timeout: 30 * time.Second,
+		},
+	}
 }
 
-// FetchJobs fetches jobs from SSC
+// FetchJobs fetches real jobs from SSC Notices page
 func (s *SSCScraper) FetchJobs() ([]Job, error) {
-	log.Println("[SSC] Fetching jobs (stub implementation)")
+	log.Println("[SSC] Fetching live jobs from ssc.gov.in...")
+
+	url := "https://ssc.gov.in/Notices"
+	res, err := s.client.Get(url)
+	if err != nil {
+		return nil, err
+	}
+	defer res.Body.Close()
+
+	doc, err := goquery.NewDocumentFromReader(res.Body)
+	if err != nil {
+		return nil, err
+	}
 
 	var jobs []Job
-	// Stub job for testing
-	job := Job{
-		Title:             "Combined Graduate Level Examination 2025",
-		CompanyOrDept:     "Staff Selection Commission",
-		Location:          "All India",
-		QualificationReq:  "Bachelor's Degree",
-		SalaryOrPayScale:  "As per 7th Pay Commission",
-		ApplyURL:          "https://ssc.gov.in/graduate-level-examination",
-		SourceAttribution: "Source: SSC Official Portal (ssc.gov.in)",
-		HashChecksum:      "", // Will be set by engine
-	}
-	jobs = append(jobs, job)
+	// SSC notices usually in a list or table
+	doc.Find(".notice-item, tr").Each(func(i int, item *goquery.Selection) {
+		title := strings.TrimSpace(item.Text())
+		if len(title) < 10 {
+			return
+		}
 
-	log.Printf("[SSC] Found %d job listings", len(jobs))
+		link, _ := item.Find("a").Attr("href")
+		if link == "" {
+			return
+		}
+
+		job := Job{
+			Title:             title,
+			CompanyOrDept:     "Staff Selection Commission",
+			Location:          "All India",
+			QualificationReq:  "10th / 12th / Graduate",
+			SalaryOrPayScale:  "As per 7th CPC",
+			ApplyURL:          link,
+			SourceAttribution: "Source: SSC Official Portal (ssc.gov.in)",
+		}
+		jobs = append(jobs, job)
+	})
+
+	if len(jobs) == 0 {
+		log.Println("[SSC] Warning: No live jobs found via parser.")
+	}
+
+	log.Printf("[SSC] Successfully extracted %d live listings", len(jobs))
 	return jobs, nil
 }

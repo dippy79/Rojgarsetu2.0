@@ -29,13 +29,13 @@ func NewAuthService(userSvc *UserService, tokenSvc *TokenService, cfg *config.Co
 
 type LoginRequest struct {
 	Email    string `json:"email" binding:"required,email"`
-	Password string `json:"password" binding:"required,min=8"`
+	Password string `json:"password" binding:"required,min=12"`
 }
 
 type RegisterRequest struct {
 	Name     string `json:"name" binding:"required"`
 	Email    string `json:"email" binding:"required,email"`
-	Password string `json:"password" binding:"required,min=8"`
+	Password string `json:"password" binding:"required,min=12"`
 	Role     string `json:"role" binding:"required,oneof=candidate company"`
 	Phone    string `json:"phone"`
 }
