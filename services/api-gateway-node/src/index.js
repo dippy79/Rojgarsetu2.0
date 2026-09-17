@@ -25,7 +25,7 @@ app.use(cors({
 }));
 
 // 2. PROXY CONFIGURATION (CONSOLIDATED)
-const BACKEND_TARGET = process.env.BACKEND_SERVICE_URL || 'http://backend:8083';
+const BACKEND_TARGET = process.env.BACKEND_SERVICE_URL || 'http://localhost:8084';
 const AUTH_TARGET = process.env.AUTH_SERVICE_URL || 'http://auth-service:8081';
 const AI_TARGET = process.env.AI_ENGINE_URL || 'http://ai-engine:8000';
 const CRAWLER_TARGET = process.env.CRAWLER_SERVICE_URL || 'http://crawler:8080';
@@ -55,12 +55,13 @@ const proxyOptions = {
 };
 
 // 3. SPECIAL ROUTES (CSRF BYPASS)
-// Route /api/v1/auth and /api/auth to the Java auth service
+// Definitively route ALL auth traffic to the Go Backend
+// Java Auth service is being decommissioned for unified Go Auth.
 const authProxy = createProxyMiddleware({
-  target: AUTH_TARGET,
+  target: BACKEND_TARGET,
   pathRewrite: {
-    '^/api/v1/auth': '/auth',
-    '^/api/auth': '/auth'
+    '^/api/v1/auth': '/api/v1/auth',
+    '^/api/auth': '/api/v1/auth'
   },
   ...proxyOptions
 });

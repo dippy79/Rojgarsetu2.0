@@ -55,9 +55,11 @@ const LoginPage = () => {
     setLoading(true);
     try {
       if (login) {
-        await login(loginForm.email.trim(), loginForm.password);
+        const user = await login(loginForm.email.trim(), loginForm.password);
+        // Security Fix: Redirect based on AUTHENTICATED role from backend
+        const authenticatedRole = (user.role || 'candidate').toLowerCase();
+        router.push(`/dashboard/${authenticatedRole}`);
       }
-      router.push(`/dashboard/${loginForm.role.toLowerCase()}`);
     } catch (err) {
       setError(err.message || 'Authentication failed. Please verify credentials.');
     } finally {
@@ -86,17 +88,24 @@ const LoginPage = () => {
     setLoading(true);
     try {
       if (register) {
-        await register({
-          name: registerForm.full_name.trim(),
+        // Standardized payload: using firstName/lastName structure
+        const nameParts = registerForm.full_name.trim().split(' ');
+        const firstName = nameParts[0];
+        const lastName = nameParts.slice(1).join(' ');
+
+        const user = await register({
+          firstName,
+          lastName,
+          name: registerForm.full_name.trim(), // keeping for backward compatibility
           email: registerForm.email.trim(),
           phone: registerForm.phone.trim(),
           password: registerForm.password,
           role: registerForm.role,
         });
-      } else if (login) {
-        await login(registerForm.email.trim(), registerForm.password);
+
+        const authenticatedRole = (user.role || 'candidate').toLowerCase();
+        router.push(`/dashboard/${authenticatedRole}`);
       }
-      router.push(`/dashboard/${registerForm.role.toLowerCase()}`);
     } catch (err) {
       setError(err.message || 'Registration failed. Please try again.');
     } finally {

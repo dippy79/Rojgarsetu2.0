@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -33,22 +34,43 @@ type LoginRequest struct {
 }
 
 type RegisterRequest struct {
-	Name     string `json:"name" binding:"required"`
-	Email    string `json:"email" binding:"required,email"`
-	Password string `json:"password" binding:"required,min=12"`
-	Role     string `json:"role" binding:"required,oneof=candidate company"`
-	Phone    string `json:"phone"`
+	FirstName string `json:"firstName"`
+	LastName  string `json:"lastName"`
+	Name      string `json:"name"` // Fallback for single name field
+	Email     string `json:"email" binding:"required,email"`
+	Password  string `json:"password" binding:"required,min=12"`
+	Role      string `json:"role" binding:"required,oneof=candidate company"`
+	Phone     string `json:"phone"`
 }
 
 type TokenResponse struct {
-	AccessToken  string `json:"access_token"`
-	RefreshToken string `json:"refresh_token"`
+	Success bool   `json:"success"`
+	Data    struct {
+		User  *db.User `json:"user"`
+		Token string   `json:"token"`
+	} `json:"data"`
 }
 
 func (s *AuthService) Register(c *gin.Context) {
 	var req RegisterRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	fullName := req.Name
+	if req.FirstName != "" || req.LastName != "" {
+		fullName = strings.TrimSpace(req.FirstName + " " + req.LastName)
+	}
+
+	if fullName == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Name is required"})
+		return
+	}
+
+	// Password strength check (Manual check as backup to binding)
+	if !validatePassword(req.Password) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Password must be 12+ chars, include uppercase, and a special character"})
 		return
 	}
 
@@ -60,7 +82,7 @@ func (s *AuthService) Register(c *gin.Context) {
 	}
 
 	userReq := db.RegisterRequest{
-		Name:     req.Name,
+		Name:     fullName,
 		Email:    req.Email,
 		Password: req.Password,
 		Role:     req.Role,
@@ -82,6 +104,22 @@ func (s *AuthService) GetUser(c *gin.Context, userID string) (*db.User, error) {
 	return s.userSvc.GetUserByID(c, userID)
 }
 
+func validatePassword(p string) bool {
+	if len(p) < 12 {
+		return false
+	}
+	var hasUpper, hasSpecial bool
+	for _, char := range p {
+		if char >= 'A' && char <= 'Z' {
+			hasUpper = true
+		}
+		if strings.ContainsAny(string(char), "!@#$%^&*()_+-=[]{}|;':\",./<>?") {
+			hasSpecial = true
+		}
+	}
+	return hasUpper && hasSpecial
+}
+
 func (s *AuthService) Login(c *gin.Context) {
 	var req LoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -96,7 +134,7 @@ func (s *AuthService) Login(c *gin.Context) {
 	}
 
 	// Generate tokens
-	expiresAt := time.Now().Add(24 * time.Hour)
+	expiresAt := time.Now().Add(30 * 24 * time.Hour) // 30 days for refresh
 	refreshToken, err := s.tokenSvc.CreateRefreshToken(c, user.ID.String(), sql.NullString{}, sql.NullString{}, expiresAt)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create tokens"})
@@ -110,28 +148,32 @@ func (s *AuthService) Login(c *gin.Context) {
 	}
 
 	// Set HttpOnly Cookies for security
+	secure := true // Enforce Secure for production hygiene
 	c.SetSameSite(http.SameSiteStrictMode)
-	c.SetCookie("access_token", accessToken, 900, "/", "", false, true)     // 15 min
-	c.SetCookie("refresh_token", refreshToken, 86400, "/", "", false, true) // 24 hours
+	c.SetCookie("access_token", accessToken, 900, "/", "", secure, true)     // 15 min
+	c.SetCookie("refresh_token", refreshToken, 2592000, "/", "", secure, true) // 30 days
 
-	c.JSON(http.StatusOK, TokenResponse{
-		AccessToken:  accessToken,
-		RefreshToken: refreshToken,
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"data": gin.H{
+			"user":  user,
+			"token": accessToken,
+		},
 	})
 }
 
 func (s *AuthService) Refresh(c *gin.Context) {
-	var req struct {
-		RefreshToken string `json:"refresh_token" binding:"required"`
-	}
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	// P1: Read from cookie instead of body
+	refreshToken, err := c.Cookie("refresh_token")
+	if err != nil {
+		// Fallback to body for legacy/testing if absolutely necessary, but audit says MUST read from cookie
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Refresh token missing from cookie"})
 		return
 	}
 
-	token, err := s.tokenSvc.GetRefreshToken(c, req.RefreshToken)
+	token, err := s.tokenSvc.GetRefreshToken(c, refreshToken)
 	if err != nil || time.Now().After(token.ExpiresAt) {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid refresh token"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired refresh token"})
 		return
 	}
 
@@ -148,20 +190,29 @@ func (s *AuthService) Refresh(c *gin.Context) {
 	}
 
 	// Update HttpOnly Cookie
+	secure := true
 	c.SetSameSite(http.SameSiteStrictMode)
-	c.SetCookie("access_token", accessToken, 900, "/", "", false, true)
+	c.SetCookie("access_token", accessToken, 900, "/", "", secure, true)
 
-	c.JSON(http.StatusOK, gin.H{"access_token": accessToken})
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"data": gin.H{
+			"token": accessToken,
+		},
+	})
 }
 
 func (s *AuthService) Logout(c *gin.Context) {
 	userID := middleware.GetUserID(c)
-	if userID == "" {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
-		return
+	if userID != "" {
+		_ = s.tokenSvc.RevokeAllTokensForUser(c, userID)
 	}
-	_ = s.tokenSvc.RevokeAllTokensForUser(c, userID)
-	c.JSON(http.StatusOK, gin.H{"message": "Logged out all sessions"})
+
+	// Clear cookies
+	c.SetCookie("access_token", "", -1, "/", "", true, true)
+	c.SetCookie("refresh_token", "", -1, "/", "", true, true)
+
+	c.JSON(http.StatusOK, gin.H{"success": true, "message": "Logged out all sessions"})
 }
 
 func (s *AuthService) generateJWT(userID, email, role string, expires time.Duration) (string, error) {

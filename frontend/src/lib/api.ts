@@ -75,7 +75,7 @@ export const fetcher = async (url: string) => {
 
 // Auth API
 export const authAPI = {
-    register: (data: { name: string; email: string; password: string; role: string; phone?: string; companyName?: string }) =>
+    register: (data: { firstName?: string; lastName?: string; name?: string; email: string; password: string; role: string; phone?: string; companyName?: string }) =>
         api.post<ApiResponse<{ user: User }>>('/api/v1/auth/register', data),
 
     login: (data: { email: string; password: string }) =>
@@ -89,7 +89,7 @@ export const authAPI = {
         api.put<ApiResponse<any>>('/api/v1/candidates/me', data),
 
     refreshToken: () =>
-        api.post<ApiResponse<any>>('/api/v1/auth/refresh')
+        api.post<ApiResponse<any>>('/api/v1/auth/refresh', {}) // Empty body, server reads from HttpOnly cookie
 };
 
 // Jobs API

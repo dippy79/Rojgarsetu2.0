@@ -13,8 +13,9 @@ export const AuthProvider = ({ children }) => {
       try {
         // Attempt to fetch profile to see if session exists (via HttpOnly cookie)
         const response = await authAPI.getProfile();
-        if (response.data && response.data.success) {
-          setUser(response.data.data);
+        const { success, data } = response.data;
+        if (success && data?.user) {
+          setUser(data.user);
         }
       } catch (err) {
         console.log("No active session found");
@@ -28,10 +29,11 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
-      await authAPI.login({ email, password });
-      const profileResponse = await authAPI.getProfile();
-      const { success, data, message } = profileResponse.data;
+      // 1. Submit credentials
+      const response = await authAPI.login({ email, password });
+      const { success, data, message } = response.data;
 
+      // 2. Align with backend response structure: data.user
       if (success && data?.user) {
         setUser(data.user);
         toast.success("Welcome back!");
@@ -39,7 +41,7 @@ export const AuthProvider = ({ children }) => {
       }
       throw new Error(message || "Login failed");
     } catch (err) {
-      const errMsg = err.response?.data?.message || err.message || "An unexpected error occurred during login";
+      const errMsg = err.response?.data?.error || err.response?.data?.message || err.message || "An unexpected error occurred during login";
       console.error("Login Error:", errMsg);
       toast.error(errMsg);
       throw new Error(errMsg);
@@ -72,7 +74,6 @@ export const AuthProvider = ({ children }) => {
     } finally {
       setUser(null);
       if (typeof window !== 'undefined') {
-        localStorage.removeItem('rojgar_user');
         window.location.href = '/login';
       }
     }
