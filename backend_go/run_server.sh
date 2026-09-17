@@ -1,9 +1,10 @@
 #!/bin/bash
-export DATABASE_URL="postgres://amitsharma:amitsharma@localhost:5432/rojgarsetu2?sslmode=disable"
+# Use variables from .env if possible, otherwise use these defaults
+export DATABASE_URL="postgres://amitsharma:supersecurepassword12345678901234567890123456789012345678901234@localhost:5432/rojgarsetu2?sslmode=disable"
 export REDIS_URL="redis://localhost:6379"
-export JWT_SECRET="test_secret_key_for_development_please_change_in_production_32chars"
-export REFRESH_TOKEN_KEY="test_refresh_key_for_development_32chars_minimum"
-export CORS_ORIGINS="http://localhost:8080,http://localhost:3000"
+export JWT_SECRET="f7e3c9a1b2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9"
+export REFRESH_TOKEN_KEY="a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2"
+export CORS_ORIGINS="http://localhost:8080,http://localhost:3000,http://localhost:3001"
 export PORT="8083"
 export MIGRATIONS_PATH="file://./migrations"
 ./server
