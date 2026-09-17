@@ -55,11 +55,18 @@ const proxyOptions = {
 };
 
 // 3. SPECIAL ROUTES (CSRF BYPASS)
-app.use('/api/auth', createProxyMiddleware({
+// Route /api/v1/auth and /api/auth to the Java auth service
+const authProxy = createProxyMiddleware({
   target: AUTH_TARGET,
-  pathRewrite: { '^/api/auth': '/auth' },
+  pathRewrite: {
+    '^/api/v1/auth': '/auth',
+    '^/api/auth': '/auth'
+  },
   ...proxyOptions
-}));
+});
+
+app.use('/api/v1/auth', authProxy);
+app.use('/api/auth', authProxy);
 
 // 4. RATE LIMITING & CSRF (Applied to other routes)
 app.use(express.json({ limit: '1mb' }));
