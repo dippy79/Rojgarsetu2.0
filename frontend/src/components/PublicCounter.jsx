@@ -14,7 +14,16 @@ const PublicCounter = () => {
     fetch(`${baseUrl}/api/v1/stats`)
       .then(res => res.ok ? res.json() : {})
       .then(data => {
-        if (data) setStats(data);
+        // Robust mapping: handle { success: true, data: { ... } } or direct object
+        const statsData = data.data || data;
+        if (statsData) {
+          setStats({
+            total_jobs: statsData.total_jobs || 0,
+            total_candidates: statsData.total_candidates || 0,
+            total_companies: statsData.total_companies || 0,
+            total_placements: statsData.total_placements || 0
+          });
+        }
       })
       .catch(err => console.error("Stats fetch error:", err));
   }, []);
