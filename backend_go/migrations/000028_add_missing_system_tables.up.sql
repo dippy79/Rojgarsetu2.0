@@ -1,6 +1,6 @@
--- Drop and Recreate to fix schema mismatch with sqlc queries
-DROP TABLE IF EXISTS email_queue;
-DROP TABLE IF EXISTS platform_stats;
+-- Fix schema to match sqlc generated code precisely
+DROP TABLE IF EXISTS email_queue CASCADE;
+DROP TABLE IF EXISTS platform_stats CASCADE;
 
 -- Create email_queue table
 CREATE TABLE IF NOT EXISTS email_queue (
@@ -17,19 +17,19 @@ CREATE TABLE IF NOT EXISTS email_queue (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- Create platform_stats table
+-- Create platform_stats table (Single row singleton)
 CREATE TABLE IF NOT EXISTS platform_stats (
-    id SERIAL PRIMARY KEY,
-    total_jobs INTEGER DEFAULT 0,
-    total_candidates INTEGER DEFAULT 0,
-    total_companies INTEGER DEFAULT 0,
-    total_placements INTEGER DEFAULT 0,
-    total_applications INTEGER DEFAULT 0,
-    visits_today INTEGER DEFAULT 0,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    total_jobs BIGINT DEFAULT 0,
+    total_candidates BIGINT DEFAULT 0,
+    total_companies BIGINT DEFAULT 0,
+    total_placements BIGINT DEFAULT 0,
+    total_applications BIGINT DEFAULT 0,
+    visits_today BIGINT DEFAULT 0,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- Insert initial row if not exists
-INSERT INTO platform_stats (id, total_jobs, total_candidates, total_companies, total_placements, total_applications, visits_today)
-VALUES (1, 0, 0, 0, 0, 0, 0)
-ON CONFLICT (id) DO NOTHING;
+-- Insert initial row
+INSERT INTO platform_stats (total_jobs, total_candidates, total_companies, total_placements, total_applications, visits_today)
+VALUES (0, 0, 0, 0, 0, 0)
+ON CONFLICT DO NOTHING;
