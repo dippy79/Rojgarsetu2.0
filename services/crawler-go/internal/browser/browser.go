@@ -7,7 +7,6 @@ import (
 	"os"
 	"strconv"
 	"sync"
-	"time"
 
 	"github.com/mxschmitt/playwright-go"
 	"github.com/rs/zerolog/log"

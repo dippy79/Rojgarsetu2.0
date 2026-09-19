@@ -312,4 +312,9 @@ func runFormsSource(ctx context.Context, st *store.PostgresStore, s *sources.Gov
 	}
 	return SourceResult{Name: s.Name(), Fetched: len(items), Saved: saved}
 }
-nfunc sleepJitter(min, max int) {ntseconds := rand.Intn(max-min+1) + minnttime.Sleep(time.Duration(seconds) * time.Second)n}
+
+func sleepJitter(min, max int) {
+	seconds := rand.Intn(max-min+1) + min
+	time.Sleep(time.Duration(seconds) * time.Second)
+}
+
