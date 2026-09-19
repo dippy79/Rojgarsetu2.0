@@ -134,6 +134,16 @@ func main() {
 	// Load config
 	cfg := config.Load()
 
+	// P4.1: Production environment validation (No Mocks)
+	if os.Getenv("ENVIRONMENT") == "production" {
+		if strings.Contains(cfg.JWT.Secret, "YOUR_MIN_32_CHAR") || len(cfg.JWT.Secret) < 32 {
+			logger.Fatal().Msg("FATAL: JWT_SECRET is missing or insecure for production. Please configure actual secrets in .env")
+		}
+		if strings.Contains(cfg.JWT.RefreshSessionKey, "YOUR_MIN_32_CHAR") || len(cfg.JWT.RefreshSessionKey) < 32 {
+			logger.Fatal().Msg("FATAL: REFRESH_TOKEN_KEY is missing or insecure for production. Please configure actual secrets in .env")
+		}
+	}
+
 	// Root command
 	dbURL = os.Getenv("DATABASE_URL")
 	if dbURL == "" {

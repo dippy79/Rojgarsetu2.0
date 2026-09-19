@@ -13,6 +13,7 @@ import './private-jobs/PrivateJobs.css'
 import './videos/Videos.css'
 import { AuthProvider } from '../context/AuthContext'
 import Navbar from '../components/Navbar'
+import ErrorBoundary from '../components/ErrorBoundary'
 import { useRouter } from 'next/router'
 import { Toaster } from 'react-hot-toast'
 
@@ -21,11 +22,13 @@ function MyApp({ Component, pageProps }) {
   const hideNavbar = ['/login'].includes(router.pathname)
 
   return (
-    <AuthProvider>
-      <Toaster position="top-center" reverseOrder={false} />
-      {!hideNavbar && <Navbar />}
-      <Component {...pageProps} />
-    </AuthProvider>
+    <ErrorBoundary>
+      <AuthProvider>
+        <Toaster position="top-center" reverseOrder={false} />
+        {!hideNavbar && <Navbar />}
+        <Component {...pageProps} />
+      </AuthProvider>
+    </ErrorBoundary>
   )
 }
 

@@ -3,13 +3,26 @@ package browser
 import (
 	"context"
 	"fmt"
+	"math/rand"
 	"os"
 	"strconv"
 	"sync"
+	"time"
 
 	"github.com/mxschmitt/playwright-go"
 	"github.com/rs/zerolog/log"
 )
+
+var userAgents = []string{
+	"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
+	"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+	"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
+	"Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:122.0) Gecko/20100101 Firefox/122.0",
+}
+
+func getRandomUserAgent() string {
+	return userAgents[rand.Intn(len(userAgents))]
+}
 
 // Pool manages a pool of browser contexts using Playwright
 type Pool struct {
@@ -64,8 +77,9 @@ func NewPool(size int) (*Pool, error) {
 func (p *Pool) Run(ctx context.Context, fn func(playwright.Page) error) error {
 	p.mu.Lock()
 	// Create a new context for each run to isolate cookies/cache.
+	// P2.4: User agent rotation
 	browserContext, err := p.browser.NewContext(playwright.BrowserNewContextOptions{
-		UserAgent: playwright.String("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"),
+		UserAgent: playwright.String(getRandomUserAgent()),
 	})
 	p.mu.Unlock()
 

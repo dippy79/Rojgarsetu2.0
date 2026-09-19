@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/rojgarsetu/backend/internal/db"
+	"github.com/rojgarsetu/backend/internal/logger"
 )
 
 type EmailWorker struct {
@@ -45,7 +46,7 @@ func (w *EmailWorker) processQueue(ctx context.Context) {
 
 	for _, email := range emails {
 		if err := w.sendEmail(email); err != nil {
-			log.Printf("Failed to send email to %s: %v", email.ToEmail, err)
+			log.Printf("Failed to send email to %s: %v", logger.SanitizeEmail(email.ToEmail), err)
 			status := "pending"
 			if email.Attempts >= 2 {
 				status = "failed"
@@ -56,7 +57,7 @@ func (w *EmailWorker) processQueue(ctx context.Context) {
 				ErrorMessage: sql.NullString{String: err.Error(), Valid: true},
 			})
 		} else {
-			log.Printf("Successfully sent email to %s", email.ToEmail)
+			log.Printf("Successfully sent email to %s", logger.SanitizeEmail(email.ToEmail))
 			_, _ = w.db.Queries.UpdateEmailStatus(ctx, db.UpdateEmailStatusParams{
 				ID:     email.ID,
 				Status: "sent",
@@ -73,7 +74,7 @@ func (w *EmailWorker) sendEmail(email db.EmailQueue) error {
 
 	if host == "" || port == "" || user == "" || pass == "" {
 		// Mock send if credentials are missing
-		log.Printf("[MOCK EMAIL] To: %s, Subject: %s", email.ToEmail, email.Subject)
+		log.Printf("[MOCK EMAIL] To: %s, Subject: %s", logger.SanitizeEmail(email.ToEmail), email.Subject)
 		return nil
 	}
 

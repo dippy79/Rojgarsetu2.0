@@ -18,7 +18,24 @@ app.use((req, res, next) => {
 
 app.use(cookieParser());
 app.use(cors({
-  origin: process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : true,
+  origin: function(origin, callback) {
+    const allowed = process.env.ALLOWED_ORIGINS
+      ? process.env.ALLOWED_ORIGINS.split(',')
+      : [];
+
+    // FAIL-CLOSED: If no allowed origins configured, reject all
+    if (allowed.length === 0) {
+      console.error('FATAL: ALLOWED_ORIGINS not configured. Failing closed for security.');
+      return callback(new Error('CORS Policy: ALLOWED_ORIGINS missing'));
+    }
+
+    if (!origin || allowed.includes(origin)) {
+      callback(null, true);
+    } else {
+      console.warn(`[CORS] Blocked request from unauthorized origin: ${origin}`);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']

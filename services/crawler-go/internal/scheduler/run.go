@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"math/rand"
 	"time"
 
 	"github.com/rojgarsetu/crawler/internal/browser"
@@ -55,11 +56,14 @@ func RunAll(
 		gov.NewNCSSource(browserPool),
 	}
 	for _, s := range govSources {
+		// P2.4: Implement jitter to avoid IP bans
+		sleepJitter(2, 5)
 		summary.SourcesRun++
 		summary.SourceResults = append(summary.SourceResults, runGovSource(ctx, st, s))
 	}
 
 	// ---- State Jobs (New) ----
+	sleepJitter(3, 7)
 	stateJobs := sources.NewStateJobsSource(browserPool)
 	summary.SourcesRun++
 	summary.SourceResults = append(summary.SourceResults, runGovSource(ctx, st, stateJobs))
@@ -77,11 +81,13 @@ func RunAll(
 		priv.NewShineSource(),
 	}
 	for _, s := range privSources {
+		sleepJitter(2, 5)
 		summary.SourcesRun++
 		summary.SourceResults = append(summary.SourceResults, runPrivSource(ctx, st, s))
 	}
 
 	// ---- Naukri (old JobSource interface → convert to PrivJobSource) ----
+	sleepJitter(5, 10)
 	summary.SourcesRun++
 	summary.SourceResults = append(summary.SourceResults, runNaukri(ctx, st, browserPool, proxyRotator))
 
@@ -97,6 +103,7 @@ func RunAll(
 		courses.NewW3SchoolsSource(),
 	}
 	for _, s := range courseSources {
+		sleepJitter(1, 3)
 		summary.SourcesRun++
 		summary.SourceResults = append(summary.SourceResults, runCourseSource(ctx, st, s))
 	}
@@ -305,3 +312,4 @@ func runFormsSource(ctx context.Context, st *store.PostgresStore, s *sources.Gov
 	}
 	return SourceResult{Name: s.Name(), Fetched: len(items), Saved: saved}
 }
+nfunc sleepJitter(min, max int) {ntseconds := rand.Intn(max-min+1) + minnttime.Sleep(time.Duration(seconds) * time.Second)n}
