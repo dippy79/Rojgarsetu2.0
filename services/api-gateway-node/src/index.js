@@ -70,6 +70,19 @@ const proxyOptions = {
   }
 };
 
+// 3. AUTH ROUTES (EXPLICIT FORWARDING)
+app.use('/api/v1/auth', createProxyMiddleware({
+  target: BACKEND_TARGET,
+  pathRewrite: { '^/api/v1/auth': '/api/v1/auth' }, // Ensure path remains /api/v1/auth
+  ...proxyOptions
+}));
+
+app.use('/api/auth', createProxyMiddleware({
+  target: BACKEND_TARGET,
+  pathRewrite: { '^/api/auth': '/api/v1/auth' },
+  ...proxyOptions
+}));
+
 // 4. RATE LIMITING & CSRF
 app.use(express.json({ limit: '1mb' }));
 
@@ -84,20 +97,8 @@ app.get('/api/csrf-token', csrfProtection, (req, res) => {
   res.json({ csrfToken: req.csrfToken() });
 });
 
-// 5. PROXIES
-// Use specific proxy for /api/v1 to prevent path stripping issues
-app.use('/api/v1', generalLimiter, createProxyMiddleware({
-    target: BACKEND_TARGET,
-    pathRewrite: { '^/api/v1': '/api/v1' },
-    ...proxyOptions
-}));
-
-app.use('/api/auth', createProxyMiddleware({
-  target: BACKEND_TARGET,
-  pathRewrite: { '^/api/auth': '/api/v1/auth' },
-  ...proxyOptions
-}));
-
+// 5. REMAINING PROXIES
+app.use('/api/v1', generalLimiter, createProxyMiddleware({ target: BACKEND_TARGET, ...proxyOptions }));
 app.use('/api/crawler', createProxyMiddleware({ target: CRAWLER_TARGET, ...proxyOptions }));
 app.use('/api/ai', createProxyMiddleware({ target: AI_TARGET, pathRewrite: { '^/api/ai': '' }, ...proxyOptions }));
 
