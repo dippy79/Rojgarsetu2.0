@@ -23,16 +23,14 @@ app.use(cors({
       ? process.env.ALLOWED_ORIGINS.split(',')
       : [];
 
-    // FAIL-CLOSED: If no allowed origins configured, reject all
     if (allowed.length === 0) {
-      console.error('FATAL: ALLOWED_ORIGINS not configured. Failing closed for security.');
+      console.error('FATAL: ALLOWED_ORIGINS not configured. Failing closed.');
       return callback(new Error('CORS Policy: ALLOWED_ORIGINS missing'));
     }
 
     if (!origin || allowed.includes(origin)) {
       callback(null, true);
     } else {
-      console.warn(`[CORS] Blocked request from unauthorized origin: ${origin}`);
       callback(new Error('Not allowed by CORS'));
     }
   },
@@ -41,19 +39,20 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));
 
-// 2. PROXY CONFIGURATION (CONSOLIDATED)
-const BACKEND_TARGET = process.env.BACKEND_SERVICE_URL || 'http://localhost:8084';
-const AUTH_TARGET = process.env.AUTH_SERVICE_URL || 'http://auth-service:8081';
+// 2. PROXY CONFIGURATION
+const BACKEND_TARGET = process.env.BACKEND_SERVICE_URL || 'http://backend:8083';
 const AI_TARGET = process.env.AI_ENGINE_URL || 'http://ai-engine:8000';
 const CRAWLER_TARGET = process.env.CRAWLER_SERVICE_URL || 'http://crawler:8080';
 
-console.log(`[API Gateway] Routing initialized.`);
+const AI_SECRET_KEY = (process.env.AI_ENGINE_API_KEY || '').trim();
 
 const proxyOptions = {
   changeOrigin: true,
   on: {
     proxyReq: (proxyReq, req) => {
-      console.log(`[API Gateway] PROXY -> ${req.method} ${req.url}`);
+      if (req.originalUrl.startsWith('/api/ai')) {
+        proxyReq.setHeader('X-AI-Secret-Key', AI_SECRET_KEY);
+      }
       if (req.headers.authorization) proxyReq.setHeader('Authorization', req.headers.authorization);
       else if (req.cookies?.access_token) proxyReq.setHeader('Authorization', `Bearer ${req.cookies.access_token}`);
 
@@ -71,22 +70,7 @@ const proxyOptions = {
   }
 };
 
-// 3. SPECIAL ROUTES (CSRF BYPASS)
-// Definitively route ALL auth traffic to the Go Backend
-// Java Auth service is being decommissioned for unified Go Auth.
-const authProxy = createProxyMiddleware({
-  target: BACKEND_TARGET,
-  pathRewrite: {
-    '^/api/v1/auth': '/api/v1/auth',
-    '^/api/auth': '/api/v1/auth'
-  },
-  ...proxyOptions
-});
-
-app.use('/api/v1/auth', authProxy);
-app.use('/api/auth', authProxy);
-
-// 4. RATE LIMITING & CSRF (Applied to other routes)
+// 4. RATE LIMITING & CSRF
 app.use(express.json({ limit: '1mb' }));
 
 const generalLimiter = rateLimit({
@@ -100,25 +84,22 @@ app.get('/api/csrf-token', csrfProtection, (req, res) => {
   res.json({ csrfToken: req.csrfToken() });
 });
 
-// 5. REMAINING PROXIES
-// Use pathFilter to avoid stripping the prefix
-app.use(createProxyMiddleware({
-  pathFilter: '/api/v1',
+// 5. PROXIES
+// Use specific proxy for /api/v1 to prevent path stripping issues
+app.use('/api/v1', generalLimiter, createProxyMiddleware({
+    target: BACKEND_TARGET,
+    pathRewrite: { '^/api/v1': '/api/v1' },
+    ...proxyOptions
+}));
+
+app.use('/api/auth', createProxyMiddleware({
   target: BACKEND_TARGET,
+  pathRewrite: { '^/api/auth': '/api/v1/auth' },
   ...proxyOptions
 }));
 
-app.use(createProxyMiddleware({
-  pathFilter: '/api/crawler',
-  target: CRAWLER_TARGET,
-  ...proxyOptions
-}));
-
-app.use('/api/ai', createProxyMiddleware({
-  target: AI_TARGET,
-  pathRewrite: { '^/api/ai': '' },
-  ...proxyOptions
-}));
+app.use('/api/crawler', createProxyMiddleware({ target: CRAWLER_TARGET, ...proxyOptions }));
+app.use('/api/ai', createProxyMiddleware({ target: AI_TARGET, pathRewrite: { '^/api/ai': '' }, ...proxyOptions }));
 
 // 6. HEALTH & FALLBACK
 app.get('/health', (req, res) => res.json({ status: 'UP' }));
@@ -127,10 +108,6 @@ app.use('/api', createProxyMiddleware({
   target: BACKEND_TARGET,
   ...proxyOptions
 }));
-app.use((req, res) => {
-  console.warn(`[API Gateway] 404 Not Found: ${req.url}`);
-  res.status(404).json({ error: 'Route not found' });
-});
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, '0.0.0.0', () => {

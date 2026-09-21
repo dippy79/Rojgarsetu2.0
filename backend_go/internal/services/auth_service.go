@@ -148,10 +148,10 @@ func (s *AuthService) Login(c *gin.Context) {
 	}
 
 	// Set HttpOnly Cookies for security
-	secure := true // Enforce Secure for production hygiene
+	cookieSecure := os.Getenv("COOKIE_SECURE") == "true"
 	c.SetSameSite(http.SameSiteStrictMode)
-	c.SetCookie("access_token", accessToken, 900, "/", "", secure, true)     // 15 min
-	c.SetCookie("refresh_token", refreshToken, 2592000, "/", "", secure, true) // 30 days
+	c.SetCookie("access_token", accessToken, 900, "/", "", cookieSecure, true)     // 15 min
+	c.SetCookie("refresh_token", refreshToken, 2592000, "/", "", cookieSecure, true) // 30 days
 
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,

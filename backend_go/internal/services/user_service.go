@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
 	"database/sql"
 
@@ -23,9 +24,6 @@ func NewUserService(d *db.PostgresDB) *UserService {
 	return &UserService{db: d}
 }
 
-// ErrCompanyNameExists is returned when a company registration uses a name that
-// already exists case-insensitively (enforced by the LOWER(name) unique index
-// created in migration 000010).
 var ErrCompanyNameExists = errors.New("a company with this name already exists")
 
 func (s *UserService) CreateUser(ctx context.Context, req db.RegisterRequest) (*db.User, error) {
@@ -34,7 +32,19 @@ func (s *UserService) CreateUser(ctx context.Context, req db.RegisterRequest) (*
 	if err != nil {
 		return nil, fmt.Errorf("failed to hash password: %w", err)
 	}
-	user, err := s.db.Queries.CreateUser(ctx, db.CreateUserParams{
+
+	// 1. Start Transaction (P0/P1 Atomicity Fix)
+	tx, err := s.db.DB.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	// Defer rollback (it does nothing if already committed)
+	defer tx.Rollback()
+
+	qtx := s.db.Queries.WithTx(tx)
+
+	// 2. Create Base User
+	user, err := qtx.CreateUser(ctx, db.CreateUserParams{
 		ID:           uid,
 		Name:         req.Name,
 		Email:        req.Email,
@@ -45,9 +55,11 @@ func (s *UserService) CreateUser(ctx context.Context, req db.RegisterRequest) (*
 	if err != nil {
 		return nil, err
 	}
+
+	// 3. Create Role-Specific Profile
 	switch req.Role {
 	case "candidate":
-		_, err = s.db.Queries.CreateCandidate(ctx, db.CreateCandidateParams{
+		_, err = qtx.CreateCandidate(ctx, db.CreateCandidateParams{
 			UserID:            uid,
 			Phone:             sql.NullString{},
 			ResumeUrl:         sql.NullString{},
@@ -70,7 +82,7 @@ func (s *UserService) CreateUser(ctx context.Context, req db.RegisterRequest) (*
 			return nil, fmt.Errorf("failed to create candidate profile: %w", err)
 		}
 	case "company":
-		_, err = s.db.Queries.CreateCompany(ctx, db.CreateCompanyParams{
+		_, err = qtx.CreateCompany(ctx, db.CreateCompanyParams{
 			UserID:       uid,
 			Name:         req.Name,
 			Industry:     sql.NullString{},
@@ -82,9 +94,6 @@ func (s *UserService) CreateUser(ctx context.Context, req db.RegisterRequest) (*
 			FoundedYear:  sql.NullInt32{},
 		})
 		if err != nil {
-			// Map the case-insensitive unique violation (SQLSTATE 23505 from the
-			// LOWER(name) unique index) to a clean, user-facing error instead of
-			// leaking the raw Postgres error to the API client.
 			var pqErr *pq.Error
 			if errors.As(err, &pqErr) && pqErr.Code.Name() == "unique_violation" {
 				return nil, ErrCompanyNameExists
@@ -92,6 +101,12 @@ func (s *UserService) CreateUser(ctx context.Context, req db.RegisterRequest) (*
 			return nil, fmt.Errorf("failed to create company profile: %w", err)
 		}
 	}
+
+	// 4. Commit Transaction
+	if err := tx.Commit(); err != nil {
+		return nil, fmt.Errorf("failed to commit transaction: %w", err)
+	}
+
 	return &user, nil
 }
 
@@ -162,4 +177,21 @@ func (s *UserService) UpdateLastLogin(ctx context.Context, id uuid.UUID) (*db.Us
 		return nil, err
 	}
 	return &result, nil
+}
+
+func clampPage(p int) int {
+	if p < 1 {
+		return 1
+	}
+	return p
+}
+
+func clampLimit(l int) int {
+	if l < 1 {
+		return 10
+	}
+	if l > 100 {
+		return 100
+	}
+	return l
 }

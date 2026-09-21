@@ -28,17 +28,18 @@ app = FastAPI(
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
-API_KEY_NAME = "X-API-Key"
+API_KEY_NAME = "X-AI-Secret-Key"
 api_key_header = APIKeyHeader(name=API_KEY_NAME, auto_error=False)
 
 async def get_api_key(api_key_header: str = Security(api_key_header)):
-    expected_key = os.getenv("API_KEY")
+    expected_key = (os.getenv("AI_ENGINE_API_KEY") or os.getenv("API_KEY") or "").strip()
     if not expected_key:
         raise HTTPException(status_code=500, detail="API key not configured")
 
     if api_key_header == expected_key:
         return api_key_header
     else:
+        logger.warning(f"Key mismatch: expected [{expected_key}], got [{api_key_header}]")
         raise HTTPException(status_code=403, detail="Could not validate credentials")
 
 # Database connection URL from environment
