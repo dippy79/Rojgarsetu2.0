@@ -7,7 +7,6 @@ const csrf = require('csurf');
 const cookieParser = require('cookie-parser');
 const cors = require('cors');
 require('dotenv').config();
-
 const app = express();
 
 // 1. BASIC MIDDLEWARE
@@ -44,15 +43,19 @@ const BACKEND_TARGET = process.env.BACKEND_SERVICE_URL || 'http://backend:8083';
 const AI_TARGET = process.env.AI_ENGINE_URL || 'http://ai-engine:8000';
 const CRAWLER_TARGET = process.env.CRAWLER_SERVICE_URL || 'http://crawler:8080';
 
-const AI_SECRET_KEY = (process.env.AI_ENGINE_API_KEY || '').trim();
+const AI_SECRET_KEY = (process.env.AI_ENGINE_API_KEY || process.env.API_KEY || '').trim();
 
 const proxyOptions = {
   changeOrigin: true,
   on: {
     proxyReq: (proxyReq, req) => {
-      if (req.originalUrl.startsWith('/api/ai')) {
+      // Log exactly what's being sent
+      console.log(`[API Gateway] PROXY -> ${req.method} ${req.url} -> ${proxyReq.host}${proxyReq.path}`);
+
+      if (req.originalUrl && req.originalUrl.startsWith('/api/ai')) {
         proxyReq.setHeader('X-AI-Secret-Key', AI_SECRET_KEY);
       }
+
       if (req.headers.authorization) proxyReq.setHeader('Authorization', req.headers.authorization);
       else if (req.cookies?.access_token) proxyReq.setHeader('Authorization', `Bearer ${req.cookies.access_token}`);
 
@@ -70,17 +73,19 @@ const proxyOptions = {
   }
 };
 
-// 3. AUTH ROUTES (EXPLICIT FORWARDING)
-app.use('/api/v1/auth', createProxyMiddleware({
-  target: BACKEND_TARGET,
-  pathRewrite: { '^/api/v1/auth': '/api/v1/auth' }, // Ensure path remains /api/v1/auth
-  ...proxyOptions
+// 3. SPECIAL PROXIES (CORS/CSRF Bypass)
+// Using app.use() without path mount to avoid path stripping
+app.use(createProxyMiddleware({
+    pathFilter: (path) => path.startsWith('/api/v1/auth'),
+    target: BACKEND_TARGET,
+    ...proxyOptions
 }));
 
-app.use('/api/auth', createProxyMiddleware({
-  target: BACKEND_TARGET,
-  pathRewrite: { '^/api/auth': '/api/v1/auth' },
-  ...proxyOptions
+app.use(createProxyMiddleware({
+    pathFilter: (path) => path.startsWith('/api/auth'),
+    target: BACKEND_TARGET,
+    pathRewrite: { '^/api/auth': '/api/v1/auth' },
+    ...proxyOptions
 }));
 
 // 4. RATE LIMITING & CSRF
@@ -98,7 +103,12 @@ app.get('/api/csrf-token', csrfProtection, (req, res) => {
 });
 
 // 5. REMAINING PROXIES
-app.use('/api/v1', generalLimiter, createProxyMiddleware({ target: BACKEND_TARGET, ...proxyOptions }));
+app.use(createProxyMiddleware({
+    pathFilter: ['/api/v1', '/api/v1/**'],
+    target: BACKEND_TARGET,
+    ...proxyOptions
+}));
+
 app.use('/api/crawler', createProxyMiddleware({ target: CRAWLER_TARGET, ...proxyOptions }));
 app.use('/api/ai', createProxyMiddleware({ target: AI_TARGET, pathRewrite: { '^/api/ai': '' }, ...proxyOptions }));
 

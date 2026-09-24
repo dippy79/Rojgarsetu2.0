@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
@@ -190,9 +191,9 @@ func (s *AuthService) Refresh(c *gin.Context) {
 	}
 
 	// Update HttpOnly Cookie
-	secure := true
+	cookieSecure := os.Getenv("COOKIE_SECURE") == "true"
 	c.SetSameSite(http.SameSiteStrictMode)
-	c.SetCookie("access_token", accessToken, 900, "/", "", secure, true)
+	c.SetCookie("access_token", accessToken, 900, "/", "", cookieSecure, true)
 
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
@@ -209,8 +210,9 @@ func (s *AuthService) Logout(c *gin.Context) {
 	}
 
 	// Clear cookies
-	c.SetCookie("access_token", "", -1, "/", "", true, true)
-	c.SetCookie("refresh_token", "", -1, "/", "", true, true)
+	cookieSecure := os.Getenv("COOKIE_SECURE") == "true"
+	c.SetCookie("access_token", "", -1, "/", "", cookieSecure, true)
+	c.SetCookie("refresh_token", "", -1, "/", "", cookieSecure, true)
 
 	c.JSON(http.StatusOK, gin.H{"success": true, "message": "Logged out all sessions"})
 }

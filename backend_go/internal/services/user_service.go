@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strings"
 
 	"database/sql"
 
@@ -177,21 +176,4 @@ func (s *UserService) UpdateLastLogin(ctx context.Context, id uuid.UUID) (*db.Us
 		return nil, err
 	}
 	return &result, nil
-}
-
-func clampPage(p int) int {
-	if p < 1 {
-		return 1
-	}
-	return p
-}
-
-func clampLimit(l int) int {
-	if l < 1 {
-		return 10
-	}
-	if l > 100 {
-		return 100
-	}
-	return l
 }

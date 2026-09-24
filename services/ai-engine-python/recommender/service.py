@@ -36,15 +36,16 @@ async def get_api_key(api_key_header: str = Security(api_key_header)):
     if not expected_key:
         raise HTTPException(status_code=500, detail="API key not configured")
 
-    if api_key_header == expected_key:
-        return api_key_header
+    provided_key = (api_key_header or "").strip()
+    if provided_key == expected_key:
+        return provided_key
     else:
-        logger.warning(f"Key mismatch: expected [{expected_key}], got [{api_key_header}]")
+        logger.warning(f"Key mismatch: expected [{expected_key}], got [{provided_key}]")
         raise HTTPException(status_code=403, detail="Could not validate credentials")
 
 # Database connection URL from environment
 DATABASE_URL = os.getenv("DATABASE_URL")
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+GEMINI_API_KEY = (os.getenv("GEMINI_API_KEY") or "").strip()
 
 # Skip fatal exits if we are just doing a smoke test/import (e.g. in CI or metadata check)
 IS_SMOKE_TEST = os.getenv("SMOKE_TEST") == "true" or os.getenv("GITHUB_ACTIONS") == "true"
