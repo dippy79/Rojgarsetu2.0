@@ -131,11 +131,11 @@ func Load() *Config {
 	// Database connection pool settings
 	cfg.Database.MaxOpenConns, _ = strconv.Atoi(os.Getenv("DB_MAX_OPEN_CONNS"))
 	if cfg.Database.MaxOpenConns == 0 {
-		cfg.Database.MaxOpenConns = 25
+		cfg.Database.MaxOpenConns = 100
 	}
 	cfg.Database.MaxIdleConns, _ = strconv.Atoi(os.Getenv("DB_MAX_IDLE_CONNS"))
 	if cfg.Database.MaxIdleConns == 0 {
-		cfg.Database.MaxIdleConns = 5
+		cfg.Database.MaxIdleConns = 25
 	}
 	cfg.Database.ConnMaxLifetime, _ = time.ParseDuration(os.Getenv("DB_CONN_MAX_LIFETIME"))
 	if cfg.Database.ConnMaxLifetime == 0 {

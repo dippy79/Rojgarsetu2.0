@@ -1,0 +1,3 @@
+DROP TABLE IF EXISTS file_uploads CASCADE;
+DROP TABLE IF EXISTS platform_videos CASCADE;
+DROP TABLE IF EXISTS government_forms CASCADE;
