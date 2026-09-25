@@ -52,19 +52,26 @@ func Load() *Config {
 	// TLS config
 	tlsEnabledStr := os.Getenv("ENABLE_TLS")
 	cfg.TLS.Enabled = tlsEnabledStr == "true" || tlsEnabledStr == "1"
-	flag.BoolVar(&cfg.TLS.Enabled, "tls", cfg.TLS.Enabled, "Enable TLS")
 
 	cfg.TLS.Cert = os.Getenv("TLS_CERT_PATH")
 	if cfg.TLS.Cert == "" {
 		cfg.TLS.Cert = "certs/cert.pem"
 	}
-	flag.StringVar(&cfg.TLS.Cert, "tls-cert", cfg.TLS.Cert, "TLS certificate path")
 
 	cfg.TLS.Key = os.Getenv("TLS_KEY_PATH")
 	if cfg.TLS.Key == "" {
 		cfg.TLS.Key = "certs/key.pem"
 	}
-	flag.StringVar(&cfg.TLS.Key, "tls-key", cfg.TLS.Key, "TLS private key path")
+
+	if flag.CommandLine.Lookup("tls") == nil {
+		flag.BoolVar(&cfg.TLS.Enabled, "tls", cfg.TLS.Enabled, "Enable TLS")
+		flag.StringVar(&cfg.TLS.Cert, "tls-cert", cfg.TLS.Cert, "TLS certificate path")
+		flag.StringVar(&cfg.TLS.Key, "tls-key", cfg.TLS.Key, "TLS private key path")
+	}
+
+	if !flag.Parsed() {
+		flag.Parse()
+	}
 
 	// JWT config
 	cfg.JWT.Issuer = os.Getenv("JWT_ISSUER")
@@ -146,7 +153,6 @@ func Load() *Config {
 		cfg.Database.ConnMaxIdleTime = 1 * time.Minute
 	}
 
-	flag.Parse()
 	return cfg
 }
 

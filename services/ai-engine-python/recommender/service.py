@@ -93,8 +93,11 @@ def extract_keywords_basic(text: str) -> dict:
 @app.post("/parse-resume", dependencies=[Depends(get_api_key)])
 @limiter.limit("5/minute")
 def parse_resume(request: Request, payload: ResumeParseRequest):
-    if not os.getenv("GEMINI_API_KEY"):
-        return {"error": "Gemini API key not configured"}
+    gemini_key = (os.getenv("GEMINI_API_KEY") or "").strip()
+    if not gemini_key or gemini_key == "mock_key":
+        fallback_data = extract_keywords_basic(payload.text)
+        fallback_data["warning"] = "Gemini API key not configured or in test mode. Using rule-based fallback."
+        return fallback_data
 
     try:
         model = genai.GenerativeModel("gemini-2.0-flash")
@@ -125,14 +128,10 @@ def parse_resume(request: Request, payload: ResumeParseRequest):
         return result
 
     except Exception as e:
-        logger.error(f"Gemini API failed: {e}")
-        if "quota" in str(e).lower() or "rate" in str(e).lower() or "limit" in str(e).lower():
-            logger.info("Triggering rule-based fallback for resume parsing")
-            return {
-                **extract_keywords_basic(payload.text),
-                "warning": "AI service temporarily unavailable. Using rule-based extraction."
-            }
-        raise HTTPException(status_code=503, detail="AI service unavailable.")
+        logger.error(f"Gemini API failed: {e}. Triggering rule-based fallback for resume parsing.")
+        fallback_data = extract_keywords_basic(payload.text)
+        fallback_data["warning"] = "AI service fallback active. Extracted key entities using rule-based engine."
+        return fallback_data
 
 class JobRecord(BaseModel):
     id: str

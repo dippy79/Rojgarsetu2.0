@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
-import { User, LogOut, LayoutDashboard, ChevronDown, Briefcase } from 'lucide-react';
+import { User, LogOut, LayoutDashboard, ChevronDown, Briefcase, Menu, X } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 import NotificationBell from './NotificationBell';
@@ -10,6 +10,7 @@ const Navbar = () => {
   const router = useRouter();
   const { user, logout, isAuthenticated } = useAuth();
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const dropdownRef = useRef(null);
 
   const isLoggedIn = Boolean(isAuthenticated || user);
@@ -194,7 +195,28 @@ const Navbar = () => {
             )}
           </div>
         )}
+
+        {/* Mobile Hamburger Menu Toggle */}
+        <button
+          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          className="lg:hidden p-2 text-stone-700 hover:text-stone-900 rounded-lg hover:bg-stone-100 transition-all"
+          aria-label="Toggle Navigation Menu"
+        >
+          {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+        </button>
       </div>
+
+      {/* Mobile Drawer Menu */}
+      {mobileMenuOpen && (
+        <div className="lg:hidden absolute top-16 left-0 w-full bg-white border-b border-stone-200 shadow-xl py-4 px-6 flex flex-col gap-4 animate-in slide-in-from-top-2 duration-200 z-50">
+          <Link href="/" onClick={() => setMobileMenuOpen(false)} className={navLinkStyle('/')}>🏛️ Home</Link>
+          <Link href="/gov-jobs" onClick={() => setMobileMenuOpen(false)} className={navLinkStyle('/gov-jobs')}>🛡️ Govt Jobs</Link>
+          <Link href="/private-jobs" onClick={() => setMobileMenuOpen(false)} className={navLinkStyle('/private-jobs')}>🏢 Private Jobs</Link>
+          <Link href="/courses" onClick={() => setMobileMenuOpen(false)} className={navLinkStyle('/courses')}>📚 Courses</Link>
+          <Link href="/videos" onClick={() => setMobileMenuOpen(false)} className={navLinkStyle('/videos')}>🎥 Videos</Link>
+          <Link href="/govt-forms" onClick={() => setMobileMenuOpen(false)} className={navLinkStyle('/govt-forms')}>🗂️ Govt Forms</Link>
+        </div>
+      )}
     </nav>
   );
 };

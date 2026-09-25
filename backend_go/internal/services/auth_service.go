@@ -3,6 +3,7 @@ package services
 import (
 	"database/sql"
 	"errors"
+	"html"
 	"net/http"
 	"os"
 	"strings"
@@ -63,6 +64,8 @@ func (s *AuthService) Register(c *gin.Context) {
 	if req.FirstName != "" || req.LastName != "" {
 		fullName = strings.TrimSpace(req.FirstName + " " + req.LastName)
 	}
+
+	fullName = html.EscapeString(strings.TrimSpace(fullName))
 
 	if fullName == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Name is required"})
