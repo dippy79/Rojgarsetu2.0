@@ -1,10 +1,16 @@
-$env:DATABASE_URL="postgres://amitsharma:amitsharma@127.0.0.1:5435/rojgarsetu2?sslmode=disable"
-$env:REDIS_URL="redis://localhost:6379"
-$env:JWT_SECRET="f7e3c9a1b2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9"
-$env:REFRESH_TOKEN_KEY="a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2"
-$env:CORS_ORIGINS="http://localhost:8080,http://localhost:3000,http://localhost:3001"
-$env:PORT="8083"
-$env:MIGRATIONS_PATH="file://./migrations"
-$env:JWT_ISSUER="rojgarsetu-backend"
-$env:JWT_AUDIENCE="rojgarsetu-api"
-.\server.exe
+if (Test-Path .env) {
+    Get-Content .env | Where-Only { $_ -and -not $_.StartsWith("#") } | ForEach-Object {
+        $name, $value = $_.Split('=', 2)
+        [System.Environment]::SetEnvironmentVariable($name.Trim(), $value.Trim())
+    }
+}
+
+if (-not $env:DATABASE_URL) { $env:DATABASE_URL="postgres://postgres:postgres@127.0.0.1:5435/rojgarsetu2?sslmode=disable" }
+if (-not $env:REDIS_URL) { $env:REDIS_URL="redis://localhost:6380" }
+if (-not $env:JWT_SECRET) { $env:JWT_SECRET="super-secret-jwt-key-minimum-32-characters-long" }
+if (-not $env:REFRESH_TOKEN_KEY) { $env:REFRESH_TOKEN_KEY="super-secret-refresh-key-minimum-32-chars" }
+if (-not $env:CORS_ORIGINS) { $env:CORS_ORIGINS="http://localhost:8080,http://localhost:3000,http://localhost:3001" }
+if (-not $env:PORT) { $env:PORT="8083" }
+if (-not $env:MIGRATIONS_PATH) { $env:MIGRATIONS_PATH="file://./migrations" }
+
+go run cmd/server/main.go

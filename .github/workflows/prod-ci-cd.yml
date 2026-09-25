@@ -38,19 +38,19 @@ jobs:
         working-directory: backend_go
         run: |
           go mod tidy
-          go test ./... -v -cover 2>&1 || true
+          go test ./... -v -cover
 
       - name: Go test integration
         working-directory: backend_go
         run: |
           go mod tidy
-          go test ./tests/... -v -cover 2>&1 || true
+          go test ./tests/... -v -cover
 
       - name: Go test crawler
         working-directory: services/crawler-go
         run: |
           go mod tidy
-          go test ./... 2>&1 || true
+          go test ./...
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -63,7 +63,7 @@ jobs:
           NODE_OPTIONS: "--max-old-space-size=4096"
         run: |
           npm install --legacy-peer-deps
-          CI=false npm run type-check 2>&1 || true
+          CI=false npm run type-check
 
       - name: Setup Python
         uses: actions/setup-python@v5

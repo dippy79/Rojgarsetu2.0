@@ -20,6 +20,16 @@ type Claims struct {
 
 // var JWT_SECRET []byte
 
+func getAccessTokenFromCookie(c *gin.Context) string {
+	if tokenString, err := c.Cookie("rojgar_token"); err == nil && tokenString != "" {
+		return tokenString
+	}
+	if tokenString, err := c.Cookie("access_token"); err == nil && tokenString != "" {
+		return tokenString
+	}
+	return ""
+}
+
 // AuthMiddleware validates JWT tokens
 func AuthMiddleware(cfg *config.Config) gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -39,7 +49,19 @@ func AuthMiddleware(cfg *config.Config) gin.HandlerFunc {
 				return
 			}
 		} else {
-			tokenString, _ = c.Cookie("access_token")
+			tokenString = getAccessTokenFromCookie(c)
+		}
+
+		if c.Request.Method != http.MethodGet && c.Request.Method != http.MethodHead && c.Request.Method != http.MethodOptions && c.GetHeader("X-Requested-With") != "XMLHttpRequest" {
+			c.JSON(http.StatusForbidden, gin.H{
+				"status": "error",
+				"error": gin.H{
+					"code":    403,
+					"message": "Request requires X-Requested-With: XMLHttpRequest",
+				},
+			})
+			c.Abort()
+			return
 		}
 
 		if tokenString == "" {
@@ -202,9 +224,7 @@ func AdminMFAMiddleware(cfg *config.Config) gin.HandlerFunc {
 		if !exists {
 			tokenString := strings.TrimPrefix(c.GetHeader("Authorization"), "Bearer ")
 			if tokenString == "" {
-				if cookie, err := c.Cookie("access_token"); err == nil && cookie != "" {
-					tokenString = cookie
-				}
+				tokenString = getAccessTokenFromCookie(c)
 			}
 			if tokenString == "" {
 				c.JSON(http.StatusForbidden, gin.H{"error": "MFA required"})

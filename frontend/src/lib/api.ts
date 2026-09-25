@@ -54,6 +54,15 @@ const api: AxiosInstance = axios.create({
     }
 });
 
+api.interceptors.request.use((config) => {
+    const method = (config.method || 'get').toLowerCase();
+    if (['post', 'put', 'patch', 'delete'].includes(method)) {
+        config.headers = config.headers || {};
+        config.headers['X-Requested-With'] = 'XMLHttpRequest';
+    }
+    return config;
+});
+
 // Handle response errors
 api.interceptors.response.use(
     (response) => response,

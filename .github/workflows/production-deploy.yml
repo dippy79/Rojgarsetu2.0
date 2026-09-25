@@ -29,7 +29,7 @@ jobs:
         run: |
           go mod tidy
           go build ./...
-          go test ./... --timeout=60s 2>&1 || true
+          go test ./... --timeout=60s
 
       - name: Crawler — tidy + build + test
         working-directory: services/crawler-go
@@ -39,7 +39,7 @@ jobs:
           go mod tidy
           go mod vendor
           go build ./...
-          go test ./... --timeout=60s 2>&1 || true
+          go test ./... --timeout=60s
 
       - name: Lint backend
         uses: golangci/golangci-lint-action@v6
@@ -62,7 +62,6 @@ jobs:
             --severity CRITICAL,HIGH \
             --exit-code 0 \
             --timeout 10m
-        continue-on-error: true
 
   frontend:
     runs-on: ubuntu-latest
@@ -85,7 +84,7 @@ jobs:
       - name: Pre-resolve Maven deps
         run: |
           cd services/auth-java
-          mvn dependency:resolve -q --no-transfer-progress 2>&1 || true
+          mvn dependency:resolve -q --no-transfer-progress
 
       - name: Trivy Security Scan
         run: |
@@ -97,7 +96,6 @@ jobs:
             --skip-dirs frontend/.next \
             --exit-code 0 \
             --timeout 10m
-        continue-on-error: true
 
       - name: Frontend — install + build
         working-directory: frontend
@@ -111,13 +109,13 @@ jobs:
 
       - name: Frontend — lint
         working-directory: frontend
-        run: npm run lint 2>&1 || true
+        run: npm run lint
 
       - name: API Gateway — install + type-check
         working-directory: services/api-gateway-node
         run: |
           npm install --legacy-peer-deps
-          npm run type-check 2>&1 || true
+          npm run type-check
 
   k8s-lint:
     runs-on: ubuntu-latest

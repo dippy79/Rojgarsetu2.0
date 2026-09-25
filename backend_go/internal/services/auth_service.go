@@ -46,11 +46,28 @@ type RegisterRequest struct {
 }
 
 type TokenResponse struct {
-	Success bool   `json:"success"`
+	Success bool `json:"success"`
 	Data    struct {
 		User  *db.User `json:"user"`
 		Token string   `json:"token"`
 	} `json:"data"`
+}
+
+func setAuthCookies(c *gin.Context, accessToken, refreshToken string) {
+	cookieSecure := os.Getenv("COOKIE_SECURE") == "true"
+	c.SetSameSite(http.SameSiteLaxMode)
+	c.SetCookie("rojgar_token", accessToken, 900, "/", "", cookieSecure, true)
+	c.SetCookie("rojgar_refresh_token", refreshToken, 2592000, "/", "", cookieSecure, true)
+	c.SetCookie("access_token", accessToken, 900, "/", "", cookieSecure, true)
+	c.SetCookie("refresh_token", refreshToken, 2592000, "/", "", cookieSecure, true)
+}
+
+func clearAuthCookies(c *gin.Context) {
+	cookieSecure := os.Getenv("COOKIE_SECURE") == "true"
+	c.SetSameSite(http.SameSiteLaxMode)
+	for _, name := range []string{"rojgar_token", "rojgar_refresh_token", "access_token", "refresh_token"} {
+		c.SetCookie(name, "", -1, "/", "", cookieSecure, true)
+	}
 }
 
 func (s *AuthService) Register(c *gin.Context) {
@@ -94,8 +111,8 @@ func (s *AuthService) Register(c *gin.Context) {
 	}
 	user, err := s.userSvc.CreateUser(c, userReq)
 	if err != nil {
-		if errors.Is(err, ErrCompanyNameExists) {
-			c.JSON(http.StatusConflict, gin.H{"error": ErrCompanyNameExists.Error()})
+		if errors.Is(err, ErrCompanyNameExists) || errors.Is(err, ErrEmailExists) {
+			c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
 			return
 		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -152,10 +169,7 @@ func (s *AuthService) Login(c *gin.Context) {
 	}
 
 	// Set HttpOnly Cookies for security
-	cookieSecure := os.Getenv("COOKIE_SECURE") == "true"
-	c.SetSameSite(http.SameSiteStrictMode)
-	c.SetCookie("access_token", accessToken, 900, "/", "", cookieSecure, true)     // 15 min
-	c.SetCookie("refresh_token", refreshToken, 2592000, "/", "", cookieSecure, true) // 30 days
+	setAuthCookies(c, accessToken, refreshToken)
 
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
@@ -168,9 +182,11 @@ func (s *AuthService) Login(c *gin.Context) {
 
 func (s *AuthService) Refresh(c *gin.Context) {
 	// P1: Read from cookie instead of body
-	refreshToken, err := c.Cookie("refresh_token")
-	if err != nil {
-		// Fallback to body for legacy/testing if absolutely necessary, but audit says MUST read from cookie
+	refreshToken, err := c.Cookie("rojgar_refresh_token")
+	if err != nil || refreshToken == "" {
+		refreshToken, err = c.Cookie("refresh_token")
+	}
+	if err != nil || refreshToken == "" {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Refresh token missing from cookie"})
 		return
 	}
@@ -194,9 +210,7 @@ func (s *AuthService) Refresh(c *gin.Context) {
 	}
 
 	// Update HttpOnly Cookie
-	cookieSecure := os.Getenv("COOKIE_SECURE") == "true"
-	c.SetSameSite(http.SameSiteStrictMode)
-	c.SetCookie("access_token", accessToken, 900, "/", "", cookieSecure, true)
+	setAuthCookies(c, accessToken, refreshToken)
 
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
@@ -213,9 +227,7 @@ func (s *AuthService) Logout(c *gin.Context) {
 	}
 
 	// Clear cookies
-	cookieSecure := os.Getenv("COOKIE_SECURE") == "true"
-	c.SetCookie("access_token", "", -1, "/", "", cookieSecure, true)
-	c.SetCookie("refresh_token", "", -1, "/", "", cookieSecure, true)
+	clearAuthCookies(c)
 
 	c.JSON(http.StatusOK, gin.H{"success": true, "message": "Logged out all sessions"})
 }

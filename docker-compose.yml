@@ -51,6 +51,8 @@ services:
       dockerfile: Dockerfile
     container_name: rojgar-backend
     restart: unless-stopped
+    env_file:
+      - .env
     ports:
       - "8083:8083"
     environment:
@@ -122,6 +124,8 @@ services:
       dockerfile: Dockerfile
     container_name: rojgar-ai-engine
     restart: unless-stopped
+    env_file:
+      - .env
     ports:
       - "8000:8000"
     environment:

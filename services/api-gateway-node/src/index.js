@@ -35,7 +35,7 @@ app.use(cors({
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-CSRF-Token', 'Cookie']
 }));
 
 // 2. PROXY CONFIGURATION
@@ -57,7 +57,12 @@ const proxyOptions = {
       }
 
       if (req.headers.authorization) proxyReq.setHeader('Authorization', req.headers.authorization);
+      else if (req.cookies?.rojgar_token) proxyReq.setHeader('Authorization', `Bearer ${req.cookies.rojgar_token}`);
       else if (req.cookies?.access_token) proxyReq.setHeader('Authorization', `Bearer ${req.cookies.access_token}`);
+
+      if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method)) {
+        proxyReq.setHeader('X-Requested-With', 'XMLHttpRequest');
+      }
 
       if (req.body && Object.keys(req.body).length > 0) {
         const bodyData = JSON.stringify(req.body);

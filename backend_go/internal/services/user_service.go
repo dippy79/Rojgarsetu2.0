@@ -24,6 +24,15 @@ func NewUserService(d *db.PostgresDB) *UserService {
 }
 
 var ErrCompanyNameExists = errors.New("a company with this name already exists")
+var ErrEmailExists = errors.New("email already exists")
+
+func isUniqueViolation(err error) bool {
+	var pqErr *pq.Error
+	if errors.As(err, &pqErr) {
+		return pqErr.Code == "23505" || pqErr.Code.Name() == "unique_violation"
+	}
+	return false
+}
 
 func (s *UserService) CreateUser(ctx context.Context, req db.RegisterRequest) (*db.User, error) {
 	uid := uuid.New()
@@ -52,6 +61,9 @@ func (s *UserService) CreateUser(ctx context.Context, req db.RegisterRequest) (*
 		Phone:        req.Phone,
 	})
 	if err != nil {
+		if isUniqueViolation(err) {
+			return nil, ErrEmailExists
+		}
 		return nil, err
 	}
 
@@ -93,8 +105,7 @@ func (s *UserService) CreateUser(ctx context.Context, req db.RegisterRequest) (*
 			FoundedYear:  sql.NullInt32{},
 		})
 		if err != nil {
-			var pqErr *pq.Error
-			if errors.As(err, &pqErr) && pqErr.Code.Name() == "unique_violation" {
+			if isUniqueViolation(err) {
 				return nil, ErrCompanyNameExists
 			}
 			return nil, fmt.Errorf("failed to create company profile: %w", err)
