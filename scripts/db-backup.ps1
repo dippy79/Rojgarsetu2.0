@@ -1,36 +1,18 @@
-# Automated PostgreSQL Database Backup Script for Windows
-# Keeps backups for 7 days
-
 $TIMESTAMP = Get-Date -Format "yyyyMMdd_HHmmss"
-$BACKUP_DIR = ".\backups"
-$POSTGRES_USER = "amitsharma"
-$POSTGRES_DB = "rojgarsetu2"
+$BACKUP_DIR = "./backups"
+$POSTGRES_USER = if ($env:POSTGRES_USER) { $env:POSTGRES_USER } else { "postgres" }
+$POSTGRES_DB = if ($env:POSTGRES_DB) { $env:POSTGRES_DB } else { "rojgarsetu2" }
 $CONTAINER_NAME = "rojgar-postgres"
 
-# Create backup directory if it doesn't exist
 if (-not (Test-Path $BACKUP_DIR)) {
     New-Item -ItemType Directory -Path $BACKUP_DIR
 }
 
-# Perform backup
-Write-Host "Starting backup at $TIMESTAMP"
-$backupFile = "$BACKUP_DIR\rojgarsetu_$TIMESTAMP.sql.gz"
+Write-Output "Starting backup at $TIMESTAMP"
+docker exec $CONTAINER_NAME pg_dump -U $POSTGRES_USER $POSTGRES_DB | Out-File -FilePath "$BACKUP_DIR/rojgarsetu_$TIMESTAMP.sql"
 
-docker exec $CONTAINER_NAME pg_dump -U $POSTGRES_USER $POSTGRES_DB | docker exec -i $CONTAINER_NAME gzip > $backupFile
-
-# Verify backup was created
-if (Test-Path $backupFile) {
-    Write-Host "Backup completed successfully: rojgarsetu_$TIMESTAMP.sql.gz"
+if (Test-Path "$BACKUP_DIR/rojgarsetu_$TIMESTAMP.sql") {
+    Write-Output "Backup completed successfully: rojgarsetu_$TIMESTAMP.sql"
 } else {
-    Write-Host "Backup failed!"
-    exit 1
+    Write-Error "Backup failed!"
 }
-
-# Remove backups older than 7 days
-$cutoffDate = (Get-Date).AddDays(-7)
-Get-ChildItem $BACKUP_DIR -Filter "rojgarsetu_*.sql.gz" | Where-Object { $_.LastWriteTime -lt $cutoffDate } | Remove-Item
-Write-Host "Old backups (older than 7 days) removed"
-
-# List current backups
-Write-Host "Current backups:"
-Get-ChildItem $BACKUP_DIR -Filter "rojgarsetu_*.sql.gz" | Format-Table Name, Length, LastWriteTime

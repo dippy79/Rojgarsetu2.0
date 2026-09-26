@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "test": "npm run type-check"
   },
   "dependencies": {
     "@tailwindcss/forms": "^0.5.11",
