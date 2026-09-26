@@ -1,253 +1,225 @@
-# 🚀 RojgarSetu 2.0 Engine
+# RojgarSetu 2.0
 
-> **Enterprise-Grade Civic Tech Job, Course, & AI Recruitment Engine**  
-> **Status:** Production Ready | **Test Suite:** 100% PASS (14/14 Suites) | **Architecture:** Microservices
+### Career discovery for India's public and private job markets
 
----
+RojgarSetu brings job discovery, career learning and recruitment workflows into one platform: candidates can explore government and private-sector opportunities, while employers can publish roles and manage candidate activity. The codebase combines a web application with API, data-ingestion and recommendation services.
 
-## 📌 Executive Overview
+> **Project status:** This repository contains product source code and local deployment definitions, not evidence of a currently operated production service. Provider availability, live data, deployment, security posture and operational readiness must be verified for the buyer's intended use. This README deliberately makes no uptime, catalogue-size, latency or production-readiness guarantee.
 
-**RojgarSetu 2.0** is an enterprise-grade, microservices-driven job aggregation and AI matching platform engineered specifically for the Indian employment landscape. It unifies public sector notifications (UPSC, SSC, RRB, State PSCs), private sector career opportunities, educational courses (NPTEL, SWAYAM), and career guidance media into a high-performance, accessible ecosystem.
+<p>
+  <img alt="Next.js" src="https://img.shields.io/badge/Web-Next.js_16-111827?logo=nextdotjs&logoColor=white" />
+  <img alt="Go" src="https://img.shields.io/badge/API-Go_1.26-00ADD8?logo=go&logoColor=white" />
+  <img alt="Python" src="https://img.shields.io/badge/AI-Python_3.11-3776AB?logo=python&logoColor=white" />
+  <img alt="PostgreSQL" src="https://img.shields.io/badge/Data-PostgreSQL_16-4169E1?logo=postgresql&logoColor=white" />
+  <img alt="Docker Compose" src="https://img.shields.io/badge/Local%20stack-Docker%20Compose-2496ED?logo=docker&logoColor=white" />
+</p>
 
-### Core Capabilities
-- 🛡️ **Anti-Fake & Scam Keyword Filtering:** Real-time NLP filters prevent scam postings, deposit fraud, and unauthorized third-party listings before DB persistence.
-- ⚡ **High-Speed Aggregation:** Semaphore-bounded Go crawler engines with MD5 composite hash deduplication (`ON CONFLICT DO UPDATE`).
-- 🧠 **AI-Powered Recommendation Engine:** Gemini-assisted resume parsing and skill-matching with automatic rule-based fallback guarantees.
-- 🔐 **Zero-Trust Security & BOLA Isolation:** Role-Based Access Control (RBAC), HttpOnly cookie token storage, CSRF protection, and Go Admin MFA middleware.
-- 🚀 **Sub-100ms Search Performance:** Full-text GIN indexed vector search across government, private, and course databases.
+**In one sentence:** a career platform for discovering opportunities and learning resources, supported by a modular backend and configurable data providers.
 
----
+## At a glance
 
-## 📊 Microservices Matrix & Service Health
+| For candidates | For employers | For platform operators |
+| --- | --- | --- |
+| Browse government and private jobs; explore courses and interview-preparation videos; create a candidate account and profile. | Create an employer account, publish roles and use company-facing dashboard/application workflows present in the product. | Operate API, crawler and AI services alongside PostgreSQL and Redis; configure integrations through environment variables. |
 
-| Service Name | Technology Stack | Port | Health Check Endpoint | Status | Key Hardening |
-| :--- | :--- | :---: | :--- | :---: | :--- |
-| **`api-gateway`** | Node.js 22 (Express) | `3001` | `GET /health` | 🟢 UP | CSRF protection, HttpOnly cookie forwarder, path-preserving proxies |
-| **`backend`** | Go 1.24 (Gin Gonic) | `8083` | `GET /health` | 🟢 UP | Multi-stage Alpine binary, GIN vector search, DB connection pool (`100/25`) |
-| **`ai-engine`** | Python 3.10 (FastAPI) | `8000` | `GET /health` | 🟢 UP | Gemini LLM + Rule-based NLP extraction fallback, ThreadPoolExecutor DB query pool |
-| **`crawler`** | Go 1.24 (Chromedp) | `8082` | `GET /health` | 🟢 UP | Semaphore-bounded worker pool, MD5 deduplication, polite rate limiter |
-| **`frontend`** | Next.js 16 + React 19 | `8080` | `GET /` | 🟢 UP | Tailwind CSS, responsive mobile drawer menu, SSR & static exports |
-| **`postgres`** | PostgreSQL 16 Alpine | `5435` | `pg_isready` | 🟢 UP | GIN indexes, 30+ migration scripts, transaction atomicity (`tx.Begin()`) |
-| **`redis`** | Redis 7 Alpine | `6380` | `redis-cli ping` | 🟢 UP | Session caching, distributed rate limiting, and pub/sub signaling |
-
----
-
-## 🏗️ System Architecture Topology
-
-### High-Level Microservices Architecture
+### Candidate journey
 
 ```mermaid
-graph TD
-    Client[📱 Web Client / Mobile App - Next.js] -->|HTTP / WS| Gateway[🛡️ API Gateway - Node.js:3001]
-    
-    subgraph "API Gateway & Security Layer"
-        Gateway -->|CSRF / Auth / Rate Limit| Router[Proxy Route Dispatcher]
-    end
-
-    Router -->|/api/v1/auth & /api/v1/*| Backend[⚡ Core Backend API - Go:8083]
-    Router -->|/api/ai/*| AIEngine[🧠 AI Engine - Python:8000]
-    Router -->|/api/crawler/*| Crawler[🕷️ Scraper Pool - Go:8082]
-
-    subgraph "Data & Persistence Layer"
-        Backend -->|Pool: 100/25| Postgres[(🗄️ PostgreSQL 16:5435)]
-        Backend -->|Cache / Sessions| Redis[(🔴 Redis 7:6380)]
-        AIEngine -->|Parallel Queries| Postgres
-        Crawler -->|Upsert / Hash Dedup| Postgres
-    end
-
-    subgraph "External Providers & Intelligence"
-        AIEngine -->|Resume Parsing| Gemini[✨ Google Gemini Flash LLM]
-        Crawler -->|Polite Scrapes| GovPortals[🏛️ SSC / UPSC / RRB / Job Portals]
-    end
+flowchart LR
+    A[Explore opportunities] --> B[Filter government or private roles]
+    B --> C[Review role and source details]
+    C --> D[Apply through the listed destination]
+    A --> E[Build skills with courses and videos]
+    E --> F[Optional resume parsing and skill-based matching]
 ```
 
-### Data Ingestion & Deduplication Pipeline
+The diagram describes the product intent, not a guarantee that every source, listing, application flow or external provider is live in every deployment.
+
+## Product capabilities
+
+| Area | What the repository provides | Important boundary |
+| --- | --- | --- |
+| Job discovery | Separate government and private-job experiences, search/filter APIs and database-backed records. | Listings depend on configured sources and ingestion health. Check deadlines and apply at the employer or official portal. |
+| Candidate and employer workflows | Registration/login, candidate and company profile handlers, job publishing and application-related APIs/UI. | Validate the complete identity, authorization and application lifecycle against the target deployment before launch. |
+| Career learning | Course and video resource pages and API handlers. | Provider feeds, availability and content rights can change; the repository does not guarantee a particular catalogue. |
+| Resume assistance | FastAPI resume parsing can use Google Gemini and has a basic rule-based parsing fallback. | Resume text is sensitive personal data. Review provider terms, consent, retention and regional privacy requirements before enabling it. |
+| Job matching | Skill and keyword overlap scoring, with a location preference adjustment. | This is transparent heuristic matching, not a trained or independently validated machine-learning ranking model. |
+| Ingestion | Go crawler service, scheduled work, browser automation and persistence/deduplication paths. | Source sites can change or restrict automated access. Configure, monitor and validate each source; do not assume freshness. |
+
+## How the system fits together
+
+The default Compose stack defines the web frontend, Node.js API gateway, Go API, Python AI service, Go crawler, PostgreSQL and Redis. The Java authentication service exists in the repository but is commented out in the default Compose file; confirm the intended auth ownership and gateway routing before a production deployment.
 
 ```mermaid
-sequenceDiagram
-    autonumber
-    participant Scraper as 🕷️ Go Scraper Engine
-    participant Normalizer as ⚙️ Data Sanitizer
-    participant DB as 🗄️ PostgreSQL DB
-    
-    Scraper->>GovPortals: Fetch job postings & notifications
-    GovPortals-->>Scraper: Raw HTML / JSON Payload
-    Scraper->>Normalizer: Extract fields & filter scam keywords
-    Normalizer->>Normalizer: Compute MD5 Hash (Company + Title + URL/ApplyURL)
-    Normalizer->>DB: INSERT INTO jobs_private / jobs_government ... ON CONFLICT (job_hash) DO UPDATE
-    DB-->>Scraper: Record Persisted / Updated (0 Duplicates)
+flowchart TB
+    subgraph Experience[Product experience]
+        Candidate[Candidate / employer]
+        Web[Next.js web app]
+        Mobile[Flutter mobile app<br/>separate workstream]
+        Candidate --> Web
+        Candidate -. optional client .-> Mobile
+    end
+
+    Web --> Gateway[Node.js API gateway]
+    Gateway --> API[Go core API]
+    Gateway --> AI[Python AI service]
+    Gateway --> Crawler[Go crawler service]
+
+    API --> DB[(PostgreSQL)]
+    API --> Cache[(Redis)]
+    AI --> DB
+    AI -. resume parsing, when configured .-> Gemini[Google Gemini API]
+    Crawler --> DB
+    Crawler -. configured sources .-> Sources[Public and private job sources]
 ```
 
----
+### Main components
 
-## 🛠️ How to Run Locally
+| Component | Technology | Responsibility |
+| --- | --- | --- |
+| Web app | Next.js 16, React 19, Tailwind CSS | Public discovery, candidate/employer screens, courses and videos. |
+| API gateway | Node.js 22, Express | HTTP entry point and service proxy/configuration layer. |
+| Core API | Go 1.26, Gin | Accounts, jobs, applications, courses, videos, search and related APIs; PostgreSQL migrations and Swagger documentation. |
+| AI service | Python 3.11, FastAPI | Resume parsing and heuristic job matching; Gemini credential required by the current service startup configuration. |
+| Crawler | Go 1.26, Playwright | Scheduled source ingestion and persistence. |
+| Data services | PostgreSQL 16, Redis 7 | Relational records and cache/service support. |
+| Mobile app | Flutter | Separate codebase in `mobile_app_flutter/`; not part of the default Compose deployment and not represented here as release-ready. |
 
-### Prerequisites
-- **Docker Desktop** v24.0+
-- **Go** v1.24+ *(for local Go development)*
-- **Node.js** v22+ & `npm` *(for frontend / gateway development)*
-- **Python** v3.10+ *(for AI engine development)*
+## Run the default stack locally
 
----
+### Requirements
 
-### Step 1: Clone Repository & Setup Environment
+- Docker Desktop or Docker Engine with the Compose plugin
+- A Google Gemini API key for the current AI-service configuration
+- Provider credentials only for integrations you choose to enable
+
+For local development of individual services, see their manifests: [frontend](frontend/package.json), [Go API](backend_go/go.mod), [crawler](services/crawler-go/go.mod), [AI service](services/ai-engine-python/requirements.txt) and [gateway](services/api-gateway-node/package.json).
+
+### 1. Create a private local environment file
+
+From the repository root, copy the template and fill required values **locally**. Do not paste secrets into this README, source files, screenshots, issues or commits.
+
+PowerShell:
+
+```powershell
+Copy-Item .env.example .env
+```
+
+macOS/Linux/Git Bash:
 
 ```bash
-# 1. Clone repo
-git clone https://github.com/dippy79/Rojgarsetu2.0.git
-cd Rojgarsetu2.0
-
-# 2. Copy environment files
 cp .env.example .env
-cp backend_go/.env.example backend_go/.env
 ```
 
-Ensure `.env` contains:
-```env
-POSTGRES_USER=postgres
-POSTGRES_PASSWORD=postgres
-POSTGRES_DB=rojgarsetu2
-DATABASE_URL=postgres://postgres:postgres@localhost:5435/rojgarsetu2?sslmode=disable
-JWT_SECRET=super-secret-jwt-key-minimum-32-characters-long
-REFRESH_TOKEN_KEY=super-secret-refresh-key-minimum-32-chars
-COOKIE_SECURE=false
-ALLOWED_ORIGINS=http://localhost:8080,http://localhost:3000,http://localhost:3001
-NEXT_PUBLIC_API_URL=http://localhost:3001
-```
+Use [`.env.example`](.env.example) as the variable-name checklist. The template contains placeholders, not working credentials. Supply strong unique secrets and valid provider credentials in your local `.env`; do not reuse example values in a deployed environment. Local `.env` files are excluded by the repository's ignore rules. Review [production.env.example](production.env.example) before preparing a deployment.
 
----
-
-### Step 2: Launch Databases & Apply Migrations
+### 2. Build and start
 
 ```bash
-# 1. Start PostgreSQL and Redis containers
-docker compose up -d postgres redis
-
-# 2. Verify containers are healthy
+docker compose up --build -d
 docker compose ps
 ```
 
----
+Open the local endpoints:
 
-### Step 3: Run Database Migrations & Data Seeder
+| Service | Local URL |
+| --- | --- |
+| Web application | [http://localhost:8080](http://localhost:8080) |
+| API gateway | [http://localhost:3001](http://localhost:3001) |
+| Go API | [http://localhost:8083](http://localhost:8083) |
+| AI service | [http://localhost:8000](http://localhost:8000) |
+| Crawler | [http://localhost:8082](http://localhost:8082) |
+| PostgreSQL | `localhost:5435` |
+| Redis | `localhost:6380` |
+| Go API health | [http://localhost:8083/health](http://localhost:8083/health) |
+| Go API Swagger UI | [http://localhost:8083/docs/index.html](http://localhost:8083/docs/index.html) |
+
+The first boot builds images and the Go API applies its database migrations. External-source data is not guaranteed to be seeded or immediately available. For local metrics, the Compose `monitoring` profile adds Prometheus and Grafana; set their credentials locally before enabling it.
+
+```bash
+docker compose --profile monitoring up --build -d
+```
+
+To stop the stack without removing persisted database volumes:
+
+```bash
+docker compose down
+```
+
+## API and integration entry points
+
+The Go API's generated Swagger UI is available at `/docs/index.html` when the backend is running. The checked-in OpenAPI/Swagger artifacts are in [`backend_go/docs/`](backend_go/docs/).
+
+| Capability | Service | Example route family |
+| --- | --- | --- |
+| Authentication and profiles | Go API | `/api/v1/auth`, candidate and company routes |
+| Government and private jobs | Go API | `/api/v1/gov-jobs`, `/api/v1/priv-jobs` |
+| Search and categories | Go API | `/api/v1/search`, `/api/v1/categories` |
+| Courses and videos | Go API | `/api/v1/courses`, `/api/v1/videos` |
+| Resume parsing and recommendations | AI service | `/parse-resume`, `/recommend/jobs` |
+| Health checks | Services | `/health` where implemented |
+
+Routes may be rewritten or protected by the gateway; use the running Swagger definition and deployed gateway configuration as the contract of record.
+
+## Verification and release confidence
+
+The repository includes Go tests and GitHub Actions workflows for backend/crawler checks, frontend type-check/build steps, an AI import smoke check, Docker builds and a non-blocking Trivy filesystem vulnerability scan. Coverage is not uniform across every component, and a successful CI run is not equivalent to a production acceptance, security or availability certification.
+
+Before relying on this system with real users, independently verify at minimum:
+
+- End-to-end registration, login, permissions, logout and account persistence through the deployed gateway.
+- Each configured source's legal access, extraction accuracy, freshness, deduplication and official application link.
+- AI-provider consent, data processing, cost controls, failure behavior and output quality.
+- Database backups/restores, monitoring/alerts, secrets rotation, TLS, ingress restrictions and incident response.
+- The actual release/deployment procedure. The current `prod-ci-cd` workflow's deploy step is a placeholder; it does not perform a production-server rollout.
+
+Useful focused checks:
 
 ```bash
 cd backend_go
-
-# Run migrations & seed core static data (Admin, Candidate, Employer, Sample Jobs, Courses, Videos)
-$env:DATABASE_URL="postgres://postgres:postgres@localhost:5435/rojgarsetu2?sslmode=disable"
-go run cmd/seeder/main.go
+go test ./...
+go test ./tests/...
 ```
 
----
-
-### Step 4: Launch Complete Microservice Stack
-
 ```bash
-# From project root
-docker compose up --build -d
-```
-
-Services will be accessible at:
-- **Frontend App:** [http://localhost:8080](http://localhost:8080)
-- **API Gateway:** [http://localhost:3001](http://localhost:3001)
-- **Backend API:** [http://localhost:8083](http://localhost:8083)
-- **AI Engine:** [http://localhost:8000](http://localhost:8000)
-- **Crawler Service:** [http://localhost:8082](http://localhost:8082)
-
----
-
-## 📡 API Reference Summary
-
-### 1. Authentication & Session Management (`/api/v1/auth`)
-
-| Method | Endpoint | Access Level | Description |
-| :--- | :--- | :--- | :--- |
-| `POST` | `/api/v1/auth/register` | Public | Register new candidate or company. Wraps `users` and profile creation in `tx.Begin()`. |
-| `POST` | `/api/v1/auth/login` | Public | Authenticates credentials and issues `access_token` and `refresh_token` HttpOnly cookies. |
-| `POST` | `/api/v1/auth/refresh` | Public | Reads `refresh_token` cookie and issues new `access_token` cookie. |
-| `GET` | `/api/v1/auth/me` | Authenticated | Returns current authenticated user profile. |
-| `POST` | `/api/v1/auth/logout` | Authenticated | Revokes refresh token sessions and clears client cookies. |
-
----
-
-### 2. Jobs Engine (`/api/v1`)
-
-| Method | Endpoint | Access Level | Description |
-| :--- | :--- | :--- | :--- |
-| `GET` | `/api/v1/gov-jobs` | Public | Fetch paginated government job listings with department/location filters. |
-| `GET` | `/api/v1/gov-jobs/:id` | Public | Fetch government job detail by UUID. |
-| `GET` | `/api/v1/private-jobs` | Public | Fetch paginated private sector job listings. |
-| `GET` | `/api/v1/private-jobs/:id` | Public | Fetch private job detail by UUID. |
-| `POST` | `/api/v1/search` | Public | Full-text vector search across all job categories (sub-100ms response time). |
-
----
-
-### 3. Role-Protected Endpoints
-
-| Method | Endpoint | Required Role | Description |
-| :--- | :--- | :--- | :--- |
-| `GET` | `/api/v1/candidate/profile` | `candidate` | Fetch candidate profile, skills, and application status. |
-| `POST` | `/api/v1/company/jobs` | `company` | Post a new private job opening. |
-| `GET` | `/api/v1/company/dashboard` | `company` | Employer dashboard with applicant metrics. |
-| `GET` | `/api/admin/*` | `admin` | Admin dashboard protected by `AdminMFAMiddleware`. |
-
----
-
-### 4. AI Engine & Courses (`/api/ai` & `/api/v1`)
-
-| Method | Endpoint | Service | Description |
-| :--- | :--- | :--- | :--- |
-| `POST` | `/api/ai/parse-resume` | `ai-engine` | Parses resume text via Gemini LLM with automatic rule-based NLP fallback. |
-| `POST` | `/api/ai/recommend/jobs` | `ai-engine` | Jaccard skill-matching engine querying job sources concurrently. |
-| `GET` | `/api/v1/courses` | `backend` | Returns skill development courses (NPTEL, SWAYAM). |
-| `GET` | `/api/v1/videos` | `backend` | Returns verified educational YouTube guidance videos. |
-
----
-
-## 🧪 Testing & Verification
-
-Run the full end-to-end automated test suite:
-
-```bash
-# Run all Go backend integration, security, and performance unit tests
-cd backend_go
-go test -v ./tests/...
-
-# Run Python AI engine unit and fallback tests
-cd ../services/ai-engine-python
-python temp_test_ai.py
-
-# Verify Next.js static export & compilation
-cd ../../frontend
+cd frontend
+npm install --legacy-peer-deps
+npm run type-check
 npm run build
 ```
 
----
+Check the workflow definitions before relying on a particular test, scanner or deployment gate: [CI workflow](.github/workflows/ci.yml) and [production workflow](.github/workflows/prod-ci-cd.yml).
 
-## 📁 Repository Directory Structure
+## Trust, privacy and operational boundaries
 
+- **Source data:** Listings and notices can become stale. Confirm the source, eligibility, dates, fees and application instructions at the original employer or official portal. RojgarSetu is a discovery layer, not the issuing authority.
+- **No fee claims:** The platform should not be presented as collecting recruitment/application fees on behalf of listed sources. Verify any payment or third-party flow separately.
+- **AI and personal data:** Resume content can include sensitive personal information. Obtain appropriate consent and assess provider processing, retention and applicable privacy obligations before sending it to an external AI provider.
+- **Security:** The codebase includes controls such as environment-configured signing keys, cookie/CSRF and rate-limit code paths, database migrations and non-root container builds. These are implementation details, not an independent audit or guarantee. The default Compose file also publishes service ports for local development; production ingress should expose only what is required.
+- **Secrets:** Never commit `.env` or real API keys, passwords, tokens, private keys or database URLs. If a credential is exposed, revoke/rotate it and report it privately using [SECURITY.md](SECURITY.md).
+- **Visible counters:** Some homepage figures are static UI values rather than a verified, audited live supply metric. Do not use them as buyer-facing catalogue or adoption evidence without replacing them with measured data.
+- **Mobile:** The Flutter directory is a separate workstream and is not started by the root Compose stack.
+
+## Repository map
+
+```text
+backend_go/                 Go API, migrations, handlers, tests and Swagger artifacts
+services/api-gateway-node/  Node.js API gateway
+services/ai-engine-python/  FastAPI resume and matching service
+services/crawler-go/        Go crawler and scheduler
+frontend/                   Next.js web application
+mobile_app_flutter/         Separate Flutter application
+database/                   Database schema references
+deployment/                 Deployment and Nginx configuration
+monitoring/                 Prometheus, Grafana and logging configuration
+docs/ops/                   Operational runbooks
+docs/reports/               Project status and analysis documents
 ```
-Rojgarsetu2.0/
-├── backend_go/                 # Go 1.24 Core API (Gin, GIN search, Auth & Transactions)
-│   ├── cmd/                    # Application entrypoints (server, seeder)
-│   ├── internal/               # Services, Handlers, Middleware, Database repos
-│   ├── migrations/             # SQL migration scripts (00001 - 00030)
-│   └── tests/                  # Integration, BOLA security, pooling & validation tests
-├── services/
-│   ├── crawler-go/             # Scraper engine with worker pools & MD5 dedup
-│   ├── ai-engine-python/       # FastAPI + Gemini LLM engine with NLP fallback
-│   └── api-gateway-node/       # Express.js / Node 22 gateway (CSRF, cookies, proxies)
-├── frontend/                   # Next.js 16 + Tailwind CSS web application (38 routes)
-├── deployment/                 # Production Docker and Nginx manifests
-└── docker-compose.yml          # Container orchestration configuration
-```
 
----
+## License and commercial evaluation
 
-## ⚖️ Legal Compliance & Security Disclosures
+This repository is **not licensed under MIT**. The checked-in [LICENSE](LICENSE) is a proprietary EULA: it grants limited free, non-commercial evaluation use, while commercial/production use and restricted modules require prior written permission or a separate agreement. Obtain written licensing and IP confirmation before acquisition, redistribution, hosting or production use.
 
-- **Source Attribution:** Every aggregated post provides a direct link to the original official recruiting portal.
-- **Content Integrity:** Scrapers never modify official notices or collect application fees.
-- **Security Disclosures:** Please report suspected security vulnerabilities privately per [SECURITY.md](SECURITY.md).
-- **License:** Proprietary / MIT License. Refer to [LICENSE](LICENSE) for terms.
+## Security and diligence
+
+For vulnerability reports, follow [SECURITY.md](SECURITY.md) and do not publish credentials or exploit details in a public issue. For buyer diligence, treat this README as an architecture and capability guide; validate the current branch, data rights, live integrations, deployment ownership and commercial terms directly against the code and maintainers.
