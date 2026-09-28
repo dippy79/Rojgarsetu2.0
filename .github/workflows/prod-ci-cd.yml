@@ -108,20 +108,18 @@ jobs:
         working-directory: services/auth-java
         run: mvn clean package -DskipTests --batch-mode
 
-      - name: Run Trivy vulnerability scanner
+      - name: Security Scan
         run: |
           curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
           trivy fs . \
             --scanners vuln \
-            --skip-dirs services/auth-java \
-            --skip-dirs node_modules \
-            --skip-dirs frontend/.next \
-            --skip-dirs .git \
-            --severity HIGH,CRITICAL \
+            --skip-dirs services/auth-java,node_modules,frontend/.next \
+            --severity CRITICAL,HIGH \
             --format sarif \
             --output trivy-results.sarif \
             --exit-code 1 \
             --timeout 10m
+        continue-on-error: false
 
       - name: Upload Trivy results to GitHub Security
         uses: github/codeql-action/upload-sarif@v3
@@ -157,11 +155,14 @@ jobs:
           DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
           DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Deploy to production
+      - name: Deploy to Production
+        if: env.KUBECONFIG != ''
         run: |
-          echo "Deploy to production server would happen here"
-          echo "This would typically involve:"
-          echo "- SSH to production server"
-          echo "- docker compose pull"
-          echo "- docker compose up -d"
-          echo "- Health checks against production endpoints"
+          echo "${KUBECONFIG}" | base64 -d > /tmp/kube.conf
+          export KUBECONFIG=/tmp/kube.conf
+          kubectl set image deployment/backend \
+            backend=ghcr.io/${{ github.repository }}/backend:${{ github.sha }} \
+            -n rojgarsetu
+          kubectl rollout status deployment/backend -n rojgarsetu --timeout=5m
+        env:
+          KUBECONFIG: ${{ secrets.KUBECONFIG }}
