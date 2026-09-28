@@ -19,6 +19,13 @@ export const GovJobsPage = () => {
     department: '',
     category: '',
   });
+  const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedQuery, setDebouncedQuery] = useState('');
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedQuery(searchQuery), 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   const fetchGovJobs = useCallback(async () => {
     setLoading(true);
@@ -28,6 +35,8 @@ export const GovJobsPage = () => {
       const queryParams = {
         location: filters.location,
         department: filters.department,
+        q: debouncedQuery,
+        search: debouncedQuery,
       };
 
       const res = await api.get('/api/v1/gov-jobs', { params: queryParams });
@@ -91,9 +100,20 @@ export const GovJobsPage = () => {
                <div className="space-y-5">
                   <div className="relative group">
                     <Search className="absolute left-4 top-4 w-5 h-5 text-stone-400 group-focus-within:text-stone-800 transition-colors" />
-                    <input type="text" placeholder="Job title or Department..." className="w-full pl-12 pr-4 py-4 bg-stone-50 border-none rounded-2xl text-sm font-bold focus:ring-4 focus:ring-stone-700/10 transition-all outline-none" />
+                    <input
+                      id="gov-job-search"
+                      name="gov-job-search"
+                      type="text"
+                      placeholder="Job title or Department..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="w-full pl-12 pr-4 py-4 bg-stone-50 border-none rounded-2xl text-sm font-bold focus:ring-4 focus:ring-stone-700/10 transition-all outline-none"
+                    />
                   </div>
-                  <button className="w-full py-4 bg-stone-800 text-white font-black rounded-2xl hover:bg-stone-900 transition-all shadow-xl shadow-blue-900/20 uppercase tracking-widest text-xs">
+                  <button
+                    onClick={fetchGovJobs}
+                    className="w-full py-4 bg-stone-800 text-white font-black rounded-2xl hover:bg-stone-900 transition-all shadow-xl shadow-blue-900/20 uppercase tracking-widest text-xs"
+                  >
                     Fetch Opportunities
                   </button>
                </div>

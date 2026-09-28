@@ -17,6 +17,13 @@ export const PrivateJobsPage = () => {
     jobType: '',
     company: '',
   });
+  const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedQuery, setDebouncedQuery] = useState('');
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedQuery(searchQuery), 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   const fetchPrivateJobs = useCallback(async () => {
     setLoading(true);
@@ -27,6 +34,8 @@ export const PrivateJobsPage = () => {
         location: filters.location,
         job_type: filters.jobType,
         company: filters.company,
+        q: debouncedQuery,
+        search: debouncedQuery,
       };
 
       const res = await api.get('/api/v1/priv-jobs', { params: queryParams });
@@ -77,9 +86,20 @@ export const PrivateJobsPage = () => {
                <div className="space-y-6 relative">
                   <div className="relative">
                     <Search className="absolute left-4 top-4 w-5 h-5 text-stone-400" />
-                    <input type="text" placeholder="Title, Skill, or Firm" className="w-full pl-12 pr-4 py-4 bg-stone-50 border-none rounded-xl text-sm font-bold text-stone-800 focus:ring-4 focus:ring-stone-800/5 transition-all outline-none" />
+                    <input
+                      id="priv-job-search"
+                      name="priv-job-search"
+                      type="text"
+                      placeholder="Title, Skill, or Firm"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="w-full pl-12 pr-4 py-4 bg-stone-50 border-none rounded-xl text-sm font-bold text-stone-800 focus:ring-4 focus:ring-stone-800/5 transition-all outline-none"
+                    />
                   </div>
-                  <button className="w-full py-5 bg-stone-800 text-white font-black rounded-xl hover:bg-stone-900 transition-all shadow-xl shadow-stone-800/20 uppercase tracking-widest text-[11px]">
+                  <button
+                    onClick={fetchPrivateJobs}
+                    className="w-full py-5 bg-stone-800 text-white font-black rounded-xl hover:bg-stone-900 transition-all shadow-xl shadow-stone-800/20 uppercase tracking-widest text-[11px]"
+                  >
                     Analyze Opportunities
                   </button>
                </div>

@@ -58,6 +58,24 @@ if not DATABASE_URL:
         logger.fatal("DATABASE_URL environment variable is required")
         exit(1)
 
+import datetime
+
+# Quota Tracking & Cost Controls
+GEMINI_DAILY_LIMIT = int(os.getenv("GEMINI_DAILY_LIMIT", "100"))
+_ai_quota_tracker = {"date": None, "count": 0}
+
+def check_and_increment_quota() -> bool:
+    today = datetime.date.today().isoformat()
+    if _ai_quota_tracker["date"] != today:
+        _ai_quota_tracker["date"] = today
+        _ai_quota_tracker["count"] = 0
+    if _ai_quota_tracker["count"] >= GEMINI_DAILY_LIMIT:
+        logger.warning(f"Daily Gemini limit ({GEMINI_DAILY_LIMIT}) reached. Triggering NLP rule fallback.")
+        return False
+    _ai_quota_tracker["count"] += 1
+    logger.info(f"Gemini API quota usage today: {_ai_quota_tracker['count']}/{GEMINI_DAILY_LIMIT}")
+    return True
+
 # Configure Gemini
 if not GEMINI_API_KEY:
     if IS_SMOKE_TEST:
@@ -90,6 +108,15 @@ def extract_keywords_basic(text: str) -> dict:
         "source": "fallback"
     }
 
+@app.get("/quota")
+def get_quota():
+    return {
+        "limit": GEMINI_DAILY_LIMIT,
+        "used": _ai_quota_tracker["count"],
+        "remaining": max(0, GEMINI_DAILY_LIMIT - _ai_quota_tracker["count"]),
+        "date": _ai_quota_tracker["date"] or datetime.date.today().isoformat()
+    }
+
 @app.post("/parse-resume", dependencies=[Depends(get_api_key)])
 @limiter.limit("5/minute")
 def parse_resume(request: Request, payload: ResumeParseRequest):
@@ -97,6 +124,11 @@ def parse_resume(request: Request, payload: ResumeParseRequest):
     if not gemini_key or gemini_key == "mock_key":
         fallback_data = extract_keywords_basic(payload.text)
         fallback_data["warning"] = "Gemini API key not configured or in test mode. Using rule-based fallback."
+        return fallback_data
+
+    if not check_and_increment_quota():
+        fallback_data = extract_keywords_basic(payload.text)
+        fallback_data["warning"] = f"Daily Gemini API quota ({GEMINI_DAILY_LIMIT}) reached. Using rule-based fallback."
         return fallback_data
 
     try:

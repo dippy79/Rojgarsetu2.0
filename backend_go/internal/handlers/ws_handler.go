@@ -3,6 +3,8 @@ package handlers
 import (
 	"log"
 	"net/http"
+	"os"
+	"strings"
 	"sync"
 
 	"github.com/gin-gonic/gin"
@@ -12,8 +14,28 @@ import (
 
 var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool {
-		return true // Allow all origins for development
+		origin := r.Header.Get("Origin")
+		if origin == "" {
+			return true // Same origin request
+		}
+		allowedStr := os.Getenv("ALLOWED_ORIGINS")
+		if allowedStr == "" {
+			allowedStr = os.Getenv("ALLOWED_ORIGIN")
+		}
+		if allowedStr == "" {
+			allowedStr = "http://localhost:8080,http://localhost:3000,http://localhost:3001"
+		}
+		allowedList := strings.Split(allowedStr, ",")
+		for _, allowed := range allowedList {
+			if strings.TrimSpace(allowed) == strings.TrimSpace(origin) {
+				return true
+			}
+		}
+		log.Printf("WebSocket origin rejected: %s", origin)
+		return false
 	},
+	ReadBufferSize:  1024,
+	WriteBufferSize: 1024,
 }
 
 type WSHandler struct {

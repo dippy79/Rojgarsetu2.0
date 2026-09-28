@@ -16,6 +16,13 @@ export const CoursesPage = () => {
     mode: '',
     level: '',
   });
+  const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedQuery, setDebouncedQuery] = useState('');
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedQuery(searchQuery), 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   const fetchInitialData = useCallback(async () => {
     try {
@@ -30,7 +37,12 @@ export const CoursesPage = () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await api.get('/api/v1/courses', { params: filters });
+      const params = {
+        ...filters,
+        q: debouncedQuery,
+        search: debouncedQuery,
+      };
+      const res = await api.get('/api/v1/courses', { params });
       const data = res.data?.data || res.data || [];
       const safeData = Array.isArray(data) ? data : [];
       setCourses(safeData);
@@ -41,7 +53,7 @@ export const CoursesPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [filters]);
+  }, [filters, debouncedQuery]);
 
   useEffect(() => {
     fetchInitialData();
@@ -77,8 +89,12 @@ export const CoursesPage = () => {
               <div className="relative group">
                 <Search className="absolute left-5 top-5 w-5 h-5 text-stone-400 group-focus-within:text-stone-800 transition-colors" />
                 <input
+                  id="course-search"
+                  name="course-search"
                   type="text"
                   placeholder="Search skills (e.g. AI, Management, Coding)..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full pl-14 pr-6 py-5 bg-stone-50 border-2 border-transparent focus:border-stone-800/10 focus:bg-white rounded-xl text-sm font-bold shadow-sm transition-all outline-none"
                 />
               </div>

@@ -19,12 +19,37 @@ export const CandidateDashboard = () => {
   const [candidateProfile, setCandidateProfile] = useState(null);
   const [recentApps, setRecentApps] = useState([]);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [aiMatches, setAiMatches] = useState([]);
+  const [aiLoading, setAiLoading] = useState(false);
   const [platformStats, setPlatformStats] = useState({
     totalJobs: 1250,
     companies: 450,
     candidates: 8900,
     placements: 3200,
   });
+
+  useEffect(() => {
+    const fetchAIMatches = async () => {
+      setAiLoading(true);
+      try {
+        const skills = candidateProfile?.skills || ['Software', 'Engineering', 'Developer'];
+        const res = await api.post('/api/ai/recommend/jobs', {
+          user_skills: skills,
+          preferred_locations: [candidateProfile?.location || 'New Delhi', 'Remote']
+        });
+        const recs = res.data?.recommendations || res.data?.data || [];
+        setAiMatches(Array.isArray(recs) ? recs : []);
+      } catch (err) {
+        console.error("AI matches error:", err);
+      } finally {
+        setAiLoading(false);
+      }
+    };
+
+    if (candidateProfile) {
+      fetchAIMatches();
+    }
+  }, [candidateProfile]);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -286,24 +311,35 @@ export const CandidateDashboard = () => {
             </div>
 
             <div className="space-y-6 relative z-10 flex-1">
-              {[
-                { title: 'Senior Systems Engineer', fit: '98%', company: 'DataScale UAE' },
-                { title: 'Full Stack Architect', fit: '94%', company: 'InfraGlobal' },
-                { title: 'UX Lead Specialist', fit: '89%', company: 'Studio 24' },
-              ].map((job, i) => (
-                <div key={i} className="flex items-center justify-between p-5 rounded-3xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all cursor-pointer group">
-                  <div>
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-[10px] font-black text-stone-400 uppercase tracking-widest">{job.fit} Fit</span>
-                      <h4 className="font-bold text-white text-sm">{job.title}</h4>
-                    </div>
-                    <p className="text-[10px] text-stone-500 font-bold uppercase">{job.company}</p>
-                  </div>
-                  <button className="p-3 bg-stone-800 rounded-xl text-white opacity-0 group-hover:opacity-100 transition-opacity">
-                    <ArrowUpRight className="w-4 h-4" />
-                  </button>
+              {aiLoading ? (
+                <div className="space-y-4 animate-pulse">
+                  {[1, 2, 3].map(i => (
+                    <div key={i} className="h-20 bg-white/5 rounded-3xl border border-white/10" />
+                  ))}
                 </div>
-              ))}
+              ) : aiMatches.length > 0 ? (
+                aiMatches.slice(0, 3).map((job) => (
+                  <div key={job.job_id || job.id} className="flex items-center justify-between p-5 rounded-3xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all cursor-pointer group">
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-[10px] font-black text-stone-400 uppercase tracking-widest">
+                          {Math.round((job.match_score || job.fit || 0.85) * 100)}% Fit
+                        </span>
+                        <h4 className="font-bold text-white text-sm">{job.title}</h4>
+                      </div>
+                      <p className="text-[10px] text-stone-500 font-bold uppercase">{job.company || job.source_table || 'Verified Firm'}</p>
+                    </div>
+                    <button
+                      onClick={() => router.push(`/jobs/${job.job_id || job.id}`)}
+                      className="p-3 bg-stone-800 rounded-xl text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <ArrowUpRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))
+              ) : (
+                <p className="text-stone-400 text-sm font-medium">Complete your candidate profile to get real-time AI matches.</p>
+              )}
             </div>
 
             <div className="mt-10 pt-10 border-t border-white/10 text-center relative z-10">

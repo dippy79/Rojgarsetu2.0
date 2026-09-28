@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "next lint",
     "type-check": "tsc --noEmit",
-    "test": "npm run type-check"
+    "test": "jest"
   },
   "dependencies": {
     "@tailwindcss/forms": "^0.5.11",
@@ -39,12 +39,17 @@
     "underscore": "1.13.8"
   },
   "devDependencies": {
+    "@testing-library/dom": "^10.4.2",
+    "@testing-library/jest-dom": "^7.0.1",
+    "@testing-library/react": "^16.3.3",
     "@types/node": "^20.11.0",
     "@types/react": "^18.2.0",
     "@types/react-dom": "^18.2.0",
     "autoprefixer": "^10.4.20",
     "eslint": "^8.56.0",
     "eslint-config-next": "^15.1.4",
+    "jest": "^30.5.2",
+    "jest-environment-jsdom": "^30.5.2",
     "postcss": "8.5.28",
     "typescript": "^5.3.0"
   }

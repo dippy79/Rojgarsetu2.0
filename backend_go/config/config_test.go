@@ -3,22 +3,12 @@ package config
 import "testing"
 
 func TestLoadRequiresJWTSecrets(t *testing.T) {
-	t.Setenv("JWT_SECRET", "")
-	t.Setenv("REFRESH_TOKEN_KEY", "")
-	t.Setenv("JWT_ISSUER", "")
-	t.Setenv("JWT_AUDIENCE", "")
-	t.Setenv("ACCESS_TOKEN_EXPIRY", "")
-	t.Setenv("REFRESH_TOKEN_EXPIRY", "")
-	t.Setenv("RATE_LIMIT", "")
-	t.Setenv("LOGIN_RATE_LIMIT", "")
-	t.Setenv("DB_MAX_OPEN_CONNS", "")
-	t.Setenv("DB_MAX_IDLE_CONNS", "")
-	t.Setenv("DB_CONN_MAX_LIFETIME", "")
-	t.Setenv("DB_CONN_MAX_IDLE_TIME", "")
+	t.Setenv("JWT_SECRET", "short_secret")
+	t.Setenv("REFRESH_TOKEN_KEY", "short_key")
 
 	defer func() {
 		if r := recover(); r == nil {
-			t.Fatal("expected Load to panic when JWT secrets are missing")
+			t.Fatal("expected Load to panic when JWT secrets are under 32 chars")
 		}
 	}()
 

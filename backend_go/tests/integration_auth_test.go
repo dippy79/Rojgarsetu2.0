@@ -24,6 +24,10 @@ import (
 )
 
 func TestIntegrationMigrationsSeederAndAuth(t *testing.T) {
+	if testing.Short() {
+		t.Skip("requires PostgreSQL; skipped in short mode")
+	}
+
 	dbURL := os.Getenv("DATABASE_URL")
 	if dbURL == "" {
 		dbURL = "postgres://postgres:postgres@localhost:5435/rojgarsetu2?sslmode=disable"

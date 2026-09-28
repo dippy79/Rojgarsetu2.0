@@ -387,8 +387,15 @@ func run(cfg *config.Config) error {
 		// Public Stats Endpoint
 		api.GET("/stats", safeHandler(func(h *AppHandlers, c *gin.Context) { h.StatsHandler.GetPlatformStats(c) }))
 
-		// Crawler Endpoints
-		api.POST("/crawler/crawl", safeHandler(func(h *AppHandlers, c *gin.Context) { h.CrawlerHandler.TriggerCrawl(c) }))
+		// Protected Crawler Administrative Group
+		crawlerAdmin := api.Group("/crawler")
+		crawlerAdmin.Use(middleware.AuthMiddleware(cfg))
+		crawlerAdmin.Use(middleware.AdminMiddleware())
+		{
+			crawlerAdmin.POST("/crawl", safeHandler(func(h *AppHandlers, c *gin.Context) { h.CrawlerHandler.TriggerCrawl(c) }))
+		}
+
+		// Public Crawler / Legal Endpoints
 		api.GET("/crawler/health", safeHandler(func(h *AppHandlers, c *gin.Context) { h.CrawlerHandler.GetHealth(c) }))
 
 		// Legal Endpoints
