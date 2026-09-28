@@ -49,7 +49,7 @@ jobs:
           NEXT_TELEMETRY_DISABLED: "1"
         run: |
           npm install --legacy-peer-deps
-          npm test -- --passWithNoTests --watchAll=false
+          npm test -- --watchAll=false
           npm run build
 
   ai-engine:
