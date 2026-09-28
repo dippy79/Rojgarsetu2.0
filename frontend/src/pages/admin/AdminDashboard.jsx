@@ -223,7 +223,7 @@ export default function AdminDashboard() {
                    </div>
                    <div className="font-mono text-[11px] text-stone-300 h-96 overflow-y-auto space-y-2 custom-scrollbar">
                      {crawlerStats.logs.length === 0 ? (
-                       <div className="text-stone-700 italic">// Awaiting input...</div>
+                       <div className="text-stone-700 italic">Awaiting input...</div>
                      ) : (
                        crawlerStats.logs.map((log, index) => <div key={index} className="flex gap-4 border-l border-white/5 pl-4"><span className="text-stone-700">{index+1}</span> {log}</div>)
                      )}

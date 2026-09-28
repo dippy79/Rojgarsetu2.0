@@ -175,7 +175,7 @@ const FloatingNotification = () => {
               <div className="notification-empty">
                 <span className="empty-icon" role="img" aria-hidden="true">🔔</span>
                 <p>No notifications yet</p>
-                <span className="empty-hint">You'll see enrollment reminders here</span>
+                <span className="empty-hint">You&apos;ll see enrollment reminders here</span>
               </div>
             ) : (
               notifications.map((notification) => (

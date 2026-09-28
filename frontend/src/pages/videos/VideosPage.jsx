@@ -50,7 +50,7 @@ export const VideosPage = () => {
               Visual Learning <br /> <span className="text-stone-300 italic">Accelerated.</span>
             </h1>
             <p className="text-stone-400 text-lg font-medium leading-relaxed">
-              Curated masterclasses from the world's leading industry experts.
+              Curated masterclasses from the world&apos;s leading industry experts.
               Interview strategies, technical deep-dives, and career guidance.
             </p>
             <div className="pt-4 flex items-center gap-6">
