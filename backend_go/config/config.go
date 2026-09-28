@@ -83,21 +83,22 @@ func Load() *Config {
 		cfg.JWT.Audience = "rojgarsetu-api"
 	}
 
-	// Read JWT secret from file or environment; fallback to default test key if empty.
+	// Development defaults keep local setup convenient; production must provide unique secrets.
+	production := strings.EqualFold(strings.TrimSpace(os.Getenv("ENVIRONMENT")), "production")
 	cfg.JWT.Secret = readSecret("JWT_SECRET", "JWT_SECRET_FILE")
-	if cfg.JWT.Secret == "" {
+	if cfg.JWT.Secret == "" && !production {
 		cfg.JWT.Secret = "super-secret-jwt-key-minimum-32-characters-long"
 	}
-	if len(cfg.JWT.Secret) < 32 {
+	if len(cfg.JWT.Secret) < 32 || (production && (cfg.JWT.Secret == "super-secret-jwt-key-minimum-32-characters-long" || strings.Contains(cfg.JWT.Secret, "YOUR_MIN_32_CHAR"))) {
 		panic("JWT_SECRET must be at least 32 characters long for security")
 	}
 
-	// Read refresh token key from file or environment; fallback to default test key if empty.
+	// Read refresh token key from file or environment.
 	cfg.JWT.RefreshSessionKey = readSecret("REFRESH_TOKEN_KEY", "REFRESH_TOKEN_KEY_FILE")
-	if cfg.JWT.RefreshSessionKey == "" {
+	if cfg.JWT.RefreshSessionKey == "" && !production {
 		cfg.JWT.RefreshSessionKey = "super-secret-refresh-key-minimum-32-chars"
 	}
-	if len(cfg.JWT.RefreshSessionKey) < 32 {
+	if len(cfg.JWT.RefreshSessionKey) < 32 || (production && (cfg.JWT.RefreshSessionKey == "super-secret-refresh-key-minimum-32-chars" || strings.Contains(cfg.JWT.RefreshSessionKey, "YOUR_MIN_32_CHAR"))) {
 		panic("REFRESH_SESSION_KEY must be at least 32 characters long for security")
 	}
 

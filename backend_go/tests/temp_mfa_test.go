@@ -26,30 +26,40 @@ func TestAdminMFAMiddlewareRequiresMFA(t *testing.T) {
 		c.JSON(http.StatusOK, gin.H{"ok": true})
 	})
 
-	claims := middleware.Claims{
-		UserID:      "admin-1",
-		Email:       "admin@example.com",
-		Role:        "admin",
-		MFAVerified: false,
-		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour)),
-			Issuer:    cfg.JWT.Issuer,
-			Audience:  jwt.ClaimStrings{cfg.JWT.Audience},
-		},
-	}
+	for _, test := range []struct {
+		name       string
+		mfa        bool
+		wantStatus int
+	}{
+		{name: "admin without MFA is denied", mfa: false, wantStatus: http.StatusForbidden},
+		{name: "admin with MFA is allowed", mfa: true, wantStatus: http.StatusOK},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			claims := middleware.Claims{
+				UserID:      "admin-1",
+				Email:       "admin@example.com",
+				Role:        "admin",
+				MFAVerified: test.mfa,
+				RegisteredClaims: jwt.RegisteredClaims{
+					ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour)),
+					Issuer:    cfg.JWT.Issuer,
+					Audience:  jwt.ClaimStrings{cfg.JWT.Audience},
+				},
+			}
+			token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+			signed, err := token.SignedString([]byte(cfg.JWT.Secret))
+			if err != nil {
+				t.Fatalf("sign token: %v", err)
+			}
 
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	signed, err := token.SignedString([]byte(cfg.JWT.Secret))
-	if err != nil {
-		t.Fatalf("sign token: %v", err)
-	}
+			req := httptest.NewRequest(http.MethodGet, "/api/admin", nil)
+			req.Header.Set("Authorization", "Bearer "+signed)
+			w := httptest.NewRecorder()
+			router.ServeHTTP(w, req)
 
-	req := httptest.NewRequest(http.MethodGet, "/api/admin", nil)
-	req.Header.Set("Authorization", "Bearer "+signed)
-	w := httptest.NewRecorder()
-	router.ServeHTTP(w, req)
-
-	if w.Code != http.StatusForbidden {
-		t.Fatalf("expected 403, got %d body=%s", w.Code, w.Body.String())
+			if w.Code != test.wantStatus {
+				t.Fatalf("expected %d, got %d body=%s", test.wantStatus, w.Code, w.Body.String())
+			}
+		})
 	}
 }

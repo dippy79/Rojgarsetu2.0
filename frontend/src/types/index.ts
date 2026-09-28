@@ -2,11 +2,16 @@
 
 export interface User {
   id: string;
+  name?: string;
   email: string;
   role: 'admin' | 'candidate' | 'company';
-  is_active: boolean;
-  email_verified: boolean;
-  created_at: string;
+  phone?: string | null;
+  avatar_url?: string | null;
+  is_active?: boolean | null;
+  is_verified?: boolean | null;
+  last_login?: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
 }
 
 export interface Job {

@@ -88,7 +88,7 @@ export const authAPI = {
         api.post<ApiResponse<{ user: User }>>('/api/v1/auth/register', data),
 
     login: (data: { email: string; password: string }) =>
-        api.post<ApiResponse<{ user: User; token?: string }>>('/api/v1/auth/login', data),
+        api.post<ApiResponse<{ user: User }>>('/api/v1/auth/login', data),
 
     logout: () => api.post<ApiResponse<any>>('/api/v1/auth/logout'),
 

@@ -29,3 +29,35 @@ func TestLoadUsesProvidedSecrets(t *testing.T) {
 		t.Fatalf("refresh token key not loaded from env: %q", cfg.JWT.RefreshSessionKey)
 	}
 }
+
+func TestLoadRejectsMissingSecretsInProduction(t *testing.T) {
+	t.Setenv("ENVIRONMENT", "production")
+	t.Setenv("JWT_SECRET", "")
+	t.Setenv("JWT_SECRET_FILE", "")
+	t.Setenv("REFRESH_TOKEN_KEY", "")
+	t.Setenv("REFRESH_TOKEN_KEY_FILE", "")
+
+	defer func() {
+		if r := recover(); r == nil {
+			t.Fatal("expected Load to reject missing production secrets")
+		}
+	}()
+
+	Load()
+}
+
+func TestLoadRejectsDevelopmentSecretsInProduction(t *testing.T) {
+	t.Setenv("ENVIRONMENT", "production")
+	t.Setenv("JWT_SECRET", "super-secret-jwt-key-minimum-32-characters-long")
+	t.Setenv("JWT_SECRET_FILE", "")
+	t.Setenv("REFRESH_TOKEN_KEY", "super-secret-refresh-key-minimum-32-chars")
+	t.Setenv("REFRESH_TOKEN_KEY_FILE", "")
+
+	defer func() {
+		if r := recover(); r == nil {
+			t.Fatal("expected Load to reject known development secrets in production")
+		}
+	}()
+
+	Load()
+}

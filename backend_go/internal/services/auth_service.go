@@ -11,6 +11,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 	"github.com/rojgarsetu/backend/config"
 	"github.com/rojgarsetu/backend/internal/db"
 	"github.com/rojgarsetu/backend/internal/middleware"
@@ -48,13 +49,72 @@ type RegisterRequest struct {
 type TokenResponse struct {
 	Success bool `json:"success"`
 	Data    struct {
-		User  *db.User `json:"user"`
-		Token string   `json:"token"`
+		User *PublicUser `json:"user"`
 	} `json:"data"`
 }
 
+// PublicUser is the safe user representation returned by authentication APIs.
+// Keep database credentials and password hashes out of serialized responses.
+type PublicUser struct {
+	ID         uuid.UUID  `json:"id"`
+	Name       string     `json:"name"`
+	Email      string     `json:"email"`
+	Role       string     `json:"role"`
+	Phone      *string    `json:"phone"`
+	AvatarUrl  *string    `json:"avatar_url"`
+	IsActive   *bool      `json:"is_active"`
+	IsVerified *bool      `json:"is_verified"`
+	LastLogin  *time.Time `json:"last_login"`
+	CreatedAt  *time.Time `json:"created_at"`
+	UpdatedAt  *time.Time `json:"updated_at"`
+}
+
+func toPublicUser(user *db.User) *PublicUser {
+	if user == nil {
+		return nil
+	}
+	return &PublicUser{
+		ID:         user.ID,
+		Name:       user.Name,
+		Email:      user.Email,
+		Role:       user.Role,
+		Phone:      nullStringValue(user.Phone),
+		AvatarUrl:  nullStringValue(user.AvatarUrl),
+		IsActive:   nullBoolValue(user.IsActive),
+		IsVerified: nullBoolValue(user.IsVerified),
+		LastLogin:  nullTimeValue(user.LastLogin),
+		CreatedAt:  nullTimeValue(user.CreatedAt),
+		UpdatedAt:  nullTimeValue(user.UpdatedAt),
+	}
+}
+
+func authUserResponse(user *db.User) gin.H {
+	return gin.H{"success": true, "data": gin.H{"user": toPublicUser(user)}}
+}
+
+func nullStringValue(value sql.NullString) *string {
+	if !value.Valid {
+		return nil
+	}
+	return &value.String
+}
+
+func nullBoolValue(value sql.NullBool) *bool {
+	if !value.Valid {
+		return nil
+	}
+	return &value.Bool
+}
+
+func nullTimeValue(value sql.NullTime) *time.Time {
+	if !value.Valid {
+		return nil
+	}
+	return &value.Time
+}
+
 func setAuthCookies(c *gin.Context, accessToken, refreshToken string) {
-	cookieSecure := os.Getenv("COOKIE_SECURE") == "true"
+	cookieSecure := os.Getenv("COOKIE_SECURE") == "true" || strings.EqualFold(os.Getenv("ENVIRONMENT"), "production")
 	c.SetSameSite(http.SameSiteLaxMode)
 	c.SetCookie("rojgar_token", accessToken, 900, "/", "", cookieSecure, true)
 	c.SetCookie("rojgar_refresh_token", refreshToken, 2592000, "/", "", cookieSecure, true)
@@ -63,7 +123,7 @@ func setAuthCookies(c *gin.Context, accessToken, refreshToken string) {
 }
 
 func clearAuthCookies(c *gin.Context) {
-	cookieSecure := os.Getenv("COOKIE_SECURE") == "true"
+	cookieSecure := os.Getenv("COOKIE_SECURE") == "true" || strings.EqualFold(os.Getenv("ENVIRONMENT"), "production")
 	c.SetSameSite(http.SameSiteLaxMode)
 	for _, name := range []string{"rojgar_token", "rojgar_refresh_token", "access_token", "refresh_token"} {
 		c.SetCookie(name, "", -1, "/", "", cookieSecure, true)
@@ -118,11 +178,15 @@ func (s *AuthService) Register(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSON(http.StatusCreated, gin.H{"success": true, "data": gin.H{"user": user}})
+	c.JSON(http.StatusCreated, authUserResponse(user))
 }
 
-func (s *AuthService) GetUser(c *gin.Context, userID string) (*db.User, error) {
-	return s.userSvc.GetUserByID(c, userID)
+func (s *AuthService) GetUser(c *gin.Context, userID string) (*PublicUser, error) {
+	user, err := s.userSvc.GetUserByID(c, userID)
+	if err != nil {
+		return nil, err
+	}
+	return toPublicUser(user), nil
 }
 
 func validatePassword(p string) bool {
@@ -171,13 +235,7 @@ func (s *AuthService) Login(c *gin.Context) {
 	// Set HttpOnly Cookies for security
 	setAuthCookies(c, accessToken, refreshToken)
 
-	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"data": gin.H{
-			"user":  user,
-			"token": accessToken,
-		},
-	})
+	c.JSON(http.StatusOK, authUserResponse(user))
 }
 
 func (s *AuthService) Refresh(c *gin.Context) {
@@ -214,9 +272,7 @@ func (s *AuthService) Refresh(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
-		"data": gin.H{
-			"token": accessToken,
-		},
+		"data":    gin.H{},
 	})
 }
 

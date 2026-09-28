@@ -25,7 +25,6 @@ const LoginPage = () => {
   const [loginForm, setLoginForm] = useState({
     email: '',
     password: '',
-    role: 'candidate',
   });
 
   // Register Form State
@@ -182,19 +181,6 @@ const LoginPage = () => {
                 className="w-full px-3 py-2 border border-stone-300 rounded-xl text-sm focus:ring-2 focus:ring-stone-900 focus:outline-none"
                 placeholder="••••••••"
               />
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-stone-700 mb-1">Account Role</label>
-              <select
-                value={loginForm.role}
-                onChange={(e) => setLoginForm({ ...loginForm, role: e.target.value })}
-                className="w-full px-3 py-2 border border-stone-300 rounded-xl text-sm focus:ring-2 focus:ring-stone-900 focus:outline-none bg-white"
-              >
-                <option value="candidate">Candidate / Job Seeker</option>
-                <option value="company">Employer / Company</option>
-                <option value="admin">Administrator</option>
-              </select>
             </div>
 
             <button

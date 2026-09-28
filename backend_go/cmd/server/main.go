@@ -19,9 +19,9 @@ import (
 	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
+	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 	"github.com/redis/go-redis/v9"
-	"github.com/joho/godotenv"
 	"github.com/rojgarsetu/backend/config"
 	_ "github.com/rojgarsetu/backend/docs" // swagger docs
 	"github.com/rojgarsetu/backend/internal/crawler"
@@ -136,10 +136,10 @@ func main() {
 
 	// P4.1: Production environment validation (No Mocks)
 	if os.Getenv("ENVIRONMENT") == "production" {
-		if strings.Contains(cfg.JWT.Secret, "YOUR_MIN_32_CHAR") || len(cfg.JWT.Secret) < 32 {
+		if strings.Contains(cfg.JWT.Secret, "YOUR_MIN_32_CHAR") || len(cfg.JWT.Secret) < 32 || cfg.JWT.Secret == "super-secret-jwt-key-minimum-32-characters-long" {
 			logger.Fatal().Msg("FATAL: JWT_SECRET is missing or insecure for production. Please configure actual secrets in .env")
 		}
-		if strings.Contains(cfg.JWT.RefreshSessionKey, "YOUR_MIN_32_CHAR") || len(cfg.JWT.RefreshSessionKey) < 32 {
+		if strings.Contains(cfg.JWT.RefreshSessionKey, "YOUR_MIN_32_CHAR") || len(cfg.JWT.RefreshSessionKey) < 32 || cfg.JWT.RefreshSessionKey == "super-secret-refresh-key-minimum-32-chars" {
 			logger.Fatal().Msg("FATAL: REFRESH_TOKEN_KEY is missing or insecure for production. Please configure actual secrets in .env")
 		}
 	}

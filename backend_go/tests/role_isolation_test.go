@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
@@ -36,6 +37,13 @@ func TestRoleIsolationBOLA(t *testing.T) {
 	candidateRoutes.Use(middleware.CandidateMiddleware())
 	candidateRoutes.GET("/profile", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"status": "candidate profile ok"})
+	})
+
+	adminRoutes := api.Group("/admin")
+	adminRoutes.Use(middleware.AuthMiddleware(cfg))
+	adminRoutes.Use(middleware.AdminMiddleware())
+	adminRoutes.GET("/dashboard", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"status": "admin dashboard ok"})
 	})
 
 	// Generate Candidate JWT Token
@@ -84,6 +92,60 @@ func TestRoleIsolationBOLA(t *testing.T) {
 	} else {
 		t.Log("Unauthenticated access correctly BLOCKED with 401 Unauthorized.")
 	}
+
+	// 4. Candidate attempts to access administrator routes -> EXPECT 403 Forbidden
+	reqAdmin, _ := http.NewRequest("GET", "/api/v1/admin/dashboard", nil)
+	reqAdmin.Header.Set("Authorization", "Bearer "+candToken)
+	wAdmin := httptest.NewRecorder()
+	router.ServeHTTP(wAdmin, reqAdmin)
+	if wAdmin.Code != http.StatusForbidden {
+		t.Errorf("Privilege escalation! Candidate accessed admin dashboard. Expected 403, got %d", wAdmin.Code)
+	}
+
+	// 5. Expired signed token -> EXPECT 401 Unauthorized
+	expiredClaims := middleware.Claims{
+		UserID: "cand_expired",
+		Email:  "expired@example.com",
+		Role:   "candidate",
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(-time.Minute)),
+			Issuer:    cfg.JWT.Issuer,
+			Audience:  []string{cfg.JWT.Audience},
+		},
+	}
+	expiredToken, err := jwt.NewWithClaims(jwt.SigningMethodHS256, expiredClaims).SignedString([]byte(cfg.JWT.Secret))
+	if err != nil {
+		t.Fatalf("Failed to generate expired token: %v", err)
+	}
+	reqExpired, _ := http.NewRequest("GET", "/api/v1/candidate/profile", nil)
+	reqExpired.Header.Set("Authorization", "Bearer "+expiredToken)
+	wExpired := httptest.NewRecorder()
+	router.ServeHTTP(wExpired, reqExpired)
+	if wExpired.Code != http.StatusUnauthorized {
+		t.Errorf("Expected 401 for expired token, got %d", wExpired.Code)
+	}
+
+	// 6. Validly signed token without exp -> EXPECT 401 Unauthorized
+	missingExpiryClaims := middleware.Claims{
+		UserID: "cand_no_expiry",
+		Email:  "no-expiry@example.com",
+		Role:   "candidate",
+		RegisteredClaims: jwt.RegisteredClaims{
+			Issuer:   cfg.JWT.Issuer,
+			Audience: []string{cfg.JWT.Audience},
+		},
+	}
+	missingExpiryToken, err := jwt.NewWithClaims(jwt.SigningMethodHS256, missingExpiryClaims).SignedString([]byte(cfg.JWT.Secret))
+	if err != nil {
+		t.Fatalf("Failed to generate token without expiry: %v", err)
+	}
+	reqMissingExpiry, _ := http.NewRequest("GET", "/api/v1/candidate/profile", nil)
+	reqMissingExpiry.Header.Set("Authorization", "Bearer "+missingExpiryToken)
+	wMissingExpiry := httptest.NewRecorder()
+	router.ServeHTTP(wMissingExpiry, reqMissingExpiry)
+	if wMissingExpiry.Code != http.StatusUnauthorized {
+		t.Errorf("Expected 401 for token without exp, got %d", wMissingExpiry.Code)
+	}
 }
 
 func generateTestToken(userID, email, role string, cfg *config.Config) (string, error) {
@@ -101,6 +163,7 @@ func createTokenHelper(userID, email, role string, cfg *config.Config) (string, 
 	}
 	claims.Issuer = cfg.JWT.Issuer
 	claims.Audience = []string{cfg.JWT.Audience}
+	claims.ExpiresAt = jwt.NewNumericDate(time.Now().Add(time.Hour))
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	return token.SignedString([]byte(cfg.JWT.Secret))
 }

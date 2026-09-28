@@ -31,14 +31,17 @@ services:
     ports:
       - "8083:8083"
     environment:
+      ENVIRONMENT: production
       PORT: 8083
       DATABASE_URL: postgres://$$(cat /run/secrets/db_user):$$(cat /run/secrets/db_password)@postgres:5432/rojgarsetu2?sslmode=disable
       REDIS_URL: redis://redis:6379
       JWT_SECRET_FILE: /run/secrets/jwt_secret
+      REFRESH_TOKEN_KEY_FILE: /run/secrets/refresh_token_key
     secrets:
       - db_user
       - db_password
       - jwt_secret
+      - refresh_token_key
     depends_on:
       postgres:
         condition: service_healthy
@@ -51,6 +54,8 @@ secrets:
   db_password:
     external: true
   jwt_secret:
+    external: true
+  refresh_token_key:
     external: true
 
 networks:

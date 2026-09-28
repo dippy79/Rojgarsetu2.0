@@ -32,6 +32,7 @@ services:
     container_name: rojgar-backend-prod
     restart: unless-stopped
     environment:
+      ENVIRONMENT: production
       PORT: 8083
       DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?sslmode=disable
       REDIS_URL: redis://redis:6379

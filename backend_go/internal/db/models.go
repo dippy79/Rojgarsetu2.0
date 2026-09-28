@@ -304,7 +304,7 @@ type User struct {
 	ID           uuid.UUID      `json:"id"`
 	Name         string         `json:"name"`
 	Email        string         `json:"email"`
-	PasswordHash string         `json:"password_hash"`
+	PasswordHash string         `json:"-"`
 	Role         string         `json:"role"`
 	Phone        sql.NullString `json:"phone"`
 	AvatarUrl    sql.NullString `json:"avatar_url"`
