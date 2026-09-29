@@ -2,7 +2,7 @@ const path = require('path');
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: 'export',
+  output: process.env.NEXT_NO_EXPORT === 'true' ? undefined : 'export',
   // Silencing workspace root warning
   experimental: {
     // optimizePackageImports: ['lucide-react'],
