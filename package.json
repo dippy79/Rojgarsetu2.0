@@ -15,22 +15,20 @@
     "tailwindcss": "^3.4.10"
   },
   "overrides": {
-    "postcss": "8.5.28",
-    "nth-check": "2.0.1",
-    "svgo": "2.8.4",
-    "serialize-javascript": "7.0.3",
-    "underscore": "1.13.8"
+    "brace-expansion": "^2.0.1",
+    "fast-uri": "^3.1.6",
+    "svgo": "^3.3.5",
+    "js-yaml": "^4.3.2",
+    "serialize-javascript": "^7.0.3",
+    "postcss": "^8.5.3",
+    "nth-check": "^2.1.1",
+    "underscore": "^1.13.8"
   },
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
-  },
-  "eslintConfig": {
-    "extends": [
-      "react-app"
-    ]
   },
   "browserslist": {
     "production": [
