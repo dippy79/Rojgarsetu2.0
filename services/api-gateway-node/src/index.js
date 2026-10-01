@@ -109,7 +109,7 @@ app.get('/api/csrf-token', csrfProtection, (req, res) => {
 
 // 5. REMAINING PROXIES
 app.use(createProxyMiddleware({
-    pathFilter: ['/api/v1', '/api/v1/**'],
+    pathFilter: (path) => path.startsWith('/api/v1'),
     target: BACKEND_TARGET,
     ...proxyOptions
 }));
