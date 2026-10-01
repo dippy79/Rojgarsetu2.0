@@ -8,6 +8,7 @@ import JobCard from '../../components/JobCard';
 import { Search, MapPin, ShieldCheck, ArrowRight, Loader2, Info, X } from 'lucide-react';
 
 export const GovJobsPage = () => {
+  const router = useRouter();
   const { user, isAuthenticated } = useAuth();
   const [jobs, setJobs] = useState([]);
   const [totalItems, setTotalItems] = useState(0);
