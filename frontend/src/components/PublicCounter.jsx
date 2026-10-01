@@ -8,9 +8,11 @@ const PublicCounter = () => {
     total_companies: 0,
     total_placements: 0
   });
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
+    setLoading(true);
     fetch(`${baseUrl}/api/v1/stats`)
       .then(res => res.ok ? res.json() : {})
       .then(data => {
@@ -25,17 +27,34 @@ const PublicCounter = () => {
           });
         }
       })
-      .catch(err => console.error("Stats fetch error:", err));
+      .catch(err => console.error("Stats fetch error:", err))
+      .finally(() => setLoading(false));
   }, []);
 
   return (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 py-12 px-6 bg-stone-900 rounded-[3rem] shadow-2xl shadow-stone-900/20 relative overflow-hidden">
       <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(#ffffff0a_1px,transparent_1px)] [background-size:24px_24px]"></div>
 
-      <StatItem icon={<Briefcase className="w-6 h-6 text-stone-400" />} label="Live Jobs" value={stats.total_jobs} color="blue" />
-      <StatItem icon={<Users className="w-6 h-6 text-stone-400" />} label="Candidates" value={stats.total_candidates} color="emerald" />
-      <StatItem icon={<Building2 className="w-6 h-6 text-stone-400" />} label="Companies" value={stats.total_companies} color="indigo" />
-      <StatItem icon={<Zap className="w-6 h-6 text-stone-400" />} label="Placements" value={stats.total_placements} color="amber" />
+      {loading ? (
+        [1, 2, 3, 4].map((i) => (
+          <div key={i} className="flex flex-col items-center text-center space-y-4 relative z-10">
+            <div className="p-4 bg-white/5 rounded-2xl border border-white/10 shadow-xl animate-pulse">
+              <div className="w-6 h-6 bg-stone-700 rounded"></div>
+            </div>
+            <div>
+              <div className="h-10 bg-stone-700 rounded w-24 mx-auto mb-2 animate-pulse"></div>
+              <div className="h-3 bg-stone-600 rounded w-16 mx-auto animate-pulse"></div>
+            </div>
+          </div>
+        ))
+      ) : (
+        <>
+          <StatItem icon={<Briefcase className="w-6 h-6 text-stone-400" />} label="Live Jobs" value={stats.total_jobs} color="blue" />
+          <StatItem icon={<Users className="w-6 h-6 text-stone-400" />} label="Candidates" value={stats.total_candidates} color="emerald" />
+          <StatItem icon={<Building2 className="w-6 h-6 text-stone-400" />} label="Companies" value={stats.total_companies} color="indigo" />
+          <StatItem icon={<Zap className="w-6 h-6 text-stone-400" />} label="Placements" value={stats.total_placements} color="amber" />
+        </>
+      )}
     </div>
   );
 };
@@ -66,7 +85,7 @@ const StatItem = ({ icon, label, value, color }) => {
 
   return (
     <div className="flex flex-col items-center text-center space-y-4 relative z-10">
-      <div className={`p-4 bg-white/5 rounded-2xl border border-white/10 shadow-xl`}>
+      <div className="p-4 bg-white/5 rounded-2xl border border-white/10 shadow-xl">
         {icon}
       </div>
       <div>

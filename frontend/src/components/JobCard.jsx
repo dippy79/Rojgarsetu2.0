@@ -18,8 +18,34 @@ const JobCard = ({ job, type = 'government' }) => {
     }
   };
 
+  // Check if closing soon (within 7 days)
+  const isClosingSoon = isGov && job?.last_date ? (() => {
+    const lastDate = new Date(job.last_date);
+    const now = new Date();
+    const diffDays = Math.ceil((lastDate - now) / (1000 * 60 * 60 * 24));
+    return diffDays >= 0 && diffDays <= 7;
+  })() : false;
+
+  const applyUrl = isGov
+    ? (job?.apply_url || job?.apply_link || job?.url)
+    : (job?.url || job?.apply_url || job?.apply_link);
+
   return (
     <div className="group bg-white border border-stone-200 rounded-xl p-8 hover:border-stone-400 hover:shadow-lg transition-all relative overflow-hidden">
+      {/* Source Badge */}
+      <div className={`absolute top-4 right-4 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${
+        isGov ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
+      }`}>
+        {isGov ? 'Government' : 'Private'}
+      </div>
+
+      {/* Closing Soon Badge */}
+      {isClosingSoon && (
+        <div className="absolute top-4 left-4 px-3 py-1 rounded-full bg-red-100 text-red-800 text-[10px] font-black uppercase tracking-widest">
+          Closing Soon
+        </div>
+      )}
+
       <div className="flex flex-col md:flex-row md:items-start gap-8 relative z-10">
         {/* Logo/Icon Area */}
         <div className={`w-16 h-16 rounded-lg flex items-center justify-center text-xl font-black shrink-0 transition-all duration-300 ${
@@ -29,7 +55,7 @@ const JobCard = ({ job, type = 'government' }) => {
         }`}>
           {(displayCompany || 'J')[0]}
         </div>
-        
+
         {/* Info Area */}
         <div className="flex-1 space-y-4">
           <div className="space-y-1">
@@ -91,7 +117,14 @@ const JobCard = ({ job, type = 'government' }) => {
               onClick={handleApplyClick}
               className="flex-1 block text-center py-3.5 bg-stone-800 text-white hover:bg-stone-900 font-bold rounded-lg transition-all text-[10px] uppercase tracking-widest shadow-lg"
             >
-              Direct Apply
+              {applyUrl ? 'Apply on Official Site →' : 'Visit Official Website'}
+            </button>
+            <button
+              onClick={() => console.log('Bookmark clicked for job:', job?.id)}
+              className="p-3.5 bg-stone-50 text-stone-600 hover:bg-stone-100 hover:text-stone-800 rounded-lg transition-all"
+              title="Save job"
+            >
+              <Bookmark className="w-4 h-4" />
             </button>
           </div>
         </div>

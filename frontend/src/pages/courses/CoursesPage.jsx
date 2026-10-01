@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/router';
 import { useAuth } from '../../hooks/useAuth';
 import api from '../../lib/api';
-import { Search, GraduationCap, Clock, BookOpen, Filter, ArrowRight, Loader2 } from 'lucide-react';
+import { Search, GraduationCap, Clock, BookOpen, Filter, ArrowRight, Loader2, X } from 'lucide-react';
 
 export const CoursesPage = () => {
+  const router = useRouter();
   const { isAuthenticated } = useAuth();
   const [courses, setCourses] = useState([]);
   const [totalItems, setTotalItems] = useState(0);
@@ -38,7 +40,9 @@ export const CoursesPage = () => {
     setError(null);
     try {
       const params = {
-        ...filters,
+        provider: filters.provider,
+        mode: filters.mode,
+        level: filters.level,
         q: debouncedQuery,
         search: debouncedQuery,
       };
@@ -62,6 +66,31 @@ export const CoursesPage = () => {
   useEffect(() => {
     fetchCourses();
   }, [fetchCourses]);
+
+  const handleClearAll = () => {
+    setFilters({ provider: '', mode: '', level: '' });
+    setSearchQuery('');
+  };
+
+  const handleRemoveFilter = (key) => {
+    setFilters(prev => ({ ...prev, [key]: '' }));
+  };
+
+  // Get active filters for display
+  const activeFilters = Object.entries(filters).filter(([_, value]) => value !== '');
+
+  // Sync URL with filters and search
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const query = {};
+      if (filters.provider) query.provider = filters.provider;
+      if (filters.mode) query.mode = filters.mode;
+      if (filters.level) query.level = filters.level;
+      if (searchQuery) query.search = searchQuery;
+      router.replace({ query }, undefined, { shallow: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filters, searchQuery]);
 
   const dynamicProviders = React.useMemo(() => {
     const fromApi = providers.map(p => p.name || p.provider || p);
@@ -138,7 +167,11 @@ export const CoursesPage = () => {
                 <label className="text-[10px] font-black text-stone-400 uppercase tracking-widest">Learning Mode</label>
                 <div className="grid grid-cols-1 gap-2">
                   {['Online', 'Hybrid', 'Self-Paced'].map(m => (
-                    <button key={m} className="w-full text-left px-4 py-3 rounded-xl border border-stone-100 text-xs font-bold text-stone-600 hover:border-stone-200 transition-all">
+                    <button
+                      key={m}
+                      onClick={() => setFilters(f => ({ ...f, mode: filters.mode === m ? '' : m }))}
+                      className={`w-full text-left px-4 py-3 rounded-xl border text-xs font-bold transition-all ${filters.mode === m ? 'bg-stone-800 text-white border-stone-800 shadow-md' : 'bg-white border-stone-100 text-stone-600 hover:border-stone-200'}`}
+                    >
                       {m}
                     </button>
                   ))}
@@ -149,7 +182,11 @@ export const CoursesPage = () => {
                 <label className="text-[10px] font-black text-stone-400 uppercase tracking-widest">Expertise Level</label>
                 <div className="grid grid-cols-1 gap-2">
                   {['Beginner', 'Intermediate', 'Expert'].map(l => (
-                    <button key={l} className="w-full text-left px-4 py-3 rounded-xl border border-stone-100 text-xs font-bold text-stone-600 hover:border-stone-200 transition-all">
+                    <button
+                      key={l}
+                      onClick={() => setFilters(f => ({ ...f, level: filters.level === l ? '' : l }))}
+                      className={`w-full text-left px-4 py-3 rounded-xl border text-xs font-bold transition-all ${filters.level === l ? 'bg-stone-800 text-white border-stone-800 shadow-md' : 'bg-white border-stone-100 text-stone-600 hover:border-stone-200'}`}
+                    >
                       {l}
                     </button>
                   ))}
@@ -160,6 +197,37 @@ export const CoursesPage = () => {
 
           {/* Courses Feed */}
           <div className="lg:col-span-9 space-y-10">
+            {/* Active Filters Pills */}
+            {(activeFilters.length > 0 || searchQuery) && (
+              <div className="flex flex-wrap items-center gap-2 mb-6">
+                {activeFilters.map(([key, value]) => (
+                  <button
+                    key={key}
+                    onClick={() => handleRemoveFilter(key)}
+                    className="inline-flex items-center gap-1 px-3 py-1.5 bg-stone-800 text-white text-xs font-bold rounded-full hover:bg-stone-700 transition-all"
+                  >
+                    {key}: {value}
+                    <X className="w-3 h-3" />
+                  </button>
+                ))}
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery('')}
+                    className="inline-flex items-center gap-1 px-3 py-1.5 bg-stone-800 text-white text-xs font-bold rounded-full hover:bg-stone-700 transition-all"
+                  >
+                    Search: {searchQuery}
+                    <X className="w-3 h-3" />
+                  </button>
+                )}
+                <button
+                  onClick={handleClearAll}
+                  className="text-xs font-bold text-stone-500 hover:text-stone-800 underline"
+                >
+                  Clear All
+                </button>
+              </div>
+            )}
+
             {loading ? (
               <div className="flex flex-col items-center justify-center py-20">
                 <Loader2 className="w-10 h-10 text-stone-800 animate-spin mb-4" />

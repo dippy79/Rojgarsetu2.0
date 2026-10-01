@@ -1,12 +1,14 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/router';
 import { useAuth } from '../../hooks/useAuth';
 import api from '../../lib/api';
 import JobFilters from '../../components/JobFilters';
 import JobCard from '../../components/JobCard';
-import { Search, Sparkles, Loader2, Info } from 'lucide-react';
+import { Search, Sparkles, Loader2, Info, X } from 'lucide-react';
 
 export const PrivateJobsPage = () => {
+  const router = useRouter();
   const { isAuthenticated } = useAuth();
   const [jobs, setJobs] = useState([]);
   const [totalItems, setTotalItems] = useState(0);
@@ -49,7 +51,7 @@ export const PrivateJobsPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [filters]);
+  }, [filters, debouncedQuery]);
 
   useEffect(() => {
     fetchPrivateJobs();
@@ -58,6 +60,31 @@ export const PrivateJobsPage = () => {
   const handleFilterChange = (newFilters) => {
     setFilters(prev => ({ ...prev, ...newFilters }));
   };
+
+  const handleClearAll = () => {
+    setFilters({ location: '', jobType: '', company: '' });
+    setSearchQuery('');
+  };
+
+  const handleRemoveFilter = (key) => {
+    setFilters(prev => ({ ...prev, [key]: '' }));
+  };
+
+  // Get active filters for display
+  const activeFilters = Object.entries(filters).filter(([_, value]) => value !== '');
+
+  // Sync URL with filters and search
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const query = {};
+      if (filters.location) query.location = filters.location;
+      if (filters.jobType) query.jobType = filters.jobType;
+      if (filters.company) query.company = filters.company;
+      if (searchQuery) query.search = searchQuery;
+      router.replace({ query }, undefined, { shallow: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filters, searchQuery]);
 
   return (
     <div className="min-h-screen bg-stone-50">
@@ -119,6 +146,37 @@ export const PrivateJobsPage = () => {
             {error && (
               <div className="p-4 bg-stone-100 text-stone-700 rounded-xl border border-stone-200 text-xs font-black uppercase tracking-widest">
                 {error}
+              </div>
+            )}
+
+            {/* Active Filters Pills */}
+            {(activeFilters.length > 0 || searchQuery) && (
+              <div className="flex flex-wrap items-center gap-2 mb-6">
+                {activeFilters.map(([key, value]) => (
+                  <button
+                    key={key}
+                    onClick={() => handleRemoveFilter(key)}
+                    className="inline-flex items-center gap-1 px-3 py-1.5 bg-stone-800 text-white text-xs font-bold rounded-full hover:bg-stone-700 transition-all"
+                  >
+                    {key}: {value}
+                    <X className="w-3 h-3" />
+                  </button>
+                ))}
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery('')}
+                    className="inline-flex items-center gap-1 px-3 py-1.5 bg-stone-800 text-white text-xs font-bold rounded-full hover:bg-stone-700 transition-all"
+                  >
+                    Search: {searchQuery}
+                    <X className="w-3 h-3" />
+                  </button>
+                )}
+                <button
+                  onClick={handleClearAll}
+                  className="text-xs font-bold text-stone-500 hover:text-stone-800 underline"
+                >
+                  Clear All
+                </button>
               </div>
             )}
 

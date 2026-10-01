@@ -5,7 +5,7 @@ import { useAuth } from '../../hooks/useAuth';
 import api from '../../lib/api';
 import JobFilters from '../../components/JobFilters';
 import JobCard from '../../components/JobCard';
-import { Search, MapPin, ShieldCheck, ArrowRight, Loader2, Info } from 'lucide-react';
+import { Search, MapPin, ShieldCheck, ArrowRight, Loader2, Info, X } from 'lucide-react';
 
 export const GovJobsPage = () => {
   const { user, isAuthenticated } = useAuth();
@@ -52,15 +52,40 @@ export const GovJobsPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [filters]);
+  }, [filters, debouncedQuery]);
 
   useEffect(() => {
     fetchGovJobs();
   }, [fetchGovJobs]);
 
+  // Sync URL with filters and search
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const query = {};
+      if (filters.location) query.location = filters.location;
+      if (filters.department) query.department = filters.department;
+      if (filters.category) query.category = filters.category;
+      if (searchQuery) query.search = searchQuery;
+      router.replace({ query }, undefined, { shallow: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filters, searchQuery]);
+
   const handleFilterChange = (newFilters) => {
     setFilters(prev => ({ ...prev, ...newFilters }));
   };
+
+  const handleClearAll = () => {
+    setFilters({ location: '', department: '', category: '' });
+    setSearchQuery('');
+  };
+
+  const handleRemoveFilter = (key) => {
+    setFilters(prev => ({ ...prev, [key]: '' }));
+  };
+
+  // Get active filters for display
+  const activeFilters = Object.entries(filters).filter(([_, value]) => value !== '');
 
   return (
     <div className="min-h-screen bg-stone-50">
@@ -136,6 +161,37 @@ export const GovJobsPage = () => {
               <div className="p-4 bg-stone-100 border border-stone-200 rounded-2xl flex items-center gap-3 text-stone-900 text-sm font-bold">
                 <Info className="w-5 h-5" />
                 {error}
+              </div>
+            )}
+
+            {/* Active Filters Pills */}
+            {(activeFilters.length > 0 || searchQuery) && (
+              <div className="flex flex-wrap items-center gap-2 mb-6">
+                {activeFilters.map(([key, value]) => (
+                  <button
+                    key={key}
+                    onClick={() => handleRemoveFilter(key)}
+                    className="inline-flex items-center gap-1 px-3 py-1.5 bg-stone-800 text-white text-xs font-bold rounded-full hover:bg-stone-700 transition-all"
+                  >
+                    {key}: {value}
+                    <X className="w-3 h-3" />
+                  </button>
+                ))}
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery('')}
+                    className="inline-flex items-center gap-1 px-3 py-1.5 bg-stone-800 text-white text-xs font-bold rounded-full hover:bg-stone-700 transition-all"
+                  >
+                    Search: {searchQuery}
+                    <X className="w-3 h-3" />
+                  </button>
+                )}
+                <button
+                  onClick={handleClearAll}
+                  className="text-xs font-bold text-stone-500 hover:text-stone-800 underline"
+                >
+                  Clear All
+                </button>
               </div>
             )}
 

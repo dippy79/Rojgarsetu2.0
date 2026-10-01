@@ -12,12 +12,24 @@ export const VideosPage = () => {
     channel: '',
     category: '',
   });
+  const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedQuery, setDebouncedQuery] = useState('');
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedQuery(searchQuery), 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   const fetchVideos = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await api.get('/api/v1/videos', { params: filters });
+      const params = {
+        ...filters,
+        q: debouncedQuery,
+        search: debouncedQuery,
+      };
+      const res = await api.get('/api/v1/videos', { params });
       const data = res.data?.data || res.data || [];
       const safeData = Array.isArray(data) ? data : [];
       setVideos(safeData);
@@ -28,7 +40,7 @@ export const VideosPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [filters]);
+  }, [filters, debouncedQuery]);
 
   useEffect(() => {
     fetchVideos();
@@ -70,13 +82,23 @@ export const VideosPage = () => {
         <div className="bg-white border border-stone-200 p-6 rounded-2xl shadow-2xl flex flex-col md:flex-row items-center gap-6 mb-16">
           <div className="flex-1 relative w-full group">
             <Search className="absolute left-4 top-4 w-5 h-5 text-stone-400 group-focus-within:text-stone-800 transition-colors" />
-            <input type="text" placeholder="Search masterclasses..." className="w-full pl-12 pr-4 py-4 bg-stone-50 border-none rounded-xl text-sm font-bold outline-none focus:ring-4 focus:ring-stone-800/5 transition-all" />
+            <input
+              type="text"
+              placeholder="Search masterclasses..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-12 pr-4 py-4 bg-stone-50 border-none rounded-xl text-sm font-bold outline-none focus:ring-4 focus:ring-stone-800/5 transition-all"
+            />
           </div>
           <div className="flex items-center gap-4 w-full md:w-auto">
-            <select className="flex-1 md:w-48 bg-stone-50 border-none px-6 py-4 rounded-xl text-xs font-black uppercase tracking-widest outline-none text-stone-900">
-              <option>All Channels</option>
-              <option>Interview Prep</option>
-              <option>Coding Deep-dives</option>
+            <select
+              value={filters.channel}
+              onChange={(e) => setFilters(f => ({ ...f, channel: e.target.value }))}
+              className="flex-1 md:w-48 bg-stone-50 border-none px-6 py-4 rounded-xl text-xs font-black uppercase tracking-widest outline-none text-stone-900"
+            >
+              <option value="">All Channels</option>
+              <option value="Interview Prep">Interview Prep</option>
+              <option value="Coding Deep-dives">Coding Deep-dives</option>
             </select>
             <button className="p-4 bg-stone-900 text-white rounded-xl hover:bg-stone-950 transition-all">
               <Filter className="w-5 h-5" />

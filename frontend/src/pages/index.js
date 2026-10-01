@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Briefcase, ShieldCheck, GraduationCap, PlayCircle, Sparkles, FileText } from 'lucide-react';
+import { Briefcase, ShieldCheck, GraduationCap, PlayCircle, Sparkles, FileText, Loader2 } from 'lucide-react';
 
 import PublicCounter from '../components/PublicCounter';
 
@@ -12,8 +12,11 @@ export default function Home() {
     total_placements: 0
   });
 
+  const [statsLoading, setStatsLoading] = useState(true);
+
   useEffect(() => {
     const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+    setStatsLoading(true);
     fetch(`${apiBase}/api/v1/stats`)
       .then(res => res.ok ? res.json() : null)
       .then(data => {
@@ -23,7 +26,8 @@ export default function Home() {
           setStats(data);
         }
       })
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => setStatsLoading(false));
   }, []);
   return (
     <div className="min-h-screen bg-stone-50 font-sans">
@@ -131,10 +135,19 @@ export default function Home() {
           <div className="flex-1 grid grid-cols-2 gap-4">
             <div className="space-y-4 pt-8">
               <div className="bg-white p-6 rounded-3xl border border-stone-200 shadow-sm h-48 flex flex-col justify-center text-center">
-                <span className="text-4xl font-black text-stone-900">
-                  {stats.total_jobs > 0 ? `${stats.total_jobs.toLocaleString()}+` : '500+'}
-                </span>
-                <span className="text-xs font-bold text-stone-400 uppercase tracking-widest mt-2">Active Jobs</span>
+                {statsLoading ? (
+                  <div className="animate-pulse">
+                    <div className="h-8 bg-stone-200 rounded mb-2"></div>
+                    <div className="h-3 bg-stone-100 rounded w-20 mx-auto"></div>
+                  </div>
+                ) : (
+                  <>
+                    <span className="text-4xl font-black text-stone-900">
+                      {stats.total_jobs > 0 ? `${stats.total_jobs.toLocaleString()}+` : '500+'}
+                    </span>
+                    <span className="text-xs font-bold text-stone-400 uppercase tracking-widest mt-2">Active Jobs</span>
+                  </>
+                )}
               </div>
               <div className="bg-stone-800 p-6 rounded-3xl shadow-xl h-40 flex flex-col justify-center text-center text-white">
                 <span className="text-3xl font-black">Verified</span>
@@ -143,16 +156,34 @@ export default function Home() {
             </div>
             <div className="space-y-4">
               <div className="bg-stone-900 p-6 rounded-3xl shadow-xl h-40 flex flex-col justify-center text-center text-white">
-                <span className="text-3xl font-black">
-                  {stats.total_companies > 0 ? `${stats.total_companies}+` : '200+'}
-                </span>
-                <span className="text-xs font-bold text-stone-400 uppercase tracking-widest mt-2">Companies</span>
+                {statsLoading ? (
+                  <div className="animate-pulse">
+                    <div className="h-6 bg-stone-700 rounded mb-2"></div>
+                    <div className="h-3 bg-stone-600 rounded w-16 mx-auto"></div>
+                  </div>
+                ) : (
+                  <>
+                    <span className="text-3xl font-black">
+                      {stats.total_companies > 0 ? `${stats.total_companies}+` : '200+'}
+                    </span>
+                    <span className="text-xs font-bold text-stone-400 uppercase tracking-widest mt-2">Companies</span>
+                  </>
+                )}
               </div>
               <div className="bg-white p-6 rounded-3xl border border-stone-200 shadow-sm h-48 flex flex-col justify-center text-center">
-                <span className="text-4xl font-black text-stone-900">
-                  {stats.total_candidates > 0 ? `${stats.total_candidates.toLocaleString()}+` : '10k+'}
-                </span>
-                <span className="text-xs font-bold text-stone-400 uppercase tracking-widest mt-2">Candidates</span>
+                {statsLoading ? (
+                  <div className="animate-pulse">
+                    <div className="h-8 bg-stone-200 rounded mb-2"></div>
+                    <div className="h-3 bg-stone-100 rounded w-20 mx-auto"></div>
+                  </div>
+                ) : (
+                  <>
+                    <span className="text-4xl font-black text-stone-900">
+                      {stats.total_candidates > 0 ? `${stats.total_candidates.toLocaleString()}+` : '10k+'}
+                    </span>
+                    <span className="text-xs font-bold text-stone-400 uppercase tracking-widest mt-2">Candidates</span>
+                  </>
+                )}
               </div>
             </div>
           </div>
